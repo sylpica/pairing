@@ -29,7 +29,7 @@ export interface ProfileEntry {
 export type TasteKey = 'sweet' | 'sour' | 'bitter' | 'astringent' | 'umami'
 export interface TasteEntry { intensity: Intensity; basis: Basis; sourceIds: string[] }
 export type TasteProfile = Record<TasteKey, TasteEntry>
-export interface TemporalStage { text: string; basis: Basis; sourceIds: string[] }
+export interface TemporalStage { text: string; basis: Basis; sourceIds: string[]; estimated?: boolean }
 export interface FlavorProfile {
   aromas: ProfileEntry[]
   tastes: TasteProfile

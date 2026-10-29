@@ -255,6 +255,9 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
             {result.contrasts.map((c, i) => <div className="temporal-card" key={i}><h4>{c.label}</h4><p>{c.detail}</p></div>)}
           </>}
           <p className="note-small">組み合わせ後のホイールは、香りを足し算して作ることはしません。共通点と対比だけを示します。</p>
+          <h3>食べる・飲む順序について（一般的な知見）</h3>
+          <p>連続して食べたり飲んだりすると、前のものの影響で後のものの時間的な感じ方が変わることが、チーズとワインの研究で示されています（チーズでワインの渋みの持続が短くなった例など）。お茶とチョコレートの組み合わせでも順序で感じ方が変わる可能性はありますが、特定の組み合わせでどう変わるかを示した研究はないため、ここでは一般的な注意としてのみ記します。</p>
+          <SourceLinks ids={['galmarini-2016-cheese-wine-tds', 'galmarini-2017-sequence-temporal']} />
           <SourceLinks ids={['spence-2020-flavour-pairing']} />
         </section>
       )}
@@ -350,6 +353,9 @@ function SourcesPage() {
         <h3>香味の時間変化について</h3>
         <p>香りや味が時間とともにどう移ろうかは、TDS（時間的優位性評価）や TI（時間強度）といった方法で研究されています。チョコレートでは時間的に優位な属性が製品で異なること（Jager et al. 2014）、産地の異なるビターチョコレートで甘味の持続に差があること（石川ら 2019）、緑茶では香りを嗅ぐ段階でも優位な香りが移ろうこと（Qiu et al. 2025）が報告され、時間的に優位な属性が甘味の感じ方自体を変えうることも示されています（Khemacheevakul et al. 2021）。</p>
         <p>ただし、個別のアイテムごとの時間プロファイルを示した研究はまだ乏しいため、このアプリでは原則として「情報不足」としています（鳳凰単叢のカップアロマ＝余韻のみ、原著に基づいて表示しています）。</p>
+        <p>一部のアイテムでは、検証済みの一般原理（チョコレートの融解、渋みの積み上がり、脂肪と香りの持続など）から考えられる経過を「推測（未検証）」と明示して併記しています。実測データとは分けて表示しています。</p>
+        <p>温度も感じ方を変えます。甘味に関わる味覚チャネル TRPM5 は温度が高いほど応答が強まるため（Talavera et al. 2005）、お茶が冷めていく過程では甘味の感じ方が変わっていく可能性があります（一般原理からの説明で、特定のお茶の実測ではありません）。また烏龍茶では、煎を重ねるごとに香りが漸減することが実測されています（Yang et al. 2025、武夷岩茶）。</p>
+        <SourceLinks ids={['talavera-2005-trpm5-temperature', 'yang-2025-gongfu-infusions']} />
       </article>
       {sources.map((s) => (
         <article className="temporal-card" key={s.id}>

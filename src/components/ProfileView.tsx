@@ -25,7 +25,7 @@ export default function ProfileView({ profile, scopeNote, sourceIds }: { profile
         {temporal.map((t) => (
           <div className="temporal-card" key={t.label}>
             <h4>{t.label}</h4>
-            {t.stage.text ? <p>{t.stage.text}</p> : <p className="unknown-box">情報不足（時間変化の検証データは未収録）</p>}
+            {t.stage.text ? <p>{t.stage.estimated && <span className="badge">推測（未検証）</span>}{t.stage.text}</p> : <p className="unknown-box">情報不足（時間変化の検証データは未収録）</p>}
           </div>
         ))}
       </div>
