@@ -32,3 +32,4 @@
 - 監査報告書: docs/audit/2026-10-30-expansion-data-audit.md, docs/audit/2026-10-30-app-quality-audit.md
 - 注意: 監査サブエージェントの書き込みプローブで src/storage.ts が一時0バイト化 → GitHub上の内容から復旧＋上記改善を適用済み
 - テスト再実行と本番ビルドは環境制限（JS書き込みEPERM）が解け次第実施し、未実施の間は「合格」と報告しない
+- 追加要望対応（2026-10-30 07:49）: タブ切り替え（組み合わせページの お茶/チョコ/組み合わせの見方）とページ遷移で先頭へスクロール（scrollTop、prefers-reduced-motion 配慮）。src/App.tsx のみ変更、main へ push 済み。gh-pages 反映はリトライジョブのビルドに含める

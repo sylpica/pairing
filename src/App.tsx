@@ -16,6 +16,10 @@ function parseRoute(): Route {
   return { name: KNOWN_ROUTES.includes(name) ? name : 'home', id }
 }
 const go = (path: string) => { location.hash = `#/${path}` }
+export const scrollTop = () => {
+  const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
+  window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' })
+}
 
 const norm = (s: string) => s.toLowerCase().replace(/[\s　]/g, '').replace(/ヶ/g, 'ケ')
 function matches(query: string, names: string[]) {
@@ -28,6 +32,7 @@ export default function App() {
   const [route, setRoute] = useState<Route>(parseRoute())
   const [saved, setSaved] = useState<SavedData>(loadSaved())
   useEffect(() => { const f = () => setRoute(parseRoute()); addEventListener('hashchange', f); return () => removeEventListener('hashchange', f) }, [])
+  useEffect(() => { scrollTop() }, [route.name, route.id])
   useEffect(() => { persistSaved(saved) }, [saved])
 
   const toggleFav = (kind: 'teas' | 'chocolates' | 'pairings', id: string) =>
@@ -211,6 +216,7 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
   const result = analyzePairing(tea.profile, choco.profile)
   const pairId = `${teaId}+${chocoId}`
   useEffect(() => { addHistory('pairings', pairId) }, [pairId])
+  useEffect(() => { scrollTop() }, [tab])
   const fav = saved.favorites.pairings.includes(pairId)
   return (
     <div>
