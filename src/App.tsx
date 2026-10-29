@@ -105,10 +105,12 @@ function useSearch<T extends { name: string; searchNames: string[] }>(items: T[]
   return { q, setQ, list }
 }
 
+const KIND_ORDER = ['green', 'white', 'yellow', 'oolong', 'black', 'dark']
 function TeaList() {
   const { q, setQ, list } = useSearch(teaItems)
   const [kind, setKind] = useState('all')
-  const shown = kind === 'all' ? list : list.filter((t) => t.kindId === kind)
+  const filtered = kind === 'all' ? list : list.filter((t) => t.kindId === kind)
+  const shown = [...filtered].sort((a, b) => KIND_ORDER.indexOf(a.kindId) - KIND_ORDER.indexOf(b.kindId))
   return (
     <div>
       <h2>お茶を調べる</h2>
