@@ -1,6 +1,6 @@
 import type { Source } from '../types'
 
-// 2026-10-29 に一次ソースで検証済みの6件のみ（docs/research/literature-verification.md）
+// 2026-10-29 に一次ソースで検証済みの17件のみ（docs/research/literature-verification.md）
 export const sources: Source[] = [
   {
     id: 'moreira-2024-tea-quality',
@@ -162,7 +162,7 @@ export const sources: Source[] = [
     title: 'TI・TDS法によるカカオ豆の異なるビターチョコレートの呈味特性',
     authors: '石川友利加, 吉田かな美, 星野亜由美, 飯田文子',
     year: 2019, journal: '日本官能評価学会誌 23(1):14–25',
-    url: 'https://www.jstage.jst.go.jp/browse/jjse/23/1/_contents',
+    url: 'https://www.jstage.jst.go.jp/article/jjsse/23/1/23_230106/_article/-char/en',
     scope: 'ガーナ・エクアドル・ベネズエラ産カカオのビターチョコレートの呈味の時間変化（TI・TDS、ノーズクリップ装着下＝香りは対象外）。DOIは未確認。',
     license: '未確認', verified: true,
   },

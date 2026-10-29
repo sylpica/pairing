@@ -9,10 +9,11 @@ import { categoryById } from './data/flavors'
 import { loadSaved, persistSaved, pushHistory, validateSaved, type SavedData } from './storage'
 
 type Route = { name: string; id?: string }
+const KNOWN_ROUTES = ['home', 'tea', 'choco', 'pair', 'compare', 'saved', 'sources']
 function parseRoute(): Route {
   const h = location.hash.replace(/^#\/?/, '')
   const [name, id] = h.split('/')
-  return { name: name || 'home', id }
+  return { name: KNOWN_ROUTES.includes(name) ? name : 'home', id }
 }
 const go = (path: string) => { location.hash = `#/${path}` }
 
@@ -203,7 +204,7 @@ function ChocoDetail({ id, saved, toggleFav, addHistory }: { id: string; saved: 
 }
 
 function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFav: (k: 'pairings', id: string) => void; addHistory: (k: 'pairings', id: string) => void }) {
-  const [teaId, setTeaId] = useState(teaItems[6].id)
+  const [teaId, setTeaId] = useState(() => teaItems.find((t) => t.id === 'oolong-tea')?.id ?? teaItems[0].id)
   const [chocoId, setChocoId] = useState(chocolateItems[0].id)
   const [tab, setTab] = useState<'tea' | 'choco' | 'pair'>('pair')
   const tea = teaById(teaId)!; const choco = chocolateById(chocoId)!
@@ -281,7 +282,7 @@ function SavedPage({ saved, setSaved }: { saved: SavedData; setSaved: (d: SavedD
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'pairing-saved.json'; a.click(); URL.revokeObjectURL(a.href)
   }
   const importJson = (f: File) => {
-    f.text().then((t) => { try { setSaved(validateSaved(JSON.parse(t))); setError('') } catch (e) { setError(`読み込めませんでした：${e instanceof Error ? e.message : '不明なエラー'}`) } })
+    f.text().then((t) => { try { setSaved(validateSaved(JSON.parse(t))); setError('') } catch (e) { setError(`読み込めませんでした：${e instanceof Error ? e.message : '不明なエラー'}`) } }).catch(() => setError('ファイルを読み取れませんでした'))
   }
   const nameOf = (kind: string, id: string) => kind === 'teas' ? teaById(id)?.name ?? id : kind === 'chocolates' ? chocolateById(id)?.name ?? id : id.replace('+', ' × ')
   const Section = ({ title, kind, ids }: { title: string; kind: string; ids: string[] }) => (

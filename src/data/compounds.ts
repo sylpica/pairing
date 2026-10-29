@@ -89,10 +89,10 @@ export const compounds: Compound[] = [
   },
   {
     id: 'indole', name: 'インドール', aliases: ['indole'],
-    noteIds: ['chestnut'],
+    noteIds: [],
     plainDescription: '茶に含まれる含窒素化合物です。',
     detectedIn: '煎茶・玉露',
-    aromaKnowledge: '総説（Zeng et al. 2025）では緑茶の栗様香りの寄与成分の一つに挙げられています。',
+    aromaKnowledge: '総説（Zeng et al. 2025）では緑茶の栗様香りの寄与成分の一つに挙げられていますが、煎茶の原著（Kumazawa & Masuda 1999）では動物様の香りとして同定されており、文献で扱いが一致していないため、特定の香りへの紐づけはしていません。',
     contributionEvidence: 'Tan et al. 2019 で煎茶・玉露の主要香気成分として最高 FD値（27）を示しました（AEDA）。',
     sourceIds: ['tan-2019-japanese-green-tea', 'zeng-2025-tea-vocs'],
   },
@@ -125,11 +125,11 @@ export const compounds: Compound[] = [
   },
   {
     id: 'delta-decalactone', name: 'δ-デカラクトン', aliases: ['δ-decalactone'],
-    noteIds: ['cream', 'stone-fruit'],
+    noteIds: ['stone-fruit'],
     plainDescription: '乳脂肪等に由来するラクトン類の一つです。',
     detectedIn: 'ミルクチョコレート',
     aromaKnowledge: 'Schnermann & Schieberle 1997 は R体を甘い・桃様の香りと記述しています。',
-    contributionEvidence: 'ミルクチョコレートの AEDA で高 FD値で同定（Schnermann & Schieberle 1997）。長鎖 δ-ラクトンは鼻後香のクリーミーさを高めることがクラムチョコレートで示されています（Samfaß et al. 2021）。',
+    contributionEvidence: 'ミルクチョコレートの AEDA で高 FD値で同定（Schnermann & Schieberle 1997）。なお、鼻後香のクリーミーさ増強が実証されているのは、同族でも別化合物の δ-テトラデカラクトンであり、本化合物自体の寄与ではありません（Samfaß et al. 2021）。',
     sourceIds: ['schnermann-1997-milk-chocolate', 'samfass-2021-crumb-chocolate-lactones'],
   },
   {

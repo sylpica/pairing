@@ -132,10 +132,10 @@ export const teaItems: TeaItem[] = [
     searchNames: ['ほうじ茶', '焙じ茶', 'Hojicha'],
     profile: prof([
       { noteId: 'toast', intensity: 'strong', basis: 'sensory', sourceIds: ['tan-2019-japanese-green-tea'] },
-      { noteId: 'wood', intensity: 'normal', basis: 'sensory', sourceIds: ['tan-2019-japanese-green-tea'] },
+      { noteId: 'wood', intensity: 'strong', basis: 'sensory', sourceIds: ['tan-2019-japanese-green-tea'] },
     ]),
     evidenceLevel: 'general',
-    scopeNote: 'Tan et al. 2019 に基づきます。ほうじ茶は焙煎様と木様のノートが高く、主要香気成分としてピラジン類（2,3-diethyl-5-methylpyrazine 等）が突出していました。個別商品の焙煎条件による違いは反映していません。',
+    scopeNote: 'Tan et al. 2019 に基づきます。ほうじ茶は焙煎様と木様のノートがともに高く、主要香気成分としてピラジン類（2,3-diethyl-5-methylpyrazine 等）が突出していました。個別商品の焙煎条件による違いは反映していません。',
     sourceIds: ['tan-2019-japanese-green-tea'],
   },
   {
@@ -145,8 +145,6 @@ export const teaItems: TeaItem[] = [
       aromas: [
         { noteId: 'floral-general', intensity: 'strong', basis: 'sensory', sourceIds: ['kun-2025-dancong-cup-aroma'] },
         { noteId: 'tropical', intensity: 'normal', basis: 'sensory', sourceIds: ['kun-2025-dancong-cup-aroma'] },
-        { noteId: 'honey', intensity: 'normal', basis: 'sensory', sourceIds: ['kun-2025-dancong-cup-aroma'] },
-        { noteId: 'ginger', intensity: 'normal', basis: 'sensory', sourceIds: ['kun-2025-dancong-cup-aroma'] },
       ],
       tastes: emptyTastes(),
       temporal: {

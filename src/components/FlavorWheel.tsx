@@ -43,7 +43,7 @@ export default function FlavorWheel({ profile, onSelectNote }: { profile: Flavor
 
   return (
     <div className="wheel-wrap">
-      <svg viewBox={`0 0 ${size} ${size}`} className="wheel" role="img" aria-label="フレーバーホイール">
+      <svg viewBox={`0 0 ${size} ${size}`} className="wheel" role="group" aria-label="フレーバーホイール">
         {drawn.map((s) => (
           <g key={s.id} onClick={() => (s.kind === 'cat' ? setCat(s.id) : onSelectNote(s.id))} className="wheel-seg" tabIndex={0} role="button"
             aria-label={s.kind === 'cat' ? `${s.label}を開く` : `${s.label}（${s.sub}）の説明を見る`}
