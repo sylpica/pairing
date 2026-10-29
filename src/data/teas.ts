@@ -16,7 +16,13 @@ export const teaKinds: TeaKind[] = [
 ]
 
 const Z = 'zeng-2025-tea-vocs'
-const prof = (aromas: FlavorProfile['aromas']): FlavorProfile => ({ aromas, tastes: emptyTastes(), temporal: emptyTemporal() })
+const prof = (aromas: FlavorProfile['aromas'], tastes?: Partial<FlavorProfile['tastes']>): FlavorProfile => ({ aromas, tastes: { ...emptyTastes(), ...(tastes ?? {}) }, temporal: emptyTemporal() })
+const TZ = ['zhang-2020-tea-chemistry-taste', 'ye-2022-bitterness-astringency']
+const greenTastes: Partial<FlavorProfile['tastes']> = {
+  bitter: { intensity: 'normal', basis: 'review', sourceIds: TZ },
+  astringent: { intensity: 'normal', basis: 'review', sourceIds: TZ },
+  umami: { intensity: 'normal', basis: 'review', sourceIds: TZ },
+}
 const e = (noteId: string, intensity: 'weak' | 'normal' | 'strong') => ({ noteId, intensity, basis: 'review' as const, sourceIds: [Z] })
 
 // 香味は Zeng et al. 2025（Foods 14:2574）本文の茶類別記述に基づく総説レベルの一般的特徴。
@@ -25,7 +31,7 @@ export const teaItems: TeaItem[] = [
   {
     id: 'green-pan-fired', name: '釜炒り緑茶（炒青）', kindId: 'green',
     searchNames: ['炒青緑茶', '釜炒り', 'pan-fired green tea', '炒青'],
-    profile: prof([e('chestnut', 'strong'), e('toast', 'normal'), e('floral-general', 'normal'), e('green-leaf', 'normal')]),
+    profile: prof([e('chestnut', 'strong'), e('toast', 'normal'), e('floral-general', 'normal'), e('green-leaf', 'normal')], greenTastes),
     evidenceLevel: 'general',
     scopeNote: '総説では炒青緑茶は栗と焙煎の香りが特徴とされ、緑茶全体は花・爽やかさ・栗様の香りが中心と整理されています。個別銘柄の実測ではありません。',
     sourceIds: [Z],
@@ -33,7 +39,7 @@ export const teaItems: TeaItem[] = [
   {
     id: 'green-steamed', name: '蒸し緑茶（蒸青）', kindId: 'green',
     searchNames: ['蒸青緑茶', '蒸し製', 'steamed green tea', '煎茶'],
-    profile: prof([e('green-leaf', 'strong'), e('floral-general', 'normal'), e('chestnut', 'normal')]),
+    profile: prof([e('green-leaf', 'strong'), e('floral-general', 'normal'), e('chestnut', 'normal')], greenTastes),
     evidenceLevel: 'general',
     scopeNote: '総説では蒸青緑茶は爽やかな香りが際立つとされています。日本の煎茶も蒸青ですが、煎茶固有の実測プロファイルではありません。',
     sourceIds: [Z],
@@ -41,7 +47,7 @@ export const teaItems: TeaItem[] = [
   {
     id: 'green-baked', name: '烘青緑茶', kindId: 'green',
     searchNames: ['烘青', 'baked green tea'],
-    profile: prof([e('green-leaf', 'normal'), e('floral-general', 'normal'), e('chestnut', 'normal')]),
+    profile: prof([e('green-leaf', 'normal'), e('floral-general', 'normal'), e('chestnut', 'normal')], greenTastes),
     evidenceLevel: 'general',
     scopeNote: '総説では烘青緑茶は爽やかさと花の香りが強調されるとされています。個別銘柄の実測ではありません。',
     sourceIds: [Z],
@@ -49,7 +55,7 @@ export const teaItems: TeaItem[] = [
   {
     id: 'green-sun-dried', name: '晒青緑茶', kindId: 'green',
     searchNames: ['晒青', 'sun-dried green tea'],
-    profile: prof([e('hay', 'normal'), e('green-leaf', 'weak')]),
+    profile: prof([e('hay', 'normal'), e('green-leaf', 'weak')], greenTastes),
     evidenceLevel: 'general',
     scopeNote: '総説では晒青緑茶は日光による干し草様の香りを持ち、全体に香りは穏やかとされています。個別銘柄の実測ではありません。',
     sourceIds: [Z],
@@ -81,9 +87,12 @@ export const teaItems: TeaItem[] = [
   {
     id: 'black-tea', name: '紅茶', kindId: 'black',
     searchNames: ['紅茶', 'Black tea', '祁門', '滇紅', '正山小種'],
-    profile: prof([e('honey', 'normal'), e('floral-general', 'normal'), e('fruit-general', 'normal')]),
+    profile: prof([e('honey', 'normal'), e('floral-general', 'normal'), e('fruit-general', 'normal')], {
+      bitter: { intensity: 'normal', basis: 'sensory', sourceIds: ['scharbert-2005-black-tea-taste'] },
+      astringent: { intensity: 'normal', basis: 'sensory', sourceIds: ['scharbert-2005-black-tea-taste', 'scharbert-2004-theaflavins'] },
+    }),
     evidenceLevel: 'general',
-    scopeNote: '総説では紅茶は甘い・花・果実の香りとされ、発酵の過程で青草様の香りから甘い花・果実の香りへ移ると説明されています。個別銘柄の実測ではありません。',
+    scopeNote: '総説では紅茶は甘い・花・果実の香りとされ、発酵の過程で青草様の香りから甘い花・果実の香りへ移ると説明されています。個別銘柄の実測ではありません。味覚（苦味・渋み）は紅茶浸出液の再構成・除去実験（Scharbert & Hofmann 2005）で主要呈味成分が検証されており、渋みには低閾値のテアフラビン類も関わります（Scharbert et al. 2004、位置づけは研究間で異なります）。',
     sourceIds: [Z],
   },
   {
@@ -100,9 +109,9 @@ export const teaItems: TeaItem[] = [
     profile: prof([
       { noteId: 'green-leaf', intensity: 'strong', basis: 'sensory', sourceIds: ['tan-2019-japanese-green-tea'] },
       { noteId: 'floral-general', intensity: 'normal', basis: 'sensory', sourceIds: ['tan-2019-japanese-green-tea'] },
-    ]),
+    ], greenTastes),
     evidenceLevel: 'general',
-    scopeNote: 'Tan et al. 2019 が市販の煎茶・抹茶・玉露・ほうじ茶を同一手法で比べた研究に基づきます。蒸し製の茶は葉様の香りが強く花様のノートも高いと評価されました。主要香気成分としてはインドールとメチオナールが挙げられています。品種・産地固有の実測ではなく、味（うま味等）はこの研究の対象外です。',
+    scopeNote: 'Tan et al. 2019 が市販の煎茶・抹茶・玉露・ほうじ茶を同一手法で比べた研究に基づきます。蒸し製の茶は葉様の香りが強く花様のノートも高いと評価されました。主要香気成分としてはインドールとメチオナールが挙げられています。品種・産地固有の実測ではありません。味覚は別途、総説（Zhang et al. 2020／Ye et al. 2022）に基づく緑茶としての一般的傾向（カテキン・カフェインの苦味、ガロイル化カテキンの渋み、テアニン等のうま味）を収録しています。',
     sourceIds: ['tan-2019-japanese-green-tea'],
   },
   {
@@ -111,9 +120,13 @@ export const teaItems: TeaItem[] = [
     profile: prof([
       { noteId: 'green-leaf', intensity: 'strong', basis: 'sensory', sourceIds: ['tan-2019-japanese-green-tea'] },
       { noteId: 'floral-general', intensity: 'normal', basis: 'sensory', sourceIds: ['tan-2019-japanese-green-tea'] },
-    ]),
+    ], {
+      umami: { intensity: 'normal', basis: 'sensory', sourceIds: ['kaneko-2006-matcha-umami'] },
+      bitter: { intensity: 'weak', basis: 'review', sourceIds: ['ye-2022-bitterness-astringency'] },
+      astringent: { intensity: 'weak', basis: 'review', sourceIds: ['ye-2022-bitterness-astringency'] },
+    }),
     evidenceLevel: 'general',
-    scopeNote: 'Tan et al. 2019 に基づきます。蒸し製の茶として葉様の香りが強く花様のノートも高い群に入り、主要香気成分としてはノナナールが最も高い FD値を示しました。中国・山東産抹茶の研究（Luo et al. 2022）は日本産抹茶のデータとしては使っていません。品種・等級固有の実測ではありません。',
+    scopeNote: 'Tan et al. 2019 に基づきます。蒸し製の茶として葉様の香りが強く花様のノートも高い群に入り、主要香気成分としてはノナナールが最も高い FD値を示しました。中国・山東産抹茶の研究（Luo et al. 2022）は日本産抹茶のデータとしては使っていません。品種・等級固有の実測ではありません。うま味は高級抹茶を対象に官能試験で寄与成分（テアニン等）が同定された研究（Kaneko et al. 2006）に基づき、苦味・渋みは被覆栽培で抑えられる方向を総説（Ye et al. 2022）が支持しています。',
     sourceIds: ['tan-2019-japanese-green-tea'],
   },
   {
@@ -122,9 +135,13 @@ export const teaItems: TeaItem[] = [
     profile: prof([
       { noteId: 'green-leaf', intensity: 'strong', basis: 'sensory', sourceIds: ['tan-2019-japanese-green-tea'] },
       { noteId: 'floral-general', intensity: 'normal', basis: 'sensory', sourceIds: ['tan-2019-japanese-green-tea'] },
-    ]),
+    ], {
+      umami: { intensity: 'normal', basis: 'review', sourceIds: TZ },
+      bitter: { intensity: 'weak', basis: 'review', sourceIds: ['ye-2022-bitterness-astringency'] },
+      astringent: { intensity: 'weak', basis: 'review', sourceIds: ['ye-2022-bitterness-astringency'] },
+    }),
     evidenceLevel: 'general',
-    scopeNote: 'Tan et al. 2019 に基づきます。蒸し製の茶として葉様の香りが強く、主要香気成分としてはインドールが挙げられています。被覆栽培の条件や品種固有の実測ではなく、うま味はこの研究の対象外です。',
+    scopeNote: 'Tan et al. 2019 に基づきます。蒸し製の茶として葉様の香りが強く、主要香気成分としてはインドールが挙げられています。被覆栽培の条件や品種固有の実測ではありません。味覚は玉露固有の呈味研究ではなく、被覆栽培の緑茶としての一般的傾向を総説（Zhang et al. 2020／Ye et al. 2022）に基づき収録しています（被覆で苦味・渋みが抑えられ、テアニン等のうま味成分が関わります）。',
     sourceIds: ['tan-2019-japanese-green-tea'],
   },
   {
@@ -133,9 +150,12 @@ export const teaItems: TeaItem[] = [
     profile: prof([
       { noteId: 'toast', intensity: 'strong', basis: 'sensory', sourceIds: ['tan-2019-japanese-green-tea'] },
       { noteId: 'wood', intensity: 'strong', basis: 'sensory', sourceIds: ['tan-2019-japanese-green-tea'] },
-    ]),
+    ], {
+      bitter: { intensity: 'weak', basis: 'review', sourceIds: ['ye-2022-bitterness-astringency'] },
+      astringent: { intensity: 'weak', basis: 'review', sourceIds: ['ye-2022-bitterness-astringency'] },
+    }),
     evidenceLevel: 'general',
-    scopeNote: 'Tan et al. 2019 に基づきます。ほうじ茶は焙煎様と木様のノートがともに高く、主要香気成分としてピラジン類（2,3-diethyl-5-methylpyrazine 等）が突出していました。個別商品の焙煎条件による違いは反映していません。',
+    scopeNote: 'Tan et al. 2019 に基づきます。ほうじ茶は焙煎様と木様のノートがともに高く、主要香気成分としてピラジン類（2,3-diethyl-5-methylpyrazine 等）が突出していました。個別商品の焙煎条件による違いは反映していません。苦味・渋みは、焙煎で低下する方向を総説（Ye et al. 2022）が支持しています。',
     sourceIds: ['tan-2019-japanese-green-tea'],
   },
   {

@@ -14,9 +14,14 @@ export const chocolateItems: ChocolateItem[] = [
       { noteId: 'toast', intensity: 'normal', basis: 'sensory', sourceIds: [A] },
       { noteId: 'caramel', intensity: 'normal', basis: 'sensory', sourceIds: [A] },
       { noteId: 'hazelnut', intensity: 'normal', basis: 'sensory', sourceIds: [A] },
-    ]),
+    ], {
+      ...emptyTastes(),
+      bitter: { intensity: 'strong', basis: 'sensory', sourceIds: ['luchian-2023-chocolate-profiles', 'stark-2006-cocoa-nibs-taste'] },
+      astringent: { intensity: 'strong', basis: 'sensory', sourceIds: ['luchian-2023-chocolate-profiles', 'stark-2006-cocoa-nibs-taste'] },
+      sour: { intensity: 'weak', basis: 'general', sourceIds: ['stark-2006-cocoa-nibs-taste'] },
+    }),
     evidenceLevel: 'general',
-    scopeNote: '同一カカオ豆の焙煎品と未焙煎品を比べた1件の原著研究（GC-O・官能評価）に基づきます。焙煎品では焙煎の香りが増し、酢酸を除く匂い物質の OAV が高い傾向でした。キャラメル様・ヘーゼルナッツ様の成分については研究発表要約の記述にも基づきます。あらゆるダークチョコレートに当てはまる実測ではありません。カカオ含有率は試料条件が未確認のため表示しません。',
+    scopeNote: '同一カカオ豆の焙煎品と未焙煎品を比べた1件の原著研究（GC-O・官能評価）に基づきます。焙煎品では焙煎の香りが増し、酢酸を除く匂い物質の OAV が高い傾向でした。キャラメル様・ヘーゼルナッツ様の成分については研究発表要約の記述にも基づきます。あらゆるダークチョコレートに当てはまる実測ではありません。カカオ含有率は試料条件が未確認のため表示しません。味覚は、カカオニブの呈味成分研究（Stark et al. 2006）と市販ダーク（70%・95%）のパネル評価（Luchian et al. 2023）に基づく一般レベルの整理で、苦味・渋みが中心です。最終製品の味は配合で変わります。',
     sourceIds: [A],
   },
   {
@@ -63,9 +68,12 @@ export const chocolateItems: ChocolateItem[] = [
       { noteId: 'hazelnut', intensity: 'normal', basis: 'measured', sourceIds: ['schnermann-1997-milk-chocolate'] },
       { noteId: 'cream', intensity: 'normal', basis: 'measured', sourceIds: ['samfass-2021-crumb-chocolate-lactones'] },
       { noteId: 'stone-fruit', intensity: 'weak', basis: 'measured', sourceIds: ['schnermann-1997-milk-chocolate'] },
-    ]),
+    ], {
+      ...emptyTastes(),
+      sweet: { intensity: 'strong', basis: 'sensory', sourceIds: ['luchian-2023-chocolate-profiles', 'guinard-1999-milk-chocolate-sugar-fat'] },
+    }),
     evidenceLevel: 'general',
-    scopeNote: '市販ミルクチョコレート1種の AEDA 研究（Schnermann & Schieberle 1997）と、クラムチョコレートのクリーミーさ研究（Samfaß et al. 2021）に基づく一般レベルの整理です。モルト様・ナッツ様の成分が高 FD値で、ラクトン類が甘い香りとクリーミーさに関わります。試料数が限られるため、全てのミルクチョコレートの実測ではありません。味覚（甘味等）の数値は表示していません。',
+    scopeNote: '市販ミルクチョコレート1種の AEDA 研究（Schnermann & Schieberle 1997）と、クラムチョコレートのクリーミーさ研究（Samfaß et al. 2021）に基づく一般レベルの整理です。モルト様・ナッツ様の成分が高 FD値で、ラクトン類が甘い香りとクリーミーさに関わります。試料数が限られるため、全てのミルクチョコレートの実測ではありません。甘味は市販品パネル研究（Luchian et al. 2023）で最も甘い群とされた記録と、配合実験（Guinard & Mazzucchelli 1999）に基づきますが、糖分量で大きく変わる配合依存の値です。',
     sourceIds: ['schnermann-1997-milk-chocolate', 'samfass-2021-crumb-chocolate-lactones'],
   },
   {
@@ -74,9 +82,12 @@ export const chocolateItems: ChocolateItem[] = [
     profile: prof([
       { noteId: 'caramel', intensity: 'normal', basis: 'sensory', sourceIds: ['stewart-2017-model-white-chocolate'] },
       { noteId: 'milk', intensity: 'normal', basis: 'sensory', sourceIds: ['stewart-2017-model-white-chocolate'] },
-    ]),
+    ], {
+      ...emptyTastes(),
+      sweet: { intensity: 'normal', basis: 'sensory', sourceIds: ['luchian-2023-chocolate-profiles'] },
+    }),
     evidenceLevel: 'general',
-    scopeNote: '注意：これは市販品の実測ではなく、実験室で調製した「モデル」ホワイトチョコレートの研究（Stewart et al. 2017/2018）に基づく説明です。高加熱のスキムミルクパウダーを使った試料ではファッジ／キャラメル様の香りが強く、コンデンスミルク様の香味が増えました。乳原料の加熱履歴で香りが変わるため、個別商品の香味とは限りません。',
+    scopeNote: '注意：香りは市販品の実測ではなく、実験室で調製した「モデル」ホワイトチョコレートの研究（Stewart et al. 2017/2018）に基づく説明です。高加熱のスキムミルクパウダーを使った試料ではファッジ／キャラメル様の香りが強く、コンデンスミルク様の香味が増えました。乳原料の加熱履歴で香りが変わるため、個別商品の香味とは限りません。甘味は別途、市販品1種のパネル研究（Luchian et al. 2023）で「はっきりした甘味」とされた記録に基づきます（単一試料の根拠です）。',
     sourceIds: ['stewart-2017-model-white-chocolate', 'stewart-2018-smp-volatile-carryover'],
   },
 ]
