@@ -7,18 +7,17 @@ import FlavorWheel from './components/FlavorWheel'
 import { analyzePairing, recommend } from './engine/pairing'
 import { categoryById } from './data/flavors'
 import { loadSaved, persistSaved, pushHistory, validateSaved, type SavedData } from './storage'
+import { go, scrollTop } from './nav'
+import NoteDetail from './components/NoteDetail'
+import { compounds } from './data/compounds'
+import { noteById } from './data/flavors'
 
 type Route = { name: string; id?: string }
-const KNOWN_ROUTES = ['home', 'tea', 'choco', 'pair', 'compare', 'saved', 'sources']
+const KNOWN_ROUTES = ['home', 'tea', 'choco', 'pair', 'compare', 'saved', 'sources', 'compounds']
 function parseRoute(): Route {
   const h = location.hash.replace(/^#\/?/, '')
   const [name, id] = h.split('/')
   return { name: KNOWN_ROUTES.includes(name) ? name : 'home', id }
-}
-const go = (path: string) => { location.hash = `#/${path}` }
-export const scrollTop = () => {
-  const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
-  window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' })
 }
 
 const norm = (s: string) => s.toLowerCase().replace(/[\s　]/g, '').replace(/ヶ/g, 'ケ')
@@ -64,9 +63,11 @@ export default function App() {
         {route.name === 'compare' && <ComparePage />}
         {route.name === 'saved' && <SavedPage saved={saved} setSaved={setSaved} />}
         {route.name === 'sources' && <SourcesPage />}
+        {route.name === 'compounds' && <CompoundsPage />}
       </main>
       <footer className="app-footer">
         <button className="linklike" onClick={() => go('compare')}>茶類・製法の比較</button>
+        <button className="linklike" onClick={() => go('compounds')}>成分一覧</button>
         <button className="linklike" onClick={() => go('sources')}>出典・論文一覧</button>
         <p>香味の表示は科学論文に基づく範囲のみ。根拠のない推定や相性スコアは出しません。</p>
       </footer>
@@ -214,6 +215,7 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
   const [teaId, setTeaId] = useState(() => teaItems.find((t) => t.id === 'oolong-tea')?.id ?? teaItems[0].id)
   const [chocoId, setChocoId] = useState(chocolateItems[0].id)
   const [tab, setTab] = useState<'tea' | 'choco' | 'pair'>('pair')
+  const [selNote, setSelNote] = useState<string | null>(null)
   const tea = teaById(teaId)!; const choco = chocolateById(chocoId)!
   const result = analyzePairing(tea.profile, choco.profile)
   const pairId = `${teaId}+${chocoId}`
@@ -233,8 +235,9 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
         <button role="tab" aria-selected={tab === 'choco'} onClick={() => setTab('choco')}>チョコ</button>
         <button role="tab" aria-selected={tab === 'pair'} onClick={() => setTab('pair')}>組み合わせの見方</button>
       </div>
-      {tab === 'tea' && <FlavorWheel profile={tea.profile} onSelectNote={() => {}} />}
-      {tab === 'choco' && <FlavorWheel profile={choco.profile} onSelectNote={() => {}} />}
+      {tab === 'tea' && <FlavorWheel profile={tea.profile} onSelectNote={setSelNote} />}
+      {tab === 'choco' && <FlavorWheel profile={choco.profile} onSelectNote={setSelNote} />}
+      {tab !== 'pair' && selNote && <NoteDetail noteId={selNote} profile={tab === 'tea' ? tea.profile : choco.profile} />}
       {tab === 'pair' && (
         <section>
           <p><span className="badge">{LEVEL_LABEL[result.level]}</span></p>
@@ -261,6 +264,7 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
 
 function ComparePage() {
   const [a, setA] = useState(teaItems[1].id); const [b, setB] = useState(teaItems[7].id)
+  const [sel, setSel] = useState<{ noteId: string; side: 'a' | 'b' } | null>(null)
   const ta = teaById(a)!; const tb = teaById(b)!
   return (
     <div>
@@ -275,9 +279,10 @@ function ComparePage() {
         <label>比べるお茶 2 <select value={b} onChange={(e) => setB(e.target.value)}>{teaItems.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
       </div>
       <div className="compare-grid">
-        <div><h3>{ta.name}</h3><FlavorWheel profile={ta.profile} onSelectNote={() => {}} /></div>
-        <div><h3>{tb.name}</h3><FlavorWheel profile={tb.profile} onSelectNote={() => {}} /></div>
+        <div><h3>{ta.name}</h3><FlavorWheel profile={ta.profile} onSelectNote={(id) => setSel({ noteId: id, side: 'a' })} /></div>
+        <div><h3>{tb.name}</h3><FlavorWheel profile={tb.profile} onSelectNote={(id) => setSel({ noteId: id, side: 'b' })} /></div>
       </div>
+      {sel && <NoteDetail noteId={sel.noteId} profile={sel.side === 'a' ? ta.profile : tb.profile} />}
       <p className="note-small">各ホイールは総説に基づく茶類・製法レベルの一般的特徴です。異なる品種・条件の試料では、違いが製法だけによるものとは限りません。</p>
     </div>
   )
@@ -310,6 +315,28 @@ function SavedPage({ saved, setSaved }: { saved: SavedData; setSaved: (d: SavedD
       <label className="btn file-btn">JSONを読み込む<input type="file" accept="application/json" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) importJson(f) }} /></label>
       {error && <p className="unknown-box" role="alert">{error}</p>}
       <p className="note-small">保存はこの端末の中だけです。アカウント登録はありません。</p>
+    </div>
+  )
+}
+
+function CompoundsPage() {
+  return (
+    <div>
+      <h2>成分一覧</h2>
+      <p>香味に寄与することが研究で示された化学成分です。「検出された」ことと「香りに寄与する」ことは分けて記録しています。香りの記述がない成分は、その旨を明記しています。</p>
+      {compounds.map((c) => (
+        <article className="temporal-card" key={c.id}>
+          <h3>{c.name}（{c.aliases[0] ?? ''}）</h3>
+          <p><strong>寄与する香り：</strong>{c.aromaKnowledge}</p>
+          <p>{c.plainDescription}</p>
+          {c.noteIds.length > 0 && <p className="note-small">関係する香味：{c.noteIds.map((n) => noteById(n)?.name ?? n).join('、')}</p>}
+          <dl>
+            <dt>検出の事実</dt><dd>{c.detectedIn}</dd>
+            <dt>寄与の根拠</dt><dd>{c.contributionEvidence}</dd>
+          </dl>
+          <SourceLinks ids={c.sourceIds} />
+        </article>
+      ))}
     </div>
   )
 }

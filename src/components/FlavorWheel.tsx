@@ -56,6 +56,7 @@ export default function FlavorWheel({ profile, onSelectNote }: { profile: Flavor
         <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" className="wheel-center">{cat ? categoryById(cat)?.name : '香り'}</text>
       </svg>
       {cat && <button className="btn ghost" onClick={() => setCat(null)}>← 大分類に戻る</button>}
+      {cat && <p className="note-small">{categoryById(cat)?.name}：このアイテムでは {segments.map((x) => `${x.label}（${x.sub}）`).join('、')} が収録されています。香りを押すと、寄与する成分が分かります。</p>}
       <ul className="wheel-list">
         {segments.map((s) => (
           <li key={s.id}>

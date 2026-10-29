@@ -188,4 +188,15 @@ export const sources: Source[] = [
     scope: '3Dプリントした積層チョコレートの TDS 評価。時間的に優位な属性が甘味知覚を上下させうることの根拠。通常製品の時間プロファイルではない。',
     license: 'CC BY 4.0（オープンアクセス）', verified: true,
   },
+  {
+    id: 'kumazawa-1999-sencha-odorants',
+    kind: 'original',
+    title: 'Identification of potent odorants in Japanese green tea (Sen-cha)',
+    authors: 'Kumazawa K, Masuda H',
+    year: 1999, journal: 'Journal of Agricultural and Food Chemistry 47(12):5169–5172',
+    doi: '10.1021/jf9906782', pmid: '10606589',
+    url: 'https://doi.org/10.1021/jf9906782',
+    scope: '煎茶試料1種を AEDA 等で分析し、強力な香気成分36種を同定した原著。試料は1種のため煎茶全般への一般化はできない。味・うま味は対象外。',
+    license: '未確認（ACS）', verified: true,
+  },
 ]
