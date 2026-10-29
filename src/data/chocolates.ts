@@ -57,18 +57,27 @@ export const chocolateItems: ChocolateItem[] = [
   {
     id: 'milk-chocolate', name: 'ミルクチョコレート', kind: 'milk',
     searchNames: ['ミルクチョコレート', 'milk chocolate'],
-    profile: prof([]),
-    evidenceLevel: 'insufficient',
-    scopeNote: '初期版では検証済みの香味データが不足しているため、香味は「不明」としています。カカオ含有率や乳成分だけから甘味・苦味を推定することはしません。',
-    sourceIds: [],
+    profile: prof([
+      { noteId: 'malt', intensity: 'normal', basis: 'measured', sourceIds: ['schnermann-1997-milk-chocolate'] },
+      { noteId: 'nut-general', intensity: 'normal', basis: 'measured', sourceIds: ['schnermann-1997-milk-chocolate'] },
+      { noteId: 'hazelnut', intensity: 'normal', basis: 'measured', sourceIds: ['schnermann-1997-milk-chocolate'] },
+      { noteId: 'cream', intensity: 'normal', basis: 'measured', sourceIds: ['samfass-2021-crumb-chocolate-lactones'] },
+      { noteId: 'stone-fruit', intensity: 'weak', basis: 'measured', sourceIds: ['schnermann-1997-milk-chocolate'] },
+    ]),
+    evidenceLevel: 'general',
+    scopeNote: '市販ミルクチョコレート1種の AEDA 研究（Schnermann & Schieberle 1997）と、クラムチョコレートのクリーミーさ研究（Samfaß et al. 2021）に基づく一般レベルの整理です。モルト様・ナッツ様の成分が高 FD値で、ラクトン類が甘い香りとクリーミーさに関わります。試料数が限られるため、全てのミルクチョコレートの実測ではありません。味覚（甘味等）の数値は表示していません。',
+    sourceIds: ['schnermann-1997-milk-chocolate', 'samfass-2021-crumb-chocolate-lactones'],
   },
   {
     id: 'white-chocolate', name: 'ホワイトチョコレート', kind: 'white',
     searchNames: ['ホワイトチョコレート', 'white chocolate'],
-    profile: prof([]),
-    evidenceLevel: 'insufficient',
-    scopeNote: '初期版では検証済みの香味データが不足しているため、香味は「不明」としています。',
-    sourceIds: [],
+    profile: prof([
+      { noteId: 'caramel', intensity: 'normal', basis: 'sensory', sourceIds: ['stewart-2017-model-white-chocolate'] },
+      { noteId: 'milk', intensity: 'normal', basis: 'sensory', sourceIds: ['stewart-2017-model-white-chocolate'] },
+    ]),
+    evidenceLevel: 'general',
+    scopeNote: '注意：これは市販品の実測ではなく、実験室で調製した「モデル」ホワイトチョコレートの研究（Stewart et al. 2017/2018）に基づく説明です。高加熱のスキムミルクパウダーを使った試料ではファッジ／キャラメル様の香りが強く、コンデンスミルク様の香味が増えました。乳原料の加熱履歴で香りが変わるため、個別商品の香味とは限りません。',
+    sourceIds: ['stewart-2017-model-white-chocolate', 'stewart-2018-smp-volatile-carryover'],
   },
 ]
 export const chocolateById = (id: string) => chocolateItems.find((c) => c.id === id)

@@ -9,10 +9,10 @@ export const teaKinds: TeaKind[] = [
   { id: 'oolong', name: '青茶（烏龍茶）', category: 'oolong', aliases: ['Oolong tea', '乌龙茶', '烏龍茶'], note: '半発酵茶。緑茶と紅茶の中間的な製法。' },
   { id: 'black', name: '紅茶', category: 'black', aliases: ['Black tea', '红茶'], note: '発酵（酵素酸化）を進めた茶。' },
   { id: 'dark', name: '黒茶', category: 'dark', aliases: ['Dark tea', '黑茶', 'プーアル茶', '普洱茶'], note: '後発酵（微生物発酵）を経る茶。プーアル茶を含む。' },
-  { id: 'sencha-form', name: '煎茶', category: 'form', aliases: ['Sencha'], note: '蒸青緑茶の一種（日本）。固有の実測プロファイルは未収録で、蒸青緑茶の一般的特徴を参照する。' },
-  { id: 'gyokuro-form', name: '玉露', category: 'form', aliases: ['Gyokuro'], note: '被覆栽培の蒸青緑茶（日本）。固有データは未収録。' },
-  { id: 'matcha-form', name: '抹茶', category: 'form', aliases: ['Matcha'], note: '碾茶を粉末にしたもの。固有データは未収録。' },
-  { id: 'hojicha-form', name: 'ほうじ茶', category: 'form', aliases: ['Hojicha', '焙じ茶'], note: '緑茶を焙煎したもの。固有データは未収録。' },
+  { id: 'sencha-form', name: '煎茶', category: 'form', aliases: ['Sencha'], note: '蒸青緑茶の一種（日本）。Tan et al. 2019 に基づく一般的特徴を収録（品種固有の実測ではない）。' },
+  { id: 'gyokuro-form', name: '玉露', category: 'form', aliases: ['Gyokuro'], note: '被覆栽培の蒸青緑茶（日本）。Tan et al. 2019 に基づく一般的特徴を収録（品種固有の実測ではない）。' },
+  { id: 'matcha-form', name: '抹茶', category: 'form', aliases: ['Matcha'], note: '碾茶を粉末にしたもの。Tan et al. 2019 に基づく一般的特徴を収録（品種固有の実測ではない）。' },
+  { id: 'hojicha-form', name: 'ほうじ茶', category: 'form', aliases: ['Hojicha', '焙じ茶'], note: '緑茶を焙煎したもの。Tan et al. 2019 に基づく一般的特徴を収録。' },
 ]
 
 const Z = 'zeng-2025-tea-vocs'
@@ -93,6 +93,71 @@ export const teaItems: TeaItem[] = [
     evidenceLevel: 'general',
     scopeNote: '総説では黒茶の陳香（熟成した香り）は木質・古い・焙煎のニュアンスを含むとされています。プーアル茶・六堡茶など個別茶の実測ではありません。菌花香など種類による違いも知られていますが、ここでは共通範囲のみを示します。',
     sourceIds: [Z],
+  },
+  {
+    id: 'sencha', name: '煎茶', kindId: 'green',
+    searchNames: ['煎茶', 'Sencha', 'せんちゃ'],
+    profile: prof([
+      { noteId: 'green-leaf', intensity: 'strong', basis: 'sensory', sourceIds: ['tan-2019-japanese-green-tea'] },
+      { noteId: 'floral-general', intensity: 'normal', basis: 'sensory', sourceIds: ['tan-2019-japanese-green-tea'] },
+    ]),
+    evidenceLevel: 'general',
+    scopeNote: 'Tan et al. 2019 が市販の煎茶・抹茶・玉露・ほうじ茶を同一手法で比べた研究に基づきます。蒸し製の茶は葉様の香りが強く花様のノートも高いと評価されました。主要香気成分としてはインドールとメチオナールが挙げられています。品種・産地固有の実測ではなく、味（うま味等）はこの研究の対象外です。',
+    sourceIds: ['tan-2019-japanese-green-tea'],
+  },
+  {
+    id: 'matcha', name: '抹茶', kindId: 'green',
+    searchNames: ['抹茶', 'Matcha', 'まっちゃ'],
+    profile: prof([
+      { noteId: 'green-leaf', intensity: 'strong', basis: 'sensory', sourceIds: ['tan-2019-japanese-green-tea'] },
+      { noteId: 'floral-general', intensity: 'normal', basis: 'sensory', sourceIds: ['tan-2019-japanese-green-tea'] },
+    ]),
+    evidenceLevel: 'general',
+    scopeNote: 'Tan et al. 2019 に基づきます。蒸し製の茶として葉様の香りが強く花様のノートも高い群に入り、主要香気成分としてはノナナールが最も高い FD値を示しました。中国・山東産抹茶の研究（Luo et al. 2022）は日本産抹茶のデータとしては使っていません。品種・等級固有の実測ではありません。',
+    sourceIds: ['tan-2019-japanese-green-tea'],
+  },
+  {
+    id: 'gyokuro', name: '玉露', kindId: 'green',
+    searchNames: ['玉露', 'Gyokuro', 'ぎょくろ'],
+    profile: prof([
+      { noteId: 'green-leaf', intensity: 'strong', basis: 'sensory', sourceIds: ['tan-2019-japanese-green-tea'] },
+      { noteId: 'floral-general', intensity: 'normal', basis: 'sensory', sourceIds: ['tan-2019-japanese-green-tea'] },
+    ]),
+    evidenceLevel: 'general',
+    scopeNote: 'Tan et al. 2019 に基づきます。蒸し製の茶として葉様の香りが強く、主要香気成分としてはインドールが挙げられています。被覆栽培の条件や品種固有の実測ではなく、うま味はこの研究の対象外です。',
+    sourceIds: ['tan-2019-japanese-green-tea'],
+  },
+  {
+    id: 'hojicha', name: 'ほうじ茶', kindId: 'green',
+    searchNames: ['ほうじ茶', '焙じ茶', 'Hojicha'],
+    profile: prof([
+      { noteId: 'toast', intensity: 'strong', basis: 'sensory', sourceIds: ['tan-2019-japanese-green-tea'] },
+      { noteId: 'wood', intensity: 'normal', basis: 'sensory', sourceIds: ['tan-2019-japanese-green-tea'] },
+    ]),
+    evidenceLevel: 'general',
+    scopeNote: 'Tan et al. 2019 に基づきます。ほうじ茶は焙煎様と木様のノートが高く、主要香気成分としてピラジン類（2,3-diethyl-5-methylpyrazine 等）が突出していました。個別商品の焙煎条件による違いは反映していません。',
+    sourceIds: ['tan-2019-japanese-green-tea'],
+  },
+  {
+    id: 'fenghuang-dancong', name: '鳳凰単叢（烏龍茶）', kindId: 'oolong',
+    searchNames: ['鳳凰単叢', '凤凰单丛', 'Fenghuang Dancong', '単叢'],
+    profile: {
+      aromas: [
+        { noteId: 'floral-general', intensity: 'strong', basis: 'sensory', sourceIds: ['kun-2025-dancong-cup-aroma'] },
+        { noteId: 'tropical', intensity: 'normal', basis: 'sensory', sourceIds: ['kun-2025-dancong-cup-aroma'] },
+        { noteId: 'honey', intensity: 'normal', basis: 'sensory', sourceIds: ['kun-2025-dancong-cup-aroma'] },
+        { noteId: 'ginger', intensity: 'normal', basis: 'sensory', sourceIds: ['kun-2025-dancong-cup-aroma'] },
+      ],
+      tastes: emptyTastes(),
+      temporal: {
+        first: { text: '', basis: 'general', sourceIds: [] },
+        middle: { text: '', basis: 'general', sourceIds: [] },
+        finish: { text: '飲み終えたカップに残る香り（カップアロマ）は、茶液の香りとは異なり、花蜜様・生姜様・花様が強いと報告されています（Kun et al. 2025、再構成実験で検証）。', basis: 'sensory', sourceIds: ['kun-2025-dancong-cup-aroma'] },
+      },
+    },
+    evidenceLevel: 'general',
+    scopeNote: 'Kun et al. 2025（センソミクス）に基づきます。茶液の香りはトロピカルフルーツ様・甘い・花様、カップアロマは花蜜様・生姜様・花様と特徴が異なりました。単叢は香型によって揮発性組成が大きく異なる（9香型の類似度 46.79–95.94%、Li & Wang 2020）ため、これは単一プロファイルではなく研究試料に基づく代表的な整理です。',
+    sourceIds: ['kun-2025-dancong-cup-aroma', 'li-wang-2020-dancong-types'],
   },
 ]
 export const teaById = (id: string) => teaItems.find((t) => t.id === id)

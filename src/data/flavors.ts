@@ -43,6 +43,7 @@ export const flavorNotes: FlavorNote[] = [
   { id: 'mushroom', categoryId: 'woody-earthy', name: 'きのこ', example: 'きのこのような香り' },
   { id: 'cinnamon', categoryId: 'spice', name: 'シナモン', example: 'シナモンのような甘い香辛料の香り' },
   { id: 'warm-spice', categoryId: 'spice', name: '温かいスパイス', example: 'カルダモンなどを思わせる香り' },
+  { id: 'ginger', categoryId: 'spice', name: '生姜', example: '生姜のような爽やかな辛みの香り' },
   { id: 'peppery', categoryId: 'spice', name: '胡椒様', example: '胡椒のようなピリッとした香り' },
   { id: 'milk', categoryId: 'dairy-creamy', name: 'ミルク', example: '温かいミルクのような香り' },
   { id: 'butter', categoryId: 'dairy-creamy', name: 'バター', example: 'バターのようなこくのある香り' },

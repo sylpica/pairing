@@ -15,7 +15,8 @@ describe('ペアリングエンジン（§15.2検証ケース）', () => {
     expect(r.sharedNotes.map((s) => s.noteId)).toContain('floral-general')
   })
   it('データ不足の組み合わせは情報不足を返す（相性不良と誤表示しない）', () => {
-    const r = analyzePairing(teaById('black-tea')!.profile, chocolateById('milk-chocolate')!.profile)
+    const emptyProfile = { ...chocolateById('milk-chocolate')!.profile, aromas: [] }
+    const r = analyzePairing(teaById('black-tea')!.profile, emptyProfile)
     expect(r.level).toBe('insufficient')
     expect(r.message).toContain('根拠が足りない')
   })
