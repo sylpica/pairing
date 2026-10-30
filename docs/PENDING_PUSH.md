@@ -1,9 +1,9 @@
 # GitHub反映 保留リスト
 
-最終更新: 2026-10-30 14:25
+最終更新: 2026-10-30 17:15
 
 ## 保留中
-- **公開サイト（Pages配信）への反映のみ保留中**。gh-pages ブランチへの再デプロイは 2026-10-30 10:56 に完了（新ヘッド 6f659ae、読み戻し確認済み）だが、11:22 時点でも公開URLは旧ビルド（index-DkkSoSa7.js）を配信し続け、新ビルドのJS（index-DNXOw2Cd.js）は 404。Pages 側の配信反映待ち／Pages ビルド側の問題かは未確認。次回リトライではまず Pages の配信状態と設定（Settings → Pages のソース）を確認すること。
+- **公開サイト（Pages配信）への反映のみ保留中**。gh-pages ブランチへの再デプロイは 2026-10-30 16:52 に再度完了（最新ビルド index-Di_ddlxs.js、新ヘッド b9e5301、読み戻し確認済み）だが、17:13 時点でも公開URLは旧ビルド（index-DkkSoSa7.js）を配信し続け、新ビルドのJS（index-Di_ddlxs.js／前回 index-DNXOw2Cd.js）は 404。Pages 側の配信反映待ち／Pages ビルド側の問題かは未確認。次回リトライではまず Pages の配信状態と設定（Settings → Pages のソース）を確認すること。
 - main への反映は下記の通り全て完了（今回の sources.ts DOI欄修正を含む）。
 - 対応方針（ユーザー確定 2026-10-30）: GitHub Actions 方式へは切り替えず、段階的リトライ（テスト→型→ビルド→少しずつ反映→公開確認）を繰り返す。2026-10-30 10:37 のリトライが失敗した場合も、間隔を空けて再リトライを続ける（次回予定はその都度このチャットに記録する）。
 - デプロイ後に行う公開確認の項目: (a) 鳳凰単叢ホイールが花様・トロピカルの2ノート (b) お茶一覧が六大茶類順 (c) 成分一覧ページ (d) 抹茶の味覚表示 (e) 時間変化の推測バッジ表示。実機・375px幅の確認メモは docs/device-check-memo.md。
@@ -78,3 +78,12 @@
 - 段階2' ビルド: `npm run build` は tsc -b の tsconfig.tsbuildinfo 書き込み EPERM で停止。`vite build` 単体も設定バンドル時の write EPERM で停止。別セッションでも3回同結果。新バンドルを生成できなかったため、gh-pages への再デプロイは今回実施していない（既存 dist は 1d981eb を含まないため、古い dist の再 push は行わなかった）。
 - 段階3 公開確認: 新ビルド未生成・未デプロイのため、確認項目 (a) 鳳凰単叢ホイールの2ノート (b) お茶一覧の六大茶類順 (c) 成分一覧ページ (d) 抹茶の味覚表示 (e) 時間変化の推測（未検証）バッジ (f) 出典ページで「DOI: 」の空表示がないこと、はいずれも新ビルドでは未確認。公開URLは引き続き旧ビルドを配信。
 - 次回: ユーザー方針どおり GitHub Actions 方式へは切り替えず、間隔を空けて再リトライする。次回は書き込み可能なセッションで vitest → tsc → build → gh-pages へ push-files → 公開確認 (a)〜(f) を実施すること。
+
+## 2026-10-30 16:37 公開反映リトライ結果（ジョブ pairing-pages-verify-20261030-4）
+- 段階0 公開現状: 16:37 時点で公開URLは旧ビルドのまま（新JS index-DNXOw2Cd.js は 404、旧JS index-DkkSoSa7.js は 200）。gh-pages 本体は 6f659ae で新JS参照済み（読み戻し確認済み）のため、未反映は Pages 配信側という前回までの切り分けを再確認。
+- ローカル同期確認: 作業ツリーの主要ファイル（src/App.tsx、src/data/sources.ts、src/data/teas.ts、package.json、本ファイル）が GitHub main 最新ヘッド 8df9b98 と blob SHA 一致。再ビルド前に dist を goal-4/hidden_files/dist-backup-20261030-1637/ へ退避した。
+- 段階1 テスト: `./node_modules/.bin/vitest run` が EPERM なく完走し 75/75 全合格（9ファイル）。13:37 リトライで未実施だった最新状態でのテストが今回実施できた。
+- 段階2 型・ビルド: `tsc --noEmit -p tsconfig.json` 通過（exit 0）。`npm run build` 完走（dist/index.html 580B、assets/index-Di_ddlxs.js 482,310B、assets/index-MIaqlyXt.css 6,837B、0バイトなし）。15:20 の前回ビルドと同一ハッシュの決定的ビルドだった。
+- 段階3 デプロイ: gh-pages へ push-files 1コールで3ファイル（index.html＋新JS＋CSS）を一括反映。新ヘッド b9e5301。読み戻しで gh-pages の index.html が新JSを参照し、blob SHA（4b5e7b10…）がローカル dist と一致することを確認。旧JS群は push-files では削除できないため残存（現行 index.html からは未参照）。
+- 段階4 公開確認: **配信は切り替わっていない**。デプロイ後約20分（17:13）時点でも公開側の新JS index-Di_ddlxs.js は 404、公開URLは旧ビルド（index-DkkSoSa7.js）を配信継続。実ブラウザ確認でも新JS2種（Di_ddlxs／DNXOw2Cd）が「Page not found」、旧JSのみ取得可だった。したがって確認項目 (a) 鳳凰単叢ホイールの2ノート (b) お茶一覧の六大茶類順 (c) 成分一覧ページ (d) 抹茶の味覚表示 (e) 時間変化の推測（未検証）バッジ (f) 出典ページで「DOI: 」の空表示がないこと、はいずれも新ビルドでは未確認（項目別の実ブラウザ判定報告はブラウザタスク終了時に未着のため、次回確認に含める）。新バンドル側には (a)〜(f) の実装・データが含まれ、テスト 75/75 合格済み。
+- 次回: ユーザー方針どおり GitHub Actions 方式へは切り替えず、間隔を空けて再リトライする。gh-pages 側は最新ビルド反映済みのため、次回は公開配信の切替有無の確認を先行し、切り替わっていなければ Pages の配信状態・設定（Settings → Pages のソース、デプロイ履歴）の確認を深めること。
