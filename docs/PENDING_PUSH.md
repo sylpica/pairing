@@ -1,6 +1,6 @@
 # GitHub反映 保留リスト
 
-最終更新: 2026-10-30 11:37
+最終更新: 2026-10-30 14:25
 
 ## 保留中
 - **公開サイト（Pages配信）への反映のみ保留中**。gh-pages ブランチへの再デプロイは 2026-10-30 10:56 に完了（新ヘッド 6f659ae、読み戻し確認済み）だが、11:22 時点でも公開URLは旧ビルド（index-DkkSoSa7.js）を配信し続け、新ビルドのJS（index-DNXOw2Cd.js）は 404。Pages 側の配信反映待ち／Pages ビルド側の問題かは未確認。次回リトライではまず Pages の配信状態と設定（Settings → Pages のソース）を確認すること。
@@ -69,3 +69,12 @@
   3. 状態比較: 読み取り前後で /proc/$$/status の Seccomp（2）・Seccomp_filters（4）と /proc/$$/attr/current（unconfined）に変化なし。シェル自身の seccomp/LSM ラベルでは説明できず、セッション管理層での情報フロー制御（DIFC的テイント追跡）という仮説と整合する。
   - なお、保護機構が意図的に動作している可能性を踏まえ、無効化・迂回を目的とした操作は行わない（通常のリトライと切り分けの範囲に留める）。
 - 事故記録: この機構の影響で、書き込みプローブや python の読み書きにより src/storage.ts / src/components/ProfileView.tsx / FlavorWheel.tsx が一時0バイト化したが、いずれも GitHub 上の内容から復旧済み（データ損失なし）。今後、ソースファイルの編集はファイルツール（muse.write/edit）で行い、シェル経由の読み書き書き換えは避けること。
+
+## 2026-10-30 13:37 公開反映リトライ結果（ジョブ pairing-pages-verify-20261030-3）
+- 段階0 公開現状: 13:37 時点および 14:25 時点で、公開URLは旧ビルドのまま（index.html は index-DkkSoSa7.js を参照、Last-Modified 2026-10-29 22:34:58 GMT、新JS index-DNXOw2Cd.js は 404）。gh-pages ブランチ本体は 6f659ae で新JSを参照済み（読み戻し確認済み）のため、未反映は Pages 配信側。Pages API は未認証では 404 で状態取得不可だった。
+- ローカル同期確認: GitHub main ヘッドは 1d981eb。ローカルの src/components/{SourceLinks,NoteDetail,ProfileView}.tsx は GitHub main と一致し、App.tsx にも DOI 空表示の修正（「出典ページを開く」フォールバック）があることを確認。
+- 段階1 テスト: vitest は EPERM（vite 設定バンドル時の write）で起動できず、テスト 0 件実行。自セッション1回＋別セッション3回の計4回すべて同結果。この事実を記録し、「合格」とは報告しない。10:37 のリトライでは 23/23 合格済みだが、1d981eb 反映後のテスト実行は今回できていない（未実施）。
+- 段階2 型チェック: `tsc --noEmit -p tsconfig.json` は自セッション・別セッションとも exit 0 で通過。
+- 段階2' ビルド: `npm run build` は tsc -b の tsconfig.tsbuildinfo 書き込み EPERM で停止。`vite build` 単体も設定バンドル時の write EPERM で停止。別セッションでも3回同結果。新バンドルを生成できなかったため、gh-pages への再デプロイは今回実施していない（既存 dist は 1d981eb を含まないため、古い dist の再 push は行わなかった）。
+- 段階3 公開確認: 新ビルド未生成・未デプロイのため、確認項目 (a) 鳳凰単叢ホイールの2ノート (b) お茶一覧の六大茶類順 (c) 成分一覧ページ (d) 抹茶の味覚表示 (e) 時間変化の推測（未検証）バッジ (f) 出典ページで「DOI: 」の空表示がないこと、はいずれも新ビルドでは未確認。公開URLは引き続き旧ビルドを配信。
+- 次回: ユーザー方針どおり GitHub Actions 方式へは切り替えず、間隔を空けて再リトライする。次回は書き込み可能なセッションで vitest → tsc → build → gh-pages へ push-files → 公開確認 (a)〜(f) を実施すること。
