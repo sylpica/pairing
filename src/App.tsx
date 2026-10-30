@@ -363,7 +363,7 @@ function SourcesPage() {
           <p>{s.authors}（{s.year}）{s.journal ?? ''}</p>
           <p>{s.scope}</p>
           <p className="note-small">種別：{s.kind === 'original' ? '原著論文' : s.kind === 'review' ? 'レビュー論文' : s.kind}／ライセンス：{s.license}</p>
-          <a href={s.url} target="_blank" rel="noreferrer">DOI: {s.doi}</a>
+          <a href={s.url} target="_blank" rel="noreferrer">{s.doi ? `DOI: ${s.doi}` : '出典ページを開く'}</a>
         </article>
       ))}
     </div>

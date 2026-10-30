@@ -13,8 +13,8 @@ export default function NoteDetail({ noteId, profile }: { noteId: string; profil
   if (!note || !entry) return null
   const linked = compounds.filter((c) => c.noteIds.includes(noteId))
   const others = [
-    ...teaItems.filter((t) => t.profile.aromas.some((a) => a.noteId === noteId)).map((t) => ({ name: t.name, path: `tea/${t.id}`, intensity: t.profile.aromas.find((a) => a.noteId === noteId)!.intensity })),
-    ...chocolateItems.filter((c) => c.profile.aromas.some((a) => a.noteId === noteId)).map((c) => ({ name: c.name, path: `choco/${c.id}`, intensity: c.profile.aromas.find((a) => a.noteId === noteId)!.intensity })),
+    ...teaItems.filter((t) => t.profile !== profile && t.profile.aromas.some((a) => a.noteId === noteId)).map((t) => ({ name: t.name, path: `tea/${t.id}`, intensity: t.profile.aromas.find((a) => a.noteId === noteId)!.intensity })),
+    ...chocolateItems.filter((c) => c.profile !== profile && c.profile.aromas.some((a) => a.noteId === noteId)).map((c) => ({ name: c.name, path: `choco/${c.id}`, intensity: c.profile.aromas.find((a) => a.noteId === noteId)!.intensity })),
   ]
   return (
     <section className="note-detail" aria-live="polite">
@@ -32,7 +32,7 @@ export default function NoteDetail({ noteId, profile }: { noteId: string; profil
           </dl>
           <SourceLinks ids={c.sourceIds} />
         </details>
-      )) : <p className="note-small">この香味に直接結びつく成分データは、検証済み文献の範囲では未収録です（香りの存在自体は右の出典に基づきます）。</p>}
+      )) : <p className="note-small">この香味に直接結びつく成分データは、検証済み文献の範囲では未収録です（香りの存在自体は下記の出典に基づきます）。</p>}
       <SourceLinks ids={entry.sourceIds} />
       {others.length > 0 && (
         <div>

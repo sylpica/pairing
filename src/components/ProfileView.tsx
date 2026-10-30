@@ -31,7 +31,7 @@ export default function ProfileView({ profile, scopeNote, sourceIds }: { profile
       </div>
       <h3>このデータについて</h3>
       <p>{scopeNote}</p>
-      <SourceLinks ids={sourceIds} />
+      <SourceLinks ids={[...new Set([...sourceIds, ...Object.values(profile.tastes).flatMap((t) => t.sourceIds), ...Object.values(profile.temporal).flatMap((t) => t.sourceIds)])]} />
     </div>
   )
 }

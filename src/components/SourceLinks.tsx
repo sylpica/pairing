@@ -12,7 +12,7 @@ export function SourceLinks({ ids }: { ids: string[] }) {
   return (
     <ul className="source-links">
       {list.map((s) => (
-        <li key={s.id}><a href={s.url} target="_blank" rel="noreferrer">{s.authors.split(',')[0]} et al. ({s.year}) {s.journal ?? ''} — DOI: {s.doi}</a></li>
+        <li key={s.id}><a href={s.url} target="_blank" rel="noreferrer">{s.authors.split(',')[0]} et al. ({s.year}) {s.journal ?? ''}{s.doi ? ` — DOI: ${s.doi}` : ''}</a></li>
       ))}
     </ul>
   )
