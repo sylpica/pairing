@@ -1,6 +1,6 @@
 import type { CacaoOrigin, DataLevelUsed, EntityFinding, TeaCultivar } from '../types'
 import { FLAVOR_FINDING_KINDS } from '../types'
-import { cultivarTeaUses } from '../data/cultivars'
+import { cultivarTeaUses, teaCultivars } from '../data/cultivars'
 import { teaKinds } from '../data/teas'
 
 // ペアリングで品種・系統が指定されたとき、「どの階層のデータに基づく参考情報か」を
@@ -121,6 +121,47 @@ export function cacaoOriginPairingNote(origin: CacaoOrigin): PairingContextNote 
   return {
     level: 'insufficient',
     text: `${origin.name}については、香味の科学データが未確認です。そのため産地の情報は組み合わせの見方に使っていません（チョコレートの種類レベルの特徴のみで見ています）。産地名から味を推定する表示はしません。`,
+    findings: [],
+    sourceIds: [],
+  }
+}
+
+/** お茶の産地（国）の選択肢。品種データに実在する国だけを、表示順つきで返す。 */
+const TEA_ORIGIN_ORDER = ['日本', '中国', '台湾', 'インド', 'スリランカ']
+export function teaOriginCountries(): string[] {
+  const present = new Set(teaCultivars.map((c) => c.country))
+  return TEA_ORIGIN_ORDER.filter((c) => present.has(c))
+}
+
+/** お茶側: 産地（国）が指定された場合の階層判定。カカオ産地と同型に扱う。
+ * 産地そのものの香味実測は収録データに存在しないため、最上位でも品種レベルの
+ * 知見を集めた「一般的な傾向（group-general）」までとし、所見がなければ
+ * insufficient として、産地の情報は組み合わせの見方に使わない。 */
+export function teaOriginPairingNote(country: string, kindId: string): PairingContextNote {
+  const kn = kindName(kindId)
+  const relevant = teaCultivars.filter((c) =>
+    c.country === country && cultivarTeaUses.some((u) => u.cultivarId === c.id && u.kindId === kindId))
+  const withFindings = relevant.filter((c) => flavorFindings(c.findings).length > 0)
+  const findings = withFindings.flatMap((c) => flavorFindings(c.findings))
+  if (findings.length > 0) {
+    return {
+      level: 'group-general',
+      text: `${country}の品種のうち、${kn}への利用が確認されている品種（${withFindings.map((c) => c.name).join('、')}）には品種レベルの科学データがあります。ただしこれは産地そのものの香味実測ではなく品種レベルの知見です。そのため所見は一般的な傾向として参考に併記するだけで、組み合わせの見方は${kn}レベルの特徴で作っています。産地名から味を断定することはしません。`,
+      findings,
+      sourceIds: [...new Set(findings.flatMap((f) => f.sourceIds))],
+    }
+  }
+  if (relevant.length > 0) {
+    return {
+      level: 'insufficient',
+      text: `${country}の品種を${kn}に加工することは確認されていますが、香味の科学データは未確認です。そのため産地の情報は組み合わせの見方に使っていません（${kn}レベルの特徴のみで見ています）。産地名から味を推定する表示はしません。`,
+      findings: [],
+      sourceIds: [],
+    }
+  }
+  return {
+    level: 'insufficient',
+    text: `${country}の品種を${kn}に加工したことは、公的資料・研究では未確認で、産地としての香味データもありません。そのため産地の情報は組み合わせの見方に使っていません（${kn}レベルの特徴のみで見ています）。産地名から味を推定する表示はしません。`,
     findings: [],
     sourceIds: [],
   }

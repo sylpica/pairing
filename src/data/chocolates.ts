@@ -100,5 +100,26 @@ export const chocolateItems: ChocolateItem[] = [
     scopeNote: '注意：香りは市販品の実測ではなく、実験室で調製した「モデル」ホワイトチョコレートの研究（Stewart et al. 2017/2018）に基づく説明です。高加熱のスキムミルクパウダーを使った試料ではファッジ／キャラメル様の香りが強く、コンデンスミルク様の香味が増えました。乳原料の加熱履歴で香りが変わるため、個別商品の香味とは限りません。甘味は別途、市販品1種のパネル研究（Luchian et al. 2023）で「はっきりした甘味」とされた記録に基づきます（単一試料の根拠です）。',
     sourceIds: ['stewart-2017-model-white-chocolate', 'stewart-2018-smp-volatile-carryover'],
   },
+  {
+    id: 'ruby-chocolate', name: 'ルビーチョコレート', kind: 'ruby',
+    searchNames: ['ルビーチョコレート', 'ruby chocolate', 'ルビー', 'ピンクチョコレート'],
+    profile: prof([
+      { noteId: 'berry', intensity: 'weak', basis: 'general', sourceIds: ['barry-callebaut-ruby', 'seremet-2019-ruby-sensory'] },
+    ], {
+      ...emptyTastes(),
+      sour: { intensity: 'normal', basis: 'sensory', sourceIds: ['seremet-2019-ruby-sensory'] },
+    }, chocoTemporal),
+    evidenceLevel: 'general',
+    scopeNote: 'ルビーは遺伝的な系統ではなく、色素の前駆体を多く含むカカオ豆の選抜と、発酵を抑えた特殊な製法で生まれる「種類」です（開発元バリーカレボーが2017年に発表。着色料・ベリー香料は無添加と公表されています）。酸味は、ダーク・ミルク・ホワイトと比較した官能評価（Šeremet et al. 2019）で供試試料の中で最も強い酸味とされた記録に基づきます。ベリー様の香りは開発メーカーの説明（参考情報）が中心で、査読済みの官能研究がベリー様の香りそのものを確かめたわけではないため、一般的な知見として弱く表示しています。組成についてはフラバン-3-オールやプロアントシアニジン（A型が特徴的）の定量研究（Tuenter et al. 2021）がありますが、組成の検出は香りの寄与とは別の記録です。カカオ分は製品により異なるため表示しません。',
+    sourceIds: ['seremet-2019-ruby-sensory', 'tuenter-2021-ruby-composition', 'barry-callebaut-ruby'],
+  },
+  {
+    id: 'blond-chocolate', name: 'ブロンドチョコレート（キャラメリゼホワイト）', kind: 'blond',
+    searchNames: ['ブロンドチョコレート', 'ブロンド', 'blond chocolate', 'blonde chocolate', 'デュルセイ', 'Dulcey', 'キャラメリゼホワイト', 'キャラメルホワイト'],
+    profile: prof([]),
+    evidenceLevel: 'insufficient',
+    scopeNote: 'ホワイトチョコレートを長時間加熱してキャラメリゼさせた種類で、ヴァローナのデュルセイ（Dulcey、2012年）が始まりとされます。メーカーはビスケット（ショートブレッド）様の味やキャラメリゼしたミルクの香り、わずかな塩味を説明していますが、これはメーカーの説明（参考情報）です。ブロンドチョコレートを対象にした査読済みの香気・官能研究は本調査で確認できなかったため、香味プロファイルは登録していません（情報不足）。メーカーの説明文を科学データのように表示することはしません。',
+    sourceIds: ['valrhona-blond-dulcey'],
+  },
 ]
 export const chocolateById = (id: string) => chocolateItems.find((c) => c.id === id)

@@ -1,6 +1,6 @@
 # 実機・表示確認メモ（デプロイ後に実施）
 
-公開URL: https://minkohno-hub.github.io/pairing/
+公開URL: https://sylpica.github.io/pairing/（2026-10-30 アカウント名変更に伴い移転）
 前提: 最新ビルド（main = fee6ee2 以降）が gh-pages に反映された後に行う。それ以前の確認結果は旧版に対するものとして区別する。
 
 ## 幅375px（スマホ想定）で確認すること

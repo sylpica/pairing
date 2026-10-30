@@ -3,7 +3,8 @@ import { INT_LABEL } from './FlavorWheel'
 import { BASIS_LABEL, SourceLinks } from './SourceLinks'
 import CompoundCard from './CompoundCard'
 import { noteById } from '../data/flavors'
-import { compoundsForNote, compoundTier, type CompoundContext } from '../data/compounds'
+import { compoundsForNote, compoundTier, compoundById, type CompoundContext } from '../data/compounds'
+import { inferencesFor } from '../data/inferences'
 import { teaItems, teaKinds } from '../data/teas'
 import { chocolateItems } from '../data/chocolates'
 import { go } from '../nav'
@@ -28,6 +29,7 @@ export default function NoteDetail({ noteId, profile, context }: { noteId: strin
   const entry = profile.aromas.find((a) => a.noteId === noteId)
   if (!note || !entry) return null
   const linked = compoundsForNote(noteId)
+  const inferences = context?.itemId ? inferencesFor(context.side, context.itemId, noteId) : []
   const tiers: { tier: 1 | 2 | 3; items: Compound[] }[] = [1, 2, 3].map((tier) => ({
     tier: tier as 1 | 2 | 3,
     items: context ? linked.filter((c) => compoundTier(c, context) === tier) : tier === 2 ? linked : [],
@@ -54,6 +56,19 @@ export default function NoteDetail({ noteId, profile, context }: { noteId: strin
           {items.map((c) => <CompoundCard key={c.id} compound={c} />)}
         </div>
       ))}
+      {inferences.length > 0 && (
+        <div className="inference-box">
+          <h4>科学的な推測 <span className="badge badge-inferred">推測（未検証）</span></h4>
+          <p className="note-small">「{note.name}」という漠然とした香りについて、このアイテム（またはその茶類・種類）で確認されている成分の顔ぶれから、具体的な花・果物への類似を推測したものです。実測でその花・果物と確認されたものではありません。</p>
+          {inferences.map((inf) => (
+            <div key={inf.label} className="inference-item">
+              <p><strong>{inf.label}</strong> <span className="badge badge-inferred">推測（未検証）</span></p>
+              <p>{inf.rationale}</p>
+              <p className="note-small">根拠成分：{inf.basisCompoundIds.map((id) => compoundById(id)?.name ?? id).join('、')}{inf.basisGrading === 'reference-assisted' && '／具体名の香り記述には参考情報（記事・データベース等）を含みます'}</p>
+            </div>
+          ))}
+        </div>
+      )}
       <SourceLinks ids={entry.sourceIds} />
       {others.length > 0 && (
         <div>

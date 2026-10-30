@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { teaCultivarPairingNote, cacaoPairingNote, cacaoOriginPairingNote } from './pairingContext'
+import { teaCultivarPairingNote, cacaoPairingNote, cacaoOriginPairingNote, teaOriginPairingNote, teaOriginCountries } from './pairingContext'
 import { teaCultivarById } from '../data/cultivars'
 import { traditionalGroupById, geneticGroupById, cacaoCloneById } from '../data/cacao'
 import { cacaoOriginById } from '../data/origins'
@@ -91,5 +91,37 @@ describe('ペアリングの階層判定（産地指定）', () => {
     const note = cacaoOriginPairingNote(cacaoOriginById('cote-divoire')!)
     expect(note.level).toBe('insufficient')
     expect(note.findings).toHaveLength(0)
+  })
+})
+
+describe('ペアリングの階層判定（お茶の産地指定）', () => {
+  it('産地の選択肢は品種データに実在する国だけ', () => {
+    const countries = teaOriginCountries()
+    expect(countries).toContain('日本')
+    expect(countries).toContain('中国')
+    expect(countries).toContain('台湾')
+    expect(countries).toContain('インド')
+    expect(countries).toContain('スリランカ')
+  })
+  it('日本×緑茶は品種レベルの所見がある→group-general（産地の実測とは言わない）', () => {
+    const note = teaOriginPairingNote('日本', 'green')
+    expect(note.level).toBe('group-general')
+    expect(note.findings.length).toBeGreaterThan(0)
+    expect(note.sourceIds.length).toBeGreaterThan(0)
+    expect(note.text).toContain('産地そのものの香味実測ではなく')
+    expect(note.text).toContain('断定')
+  })
+  it('スリランカ×紅茶は組み合わせ確認済みでも香味データなし→insufficient', () => {
+    const note = teaOriginPairingNote('スリランカ', 'black')
+    expect(note.level).toBe('insufficient')
+    expect(note.findings).toHaveLength(0)
+    expect(note.text).toContain('未確認')
+    expect(note.text).toContain('使っていません')
+  })
+  it('スリランカ×青茶は組み合わせ自体が未確認→insufficient', () => {
+    const note = teaOriginPairingNote('スリランカ', 'oolong')
+    expect(note.level).toBe('insufficient')
+    expect(note.findings).toHaveLength(0)
+    expect(note.text).toContain('未確認')
   })
 })

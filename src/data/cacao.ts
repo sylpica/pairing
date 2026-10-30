@@ -52,7 +52,7 @@ export const traditionalGroupById = (id: string) => cacaoTraditionalGroups.find(
 // ===== 現代の遺伝的分類（Motamayor et al. 2008 の10集団） =====
 export const cacaoGeneticGroups: CacaoGeneticGroup[] = [
   {
-    id: 'gen-criollo', name: 'Criollo', aliases: ['Cacao Criollo'],
+    id: 'gen-criollo', name: 'Criollo', nameJa: 'クリオロ', aliases: ['Cacao Criollo'],
     namingBasis: '伝統的栽培品種 Criollo にちなんで命名された。',
     distribution: '中央アメリカの原生林に見られる唯一のクラスター。10クラスター全てが南アメリカの森林に存在し、Criollo も南アメリカに分布する。',
     classificationSystem: SYSTEM,
@@ -64,7 +64,7 @@ export const cacaoGeneticGroups: CacaoGeneticGroup[] = [
     note: '伝統的分類の Criollo（trad-criollo）とは別エンティティとして管理する。概ね対応するが同一ではない。',
   },
   {
-    id: 'gen-amelonado', name: 'Amelonado', aliases: [],
+    id: 'gen-amelonado', name: 'Amelonado', nameJa: 'アメロナド', aliases: [],
     namingBasis: '伝統的栽培品種 Amelonado にちなんで命名された。',
     distribution: '野生個体（遠く離れた地点のもの）と栽培遺伝子型（ブラジル・バイーア州、コスタリカ、ガーナ）が同一クラスターに含まれる。下流アマゾン起源の伝統的栽培品種で、パラ川（Para River）流域の木々から家畜化された可能性が歴史資料から示唆される。ブラジルと西アフリカの広い地域に植えられている。',
     classificationSystem: SYSTEM,
@@ -74,7 +74,7 @@ export const cacaoGeneticGroups: CacaoGeneticGroup[] = [
     sourceIds: [MOTA],
   },
   {
-    id: 'gen-nacional', name: 'Nacional', aliases: [],
+    id: 'gen-nacional', name: 'Nacional', nameJa: 'ナシオナル', aliases: [],
     namingBasis: '伝統的栽培品種 Nacional にちなんで命名された。',
     distribution: 'クラスター自体はエクアドル・アンデスのアマゾン側（モローナ川、ナンガリツァ川、サモラ川流域）の個体をグループ化する。栽培品種としての Nacional はエクアドル太平洋側（海岸部）での数世紀にわたる人為選択の産物と推定され、現在の「現代 Nacional」と呼ばれる植栽は、祖先的 Nacional と導入された Trinitario との遺伝的混合である。',
     classificationSystem: SYSTEM,
@@ -88,7 +88,7 @@ export const cacaoGeneticGroups: CacaoGeneticGroup[] = [
     note: '「Nacional」には複数の用法が併存する: (1) 本エンティティ＝遺伝集団、(2) 伝統的栽培品種としての Nacional、(3) 商業呼称 "Arriba"（エクアドル産ファインカカオの香味・商業呼称であり、遺伝集団名そのものではない）。また ICCO の体系では Nacional は Forastero 型と位置付けられるなど、用いる分類体系によって位置付けが変わる。',
   },
   {
-    id: 'gen-contamana', name: 'Contamana', aliases: [],
+    id: 'gen-contamana', name: 'Contamana', nameJa: 'コンタマナ', aliases: [],
     namingBasis: '地理的位置（コンタマナ）にちなんで命名された。',
     classificationSystem: SYSTEM,
     verification: { existence: 'confirmed', classification: 'partial', science: 'unconfirmed' },
@@ -98,7 +98,7 @@ export const cacaoGeneticGroups: CacaoGeneticGroup[] = [
     note: 'Pound コレクションの SCA（Scavina）系列が本クラスターの 28% を占める（Motamayor et al. 2008）。原著本文範囲ではこれ以上の個別記述は未確認のため、分類確認は「一部確認」とする。',
   },
   {
-    id: 'gen-curaray', name: 'Curaray', aliases: [],
+    id: 'gen-curaray', name: 'Curaray', nameJa: 'クラライ', aliases: [],
     namingBasis: '地理的位置（クラライ川）にちなんで命名された。',
     classificationSystem: SYSTEM,
     verification: { existence: 'confirmed', classification: 'partial', science: 'unconfirmed' },
@@ -108,7 +108,7 @@ export const cacaoGeneticGroups: CacaoGeneticGroup[] = [
     note: '原著本文範囲で個別の分布記述は未確認のため、分類確認は「一部確認」とする。Cornejo et al. 2018 の関連報道では Criollo の祖先的 germplasm として言及されているが、一次の抄録範囲を超えるため本文未確認として扱う。',
   },
   {
-    id: 'gen-guiana', name: 'Guiana', aliases: ['Cacao guiana'],
+    id: 'gen-guiana', name: 'Guiana', nameJa: 'ギアナ', aliases: ['Cacao guiana'],
     namingBasis: '地理的位置（ギアナ）にちなんで命名された。',
     classificationSystem: SYSTEM,
     verification: { existence: 'confirmed', classification: 'partial', science: 'unconfirmed' },
@@ -118,7 +118,7 @@ export const cacaoGeneticGroups: CacaoGeneticGroup[] = [
     note: '原著の採取対象地域にフランス領ギアナが含まれることまでは確認できるが、クラスター固有の分布記述は本文範囲では未確認のため、分類確認は「一部確認」とする。',
   },
   {
-    id: 'gen-iquitos', name: 'Iquitos', aliases: [],
+    id: 'gen-iquitos', name: 'Iquitos', nameJa: 'イキトス', aliases: [],
     namingBasis: '地理的位置（イキトス）にちなんで命名された。',
     distribution: 'ペルー・アマゾンのイキトス周辺。Pound コレクションの IMC（Iquitos Mixed Calabacillo）系列が本クラスターの 54% を占める。Nanay クラスターと採取地が重なり合う。',
     classificationSystem: SYSTEM,
@@ -128,7 +128,7 @@ export const cacaoGeneticGroups: CacaoGeneticGroup[] = [
     sourceIds: [MOTA],
   },
   {
-    id: 'gen-maranon', name: 'Marañon', aliases: ['Maranon'],
+    id: 'gen-maranon', name: 'Marañon', nameJa: 'マラニョン', aliases: ['Maranon'],
     namingBasis: '地理的位置（マラニョン川）にちなんで命名された。',
     distribution: 'ペルー・アマゾン上流。Pound コレクションの PA（Parinari）系列が本クラスターの 68% を占める。Parinari はマラニョン川流域の地名である。',
     classificationSystem: SYSTEM,
@@ -138,7 +138,7 @@ export const cacaoGeneticGroups: CacaoGeneticGroup[] = [
     sourceIds: [MOTA],
   },
   {
-    id: 'gen-nanay', name: 'Nanay', aliases: [],
+    id: 'gen-nanay', name: 'Nanay', nameJa: 'ナナイ', aliases: [],
     namingBasis: '地理的位置（ナナイ川）にちなんで命名された。',
     distribution: 'ペルー・アマゾンのナナイ川流域。Pound コレクションの NA（Nanay）系列が本クラスターの 90% を占める。Iquitos とは対立遺伝子頻度の差で区別される（小サンプルでは両者が1クラスターに融合する結果も原著に併記されている）。',
     classificationSystem: SYSTEM,
@@ -148,7 +148,7 @@ export const cacaoGeneticGroups: CacaoGeneticGroup[] = [
     sourceIds: [MOTA],
   },
   {
-    id: 'gen-purus', name: 'Purús', aliases: ['Purus'],
+    id: 'gen-purus', name: 'Purús', nameJa: 'プルス', aliases: ['Purus'],
     namingBasis: '地理的位置（プルス川）にちなんで命名された。',
     distribution: 'プルス川・ソリモンエス川流域。上ソリモンエス川とイサ川（Iça River）のサブクラスターが含まれる。ソリモンエス川沿いでは遺伝子流動が広範で、下流の移入集団のクラスタリングは困難とされる。',
     classificationSystem: SYSTEM,

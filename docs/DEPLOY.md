@@ -5,7 +5,7 @@
 ## 方法A: gh-pages ブランチ（現在の公開方式）
 - `npm run build` の成果物（dist/ の内容）を `gh-pages` ブランチのルートに配置する。
 - GitHub の Settings → Pages → Build and deployment → Source で「Deploy from a branch」、Branch に `gh-pages` / `(root)` を選ぶ（リポジトリ管理者による1回だけの設定）。
-- 公開URL: https://minkohno-hub.github.io/pairing/
+- 公開URL: https://sylpica.github.io/pairing/（2026-10-30 アカウント名変更 minkohno-hub → sylpica に伴い移転。旧URLはリダイレクトされない）
 - アプリは相対 base（`./`）とハッシュルーティングを使うため、サブパスでも直接アクセスでも壊れない。
 
 ## 方法B: GitHub Actions（将来）

@@ -618,6 +618,27 @@ export const compounds: Compound[] = [
       { taste: 'astringent', evidence: '焙煎カカオニブで渋み（収れん感）への寄与が実証されています。' },
     ],
   },
+  // ===== 鳳凰単叢の香気成分（Qin et al. 2023 / Kun et al. 2025、2026-10-30 追加）=====
+  {
+    id: 'hotrienol', name: 'ホトリエノール', aliases: ['Hotrienol', '3,7-Dimethyl-1,5,7-octatrien-3-ol'],
+    noteIds: ['floral-general'],
+    plainDescription: 'リナロールの代謝物で、烏龍茶の花の香りに関わる成分です。',
+    detectedIn: '鳳凰単叢（烏龍茶）',
+    aromaKnowledge: '鳳凰単叢の茶液の GC-O では「クチナシ様・ミント」と記述されました（Kun et al. 2025）。お茶の香り形成の総説でも烏龍茶の花様の香りの成分に挙げられます。',
+    contributionEvidence: '鳳凰単叢の10香型で最も豊富な成分の一つに挙げられています（Qin et al. 2023）。ただし Kun et al. 2025 では、GC-O で香気強度4と強く知覚された一方で OAV は1未満と報告されており、寄与の大きさには留保があります（同論文は低 OAV でも相乗効果で知覚に影響しうる点も論じています）。',
+    sourceIds: ['kun-2025-dancong-cup-aroma', 'qin-2023-dancong-fragrance-types'],
+    scopes: [{ side: 'tea', kindId: 'oolong' }],
+  },
+  {
+    id: 'jasmine-lactone', name: 'ジャスミンラクトン', aliases: ['Jasmine lactone'],
+    noteIds: ['floral-general'],
+    plainDescription: 'ジャスミンの花の香りを特徴づける成分の一つで、お茶にも含まれるラクトン類です。',
+    detectedIn: '鳳凰単叢（烏龍茶）',
+    aromaKnowledge: 'お茶の揮発成分を扱った査読論文の香り記述表では「ジャスミン様・花様」と記述されています（Shi et al. 2019）。なお、香料データベース等の参考情報では、ココナッツや桃を思わせる果実様のニュアンスも併記されます（参考情報の格付けであり、査読論文の記述ではありません）。',
+    contributionEvidence: '鳳凰単叢の10香型で最も豊富な成分の一つに挙げられ、OAV 解析では香型を特徴づける20のマーカー候補に含まれます（Qin et al. 2023）。マーカーは候補の位置づけであり、再構成実験で寄与が確定したものではありません。',
+    sourceIds: ['qin-2023-dancong-fragrance-types', 'shi-2019-meja-tea-flavor'],
+    scopes: [{ side: 'tea', kindId: 'oolong' }],
+  },
 ]
 export const compoundById = (id: string) => compounds.find((c) => c.id === id)
 
@@ -626,7 +647,7 @@ export const compoundsForNote = (noteId: string) => compounds.filter((c) => c.no
 /** 味覚項目 → 関連する呈味成分。 */
 export const compoundsForTaste = (taste: TasteKey) => compounds.filter((c) => c.tasteLinks?.some((l) => l.taste === taste))
 
-export interface CompoundContext { side: 'tea' | 'chocolate'; kindId: string; itemName: string }
+export interface CompoundContext { side: 'tea' | 'chocolate'; kindId: string; itemName: string; /** 推測（inferences.ts）の参照用。未指定の表示では推測を出さない */ itemId?: string }
 
 /** 成分の根拠が、表示中のアイテムに対してどの階層か。
  *  1 = その茶類・種類の試料での研究例 / 2 = その食品全般（原料カカオ含む）の研究例 / 3 = 他の食品・茶類での研究例。

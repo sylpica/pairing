@@ -153,3 +153,72 @@ describe('産地データと調べる画面の再設計（2026-10-30）', () => 
     expect(screen.getByText('使えるデータがないため不使用')).toBeTruthy()
   })
 })
+
+describe('UI改善：絞り込みのメイン化・チョコ種類追加・系統統合・お茶産地（2026-10-30）', () => {
+  beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
+  const cardTexts = () => [...document.querySelectorAll('.item-card')].map((el) => el.textContent ?? '')
+
+  it('調べる画面の絞り込みは大きなコントロール（filter-hero）で表示される', () => {
+    location.hash = '#/tea'; render(<App />)
+    expect(document.querySelector('.filter-hero')).toBeTruthy()
+    expect(document.querySelectorAll('.filter-hero .big-select').length).toBe(3)
+    cleanup()
+    location.hash = '#/choco'; render(<App />)
+    expect(document.querySelector('.filter-hero')).toBeTruthy()
+    expect(document.querySelectorAll('.filter-hero .big-select').length).toBe(3)
+  })
+  it('チョコ一覧：分類プルダウンにルビーがあり、選ぶとルビーのカードが出る', () => {
+    location.hash = '#/choco'; render(<App />)
+    fireEvent.change(screen.getByLabelText('分類（種類）で絞り込み'), { target: { value: 'ruby' } })
+    const texts = cardTexts()
+    expect(texts.some((t) => t.includes('ルビーチョコレート'))).toBe(true)
+    expect(texts.some((t) => t.includes('ミルクチョコレート'))).toBe(false)
+  })
+  it('ルビー詳細ではホイールと官能研究の出典が出て、系統ではなく種類として説明される', () => {
+    location.hash = '#/choco/ruby-chocolate'; render(<App />)
+    expect(screen.getByLabelText('フレーバーホイール')).toBeTruthy()
+    expect(screen.getAllByText(/Šeremet/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/遺伝的な系統ではなく/).length).toBeGreaterThan(0)
+  })
+  it('ブロンド詳細では香味プロファイル未登録（情報不足）が明示される', () => {
+    location.hash = '#/choco/blond-chocolate'; render(<App />)
+    expect(screen.getAllByText(/情報不足/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/香味プロファイルは登録していません/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Valrhona/).length).toBeGreaterThan(0)
+  })
+  it('組み合わせ画面：系統は1つのプルダウンに統合され、カタカナ主表記で選べる', () => {
+    location.hash = '#/pair'; render(<App />)
+    const sel = screen.getByLabelText('カカオの系統（任意）') as HTMLSelectElement
+    const optionTexts = [...sel.querySelectorAll('option')].map((o) => o.textContent ?? '')
+    expect(optionTexts.some((t) => t.includes('クリオロ（Criollo）'))).toBe(true)
+    expect(optionTexts.some((t) => t.includes('ナシオナル（Nacional）'))).toBe(true)
+    expect(optionTexts.some((t) => t.includes('フォラステロ（Forastero）'))).toBe(true)
+    // 折りたたみ（details）には隠れていない
+    expect(sel.closest('details')).toBeNull()
+    fireEvent.change(sel, { target: { value: 'genetic:gen-nacional' } })
+    expect(screen.getByText('カカオの系統：ナシオナル（Nacional）')).toBeTruthy()
+    expect(screen.getByText('分類・集団レベルの特徴に基づく参考情報')).toBeTruthy()
+  })
+  it('組み合わせ画面：チョコの産地も折りたたみに隠れていない', () => {
+    location.hash = '#/pair'; render(<App />)
+    const sel = screen.getByLabelText('カカオの産地（任意）')
+    expect(sel.closest('details')).toBeNull()
+  })
+  it('組み合わせ画面：お茶に分類と産地の指定がある（産地は階層判定つき）', () => {
+    location.hash = '#/pair'; render(<App />)
+    expect(screen.getByLabelText('お茶の分類（茶類）')).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('お茶の産地（任意）'), { target: { value: 'スリランカ' } })
+    expect(screen.getByText('お茶の産地：スリランカ')).toBeTruthy()
+    expect(screen.getByText('使えるデータがないため不使用')).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('お茶の産地（任意）'), { target: { value: '日本' } })
+    expect(screen.getByText('お茶の産地：日本')).toBeTruthy()
+  })
+  it('組み合わせ画面：お茶の分類を選ぶと、その茶類のお茶だけが候補になる', () => {
+    location.hash = '#/pair'; render(<App />)
+    fireEvent.change(screen.getByLabelText('お茶の分類（茶類）'), { target: { value: 'black' } })
+    const sel = screen.getByLabelText('お茶') as HTMLSelectElement
+    const values = [...sel.querySelectorAll('option')].map((o) => o.value)
+    expect(values).toContain('black-tea')
+    expect(values).not.toContain('oolong-tea')
+  })
+})

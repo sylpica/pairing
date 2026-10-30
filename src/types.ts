@@ -65,13 +65,39 @@ export interface Compound {
   scopes?: CompoundScope[]
 }
 
+/** 花・果物の具体名への「科学的な推測」。実測（ProfileEntry）とは型レベルで分離し、
+ *  必ず estimation: 'inferred' を持つ。根拠は、そのアイテム（またはその茶類・種類の試料）で
+ *  確認済みの化合物に限定される（docs/research/floral-fruit-inference.md）。 */
+export interface InferredSpecific {
+  /** 具体名の候補（例: バラ、ジャスミン、ココナッツ） */
+  label: string
+  /** 根拠となる化合物ID（すべて実在し、そのアイテムで tier 2 以内＝茶類・種類レベルまでに確認済みのもの） */
+  basisCompoundIds: string[]
+  /** 推論の説明。「〜の可能性」レベルの表現に留め、断定しない */
+  rationale: string
+  /** 裏付けの格付け: peer-reviewed = 化合物の確認も具体名の香り記述も査読済み出典に基づく /
+   *  reference-assisted = 化合物の確認は査読済みだが、具体名の香り記述の一部に記事・データベース等の参考情報を含む */
+  basisGrading: 'peer-reviewed' | 'reference-assisted'
+  /** 推測であることを型で固定する区分（リテラル必須） */
+  estimation: 'inferred'
+}
+
+/** 1アイテム×1ノートに対する具体名の推測。推測の対象は漠然としたノート
+ *  （花様・トロピカル・果実全般）のみ。具体名が根拠で確定しているノートには付けない。 */
+export interface NoteInference {
+  itemSide: 'tea' | 'chocolate'
+  itemId: string
+  noteId: string
+  specifics: InferredSpecific[]
+}
+
 export type TeaCategory = 'green' | 'white' | 'yellow' | 'oolong' | 'black' | 'dark'
 export interface TeaKind { id: string; name: string; category: TeaCategory | 'form'; aliases: string[]; region?: string; note: string }
 export interface TeaItem {
   id: string; name: string; kindId: string; cultivarName?: string
   searchNames: string[]; profile: FlavorProfile; evidenceLevel: EvidenceLevel; scopeNote: string; sourceIds: string[]
 }
-export type ChocolateKind = 'dark' | 'milk' | 'white' | 'other'
+export type ChocolateKind = 'dark' | 'milk' | 'white' | 'ruby' | 'blond' | 'other'
 export interface ChocolateItem {
   id: string; name: string; kind: ChocolateKind; cacaoPercent?: number
   searchNames: string[]; profile: FlavorProfile; evidenceLevel: EvidenceLevel; scopeNote: string; sourceIds: string[]
@@ -161,6 +187,8 @@ export interface CacaoTraditionalGroup {
 export interface CacaoGeneticGroup {
   id: string
   name: string
+  /** カタカナ表記（選択UIではこちらを主表記にする） */
+  nameJa: string
   aliases: string[]
   namingBasis: string
   distribution?: string
@@ -193,6 +221,31 @@ export interface CacaoClone {
 
 // ペアリング予測が「どの階層のデータを使ったか」の記録区分（将来の engine 拡張用）
 export type DataLevelUsed = 'cultivar-measured' | 'cultivar-general' | 'origin-measured' | 'group-general' | 'kind-general' | 'insufficient'
+
+// ===== 組み合わせの相互作用（2026-10-30 追加） =====
+// 成分の合算予測ではなく、知覚レベルの相互作用（混合抑制、香りによる味の増強、
+// 渋味と脂肪の対向など）を、文献で裏付けられたルールで文章化する。
+// 根拠・適用条件・限界は docs/research/pairing-interactions.md、エンジンは src/engine/interactions.ts。
+export type InteractionKind = 'aroma' | 'taste' | 'mouthfeel'
+/** 相互作用文の根拠区分: general = 一般的な知見（メカニズムは実際の飲料・食品でも実証）/
+ *  exploratory = 探索的な予想（モデル系・他の食品ペアからの類推） */
+export type InteractionLevel = 'general' | 'exploratory'
+export interface InteractionStatement {
+  /** ルールID（docs/research/pairing-interactions.md の対応表と一致） */
+  ruleId: string
+  kind: InteractionKind
+  /** 本文。言及する香味・味覚は、必ず両プロファイルの実データに基づく */
+  text: string
+  level: InteractionLevel
+  sourceIds: string[]
+  /** 花・果物の推測（inferences.ts）を使った文かどうか。true の文は本文に「推測」を含み、画面でも推測バッジを付ける */
+  usesInference: boolean
+}
+export interface InteractionAnalysis {
+  aroma: InteractionStatement[]
+  taste: InteractionStatement[]
+  mouthfeel: InteractionStatement[]
+}
 
 // ===== カカオの産地（2026-10-30 追加） =====
 // 産地は品種ではない。産地と遺伝（伝統的分類・遺伝集団・クローン）は多対多の関係にあり、

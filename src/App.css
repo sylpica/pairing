@@ -44,6 +44,11 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 .taste-bars { display: flex; gap: 4px; } .bar { width: 34px; height: 12px; border-radius: 6px; background: #eee0c8; } .bar.on { background: #f2a65a; }
 .note-small, .unknown-box { font-size: 0.88rem; }
 .unknown-box { background: #f3ede2; border-radius: 12px; padding: 10px 14px; }
+.inference-box { border: 1.5px dashed #b08968; background: #fdf8f1; border-radius: 12px; padding: 10px 14px; margin: 12px 0; }
+.inference-box h4 { margin: 4px 0; }
+.inference-item { margin: 10px 0; }
+.inference-item p { margin: 4px 0; }
+.badge-inferred { background: #e6dbc4; border: 1px dashed #b08968; }
 .temporal { display: grid; gap: 10px; } @media (min-width: 640px) { .temporal { grid-template-columns: repeat(3, 1fr); } .compare-grid { grid-template-columns: 1fr 1fr; } }
 .compare-grid { display: grid; gap: 16px; }
 .temporal-card h4 { margin: 4px 0; }
@@ -91,4 +96,34 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 .compound-card { border-top: 1px solid var(--line); padding: 8px 0 2px; }
 .compound-card h5 { margin: 4px 0; font-size: 1rem; }
 .compound-highlight { border-color: var(--accent2); box-shadow: 0 0 0 2px #f2d8ae; }
+/* ===== 調べる画面の絞り込み（メインとして大きく、イラストつき） ===== */
+.filter-hero { background: var(--card); border: 2px solid var(--line); border-radius: 20px; padding: 16px; margin: 12px 0 16px; }
+.filter-hero-title { margin: 0 0 12px; font-size: 1.15rem; display: flex; align-items: center; gap: 8px; }
+.hero-icon { width: 30px; height: 30px; flex: none; }
+.filter-grid { display: grid; gap: 12px; }
+@media (min-width: 640px) {
+  .filter-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .filter-grid.cols-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 880px) { .filter-grid.cols-4 { grid-template-columns: repeat(4, 1fr); } }
+.filter-field { display: grid; gap: 6px; min-width: 0; }
+.filter-label { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 1rem; }
+.filter-icon { width: 24px; height: 24px; flex: none; }
+.filter-icon.tea, .hero-icon.tea, .col-icon.tea { color: #5d9247; }
+.filter-icon.choco, .hero-icon.choco, .col-icon.choco { color: #96683c; }
+.filter-icon.pin { color: #c26d4d; }
+.filter-icon.sprout { color: #6d9c4f; }
+.filter-icon.lineage { color: #8d7b68; }
+.filter-icon.percent { color: #c99a3a; }
+.big-select, .big-input { font: inherit; font-size: 1.05rem; padding: 12px; min-height: 54px; border-radius: 12px; border: 2px solid var(--line); background: #fff; width: 100%; max-width: 100%; }
+.percent-wrap { display: flex; align-items: center; gap: 6px; font-size: 1.05rem; }
+/* 結果カードのアイコンとバッジ配置 */
+.card-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; color: #fff; flex: none; }
+.card-icon svg { width: 24px; height: 24px; }
+.item-card { justify-content: flex-start; }
+.card-badges { margin-left: auto; text-align: right; }
+/* 組み合わせ画面の見出しアイコン */
+.col-head { display: flex; align-items: center; gap: 8px; }
+.col-icon { width: 26px; height: 26px; flex: none; }
+.pair-col select { font-size: 1rem; padding: 10px; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
