@@ -55,4 +55,8 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 .linklike { background: none; border: none; font: inherit; color: var(--accent2); cursor: pointer; text-decoration: underline; }
 .file-btn { display: inline-block; margin-left: 8px; }
 .kinds-note { margin-top: 18px; }
+.big-card.cultivars { border-color: #c9d6a3; }
+.advanced { margin: 4px 0 12px; }
+.advanced summary { cursor: pointer; font-weight: 700; min-height: 32px; }
+.advanced select { font: inherit; padding: 10px; border-radius: 10px; border: 1.5px solid var(--line); min-height: 44px; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

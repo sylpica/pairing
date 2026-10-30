@@ -1,0 +1,96 @@
+import type { DataLevelUsed, EntityFinding, TeaCultivar } from '../types'
+import { FLAVOR_FINDING_KINDS } from '../types'
+import { cultivarTeaUses } from '../data/cultivars'
+import { teaKinds } from '../data/teas'
+
+// ペアリングで品種・系統が指定されたとき、「どの階層のデータに基づく参考情報か」を
+// 判定する（設計: docs/design/cultivar-data-model.md §9）。
+// ここでは相性や強度を一切計算しない。品種・系統の所見は「参考として併記」するだけで、
+// 組み合わせの見方そのものは従来どおり茶類・種類レベルのプロファイルで作る。
+export const DATA_LEVEL_LABEL: Record<DataLevelUsed, string> = {
+  'cultivar-measured': '品種・系統の実測に基づく参考情報',
+  'cultivar-general': '品種固有の一般的傾向に基づく参考情報',
+  'group-general': '分類・集団レベルの特徴に基づく参考情報',
+  'kind-general': '茶類・種類レベルの特徴による参考情報',
+  'insufficient': '使えるデータがないため不使用',
+}
+
+export interface PairingContextNote {
+  level: DataLevelUsed
+  text: string
+  findings: EntityFinding[]
+  sourceIds: string[]
+}
+
+const kindName = (kindId: string) => teaKinds.find((k) => k.id === kindId)?.name ?? kindId
+const flavorFindings = (findings: EntityFinding[]) => findings.filter((f) => FLAVOR_FINDING_KINDS.includes(f.kind))
+
+/** お茶側: 品種が指定された場合の階層判定。未指定なら null（従来表示のまま）。 */
+export function teaCultivarPairingNote(cultivar: TeaCultivar, kindId: string): PairingContextNote {
+  const use = cultivarTeaUses.find((u) => u.cultivarId === cultivar.id && u.kindId === kindId)
+  const findings = flavorFindings(cultivar.findings)
+  const kn = kindName(kindId)
+  if (use?.status === 'studied' && findings.length > 0) {
+    return {
+      level: 'cultivar-measured',
+      text: `${cultivar.name}を${kn}に加工した研究で確認された所見があります。組み合わせの見方そのものは${kn}レベルの特徴で作り、品種の所見は下記の範囲で参考として併記します。条件付きの所見は条件を落とさずに示します。`,
+      findings,
+      sourceIds: [...new Set(findings.flatMap((f) => f.sourceIds))],
+    }
+  }
+  if (use && findings.length > 0) {
+    return {
+      level: 'cultivar-general',
+      text: `${cultivar.name}には品種固有の科学データがありますが、${kn}での実測として確認できる範囲は限られます（条件付きの知見を含みます）。組み合わせの見方は${kn}レベルの特徴で作り、品種の所見は一般的な傾向として参考に併記します。`,
+      findings,
+      sourceIds: [...new Set(findings.flatMap((f) => f.sourceIds))],
+    }
+  }
+  if (use) {
+    return {
+      level: 'kind-general',
+      text: `${cultivar.name}を${kn}に加工することは確認されていますが、品種固有の香味データは未確認です。そのため組み合わせの見方は${kn}レベルの特徴だけで作っています。品種固有の相性があるかのような表示はしません。`,
+      findings: [],
+      sourceIds: [],
+    }
+  }
+  return {
+    level: 'kind-general',
+    text: `${cultivar.name}を${kn}に加工したことは、公的資料・研究では未確認です（実在しない組み合わせを実測済みとは扱いません）。組み合わせの見方は${kn}レベルの特徴だけで作っています。`,
+    findings: [],
+    sourceIds: [],
+  }
+}
+
+export type CacaoLayer = 'traditional' | 'genetic' | 'clone'
+export const CACAO_LAYER_LABEL: Record<CacaoLayer, string> = {
+  traditional: '伝統的分類',
+  genetic: '遺伝集団（Motamayor et al. 2008）',
+  clone: '個別クローン',
+}
+
+interface CacaoEntityLike {
+  name: string
+  findings: EntityFinding[]
+}
+
+/** カカオ側: 系統が指定された場合の階層判定。未指定なら呼び出し側で表示しない。 */
+export function cacaoPairingNote(layer: CacaoLayer, entity: CacaoEntityLike): PairingContextNote {
+  const findings = flavorFindings(entity.findings)
+  if (findings.length > 0) {
+    return {
+      level: layer === 'clone' ? 'cultivar-measured' : 'group-general',
+      text: layer === 'clone'
+        ? `${entity.name}（個別クローン）については実測の所見があります。ただし個別のチョコレートの味は発酵・焙煎・配合でも変わるため、組み合わせの見方はチョコレートの種類レベルの特徴で作り、クローンの所見は参考として併記します。`
+        : `${entity.name}（${CACAO_LAYER_LABEL[layer]}）としての実測・整理があります。ただしこれは分類・集団レベルの知見で、個別のチョコレートの味を決めるものではありません。組み合わせの見方はチョコレートの種類レベルの特徴で作り、所見は参考として併記します。`,
+      findings,
+      sourceIds: [...new Set(findings.flatMap((f) => f.sourceIds))],
+    }
+  }
+  return {
+    level: 'insufficient',
+    text: `${entity.name}（${CACAO_LAYER_LABEL[layer]}）については、香味の科学データが未確認です。そのため系統の情報は組み合わせの見方に使っていません（チョコレートの種類レベルの特徴のみで見ています）。遺伝的分類だけから味を断定することはしません。`,
+    findings: [],
+    sourceIds: [],
+  }
+}

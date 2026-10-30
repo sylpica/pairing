@@ -11,13 +11,19 @@ import { go, scrollTop } from './nav'
 import NoteDetail from './components/NoteDetail'
 import { compounds } from './data/compounds'
 import { noteById } from './data/flavors'
+import { CultivarsPage, TeaCultivarDetail, CacaoDetail } from './components/CultivarPages'
+import CultivarComparePage from './components/CultivarCompare'
+import { teaCultivarById, cultivarsForKind } from './data/cultivars'
+import { cacaoTraditionalGroups, cacaoGeneticGroups, cacaoClones, traditionalGroupById, geneticGroupById, cacaoCloneById } from './data/cacao'
+import { teaCultivarPairingNote, cacaoPairingNote, DATA_LEVEL_LABEL, type CacaoLayer } from './engine/pairingContext'
+import { FindingsList } from './components/EntityViews'
 
-type Route = { name: string; id?: string }
-const KNOWN_ROUTES = ['home', 'tea', 'choco', 'pair', 'compare', 'saved', 'sources', 'compounds']
+type Route = { name: string; id?: string; sub?: string }
+const KNOWN_ROUTES = ['home', 'tea', 'choco', 'pair', 'compare', 'saved', 'sources', 'compounds', 'cultivars', 'cultivar', 'cacao', 'compare-cultivars']
 function parseRoute(): Route {
   const h = location.hash.replace(/^#\/?/, '')
-  const [name, id] = h.split('/')
-  return { name: KNOWN_ROUTES.includes(name) ? name : 'home', id }
+  const [name, id, sub] = h.split('/')
+  return { name: KNOWN_ROUTES.includes(name) ? name : 'home', id, sub }
 }
 
 const norm = (s: string) => s.toLowerCase().replace(/[\s　]/g, '').replace(/ヶ/g, 'ケ')
@@ -49,6 +55,7 @@ export default function App() {
         <nav className="app-nav" aria-label="主なメニュー">
           <button onClick={() => go('tea')}>お茶</button>
           <button onClick={() => go('choco')}>チョコ</button>
+          <button onClick={() => go('cultivars')}>品種・系統</button>
           <button onClick={() => go('pair')}>組み合わせる</button>
           <button onClick={() => go('saved')}>お気に入り・履歴</button>
         </nav>
@@ -64,9 +71,14 @@ export default function App() {
         {route.name === 'saved' && <SavedPage saved={saved} setSaved={setSaved} />}
         {route.name === 'sources' && <SourcesPage />}
         {route.name === 'compounds' && <CompoundsPage />}
+        {route.name === 'cultivars' && <CultivarsPage />}
+        {route.name === 'cultivar' && route.id && <TeaCultivarDetail id={route.id} />}
+        {route.name === 'cacao' && route.id && route.sub && <CacaoDetail layer={route.id as CacaoLayer} id={route.sub} />}
+        {route.name === 'compare-cultivars' && <CultivarComparePage />}
       </main>
       <footer className="app-footer">
         <button className="linklike" onClick={() => go('compare')}>茶類・製法の比較</button>
+        <button className="linklike" onClick={() => go('compare-cultivars')}>品種・系統の比較</button>
         <button className="linklike" onClick={() => go('compounds')}>成分一覧</button>
         <button className="linklike" onClick={() => go('sources')}>出典・論文一覧</button>
         <p>香味の表示は科学論文に基づく範囲のみ。根拠のない推定や相性スコアは出しません。</p>
@@ -94,6 +106,10 @@ function Home() {
         <button className="big-card pair" onClick={() => go('pair')}>
           <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="24" cy="32" r="15" fill="#7fb069" opacity="0.75" /><circle cx="42" cy="32" r="15" fill="#a67c52" opacity="0.75" /></svg>
           <span className="big-card-title">組み合わせる</span><span>共通の香りと対比を探す</span>
+        </button>
+        <button className="big-card cultivars" onClick={() => go('cultivars')}>
+          <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 54V30" stroke="#7fb069" strokeWidth="4" strokeLinecap="round" /><path d="M32 30C32 20 26 12 14 12c0 12 8 18 18 18z" fill="#7fb069" /><path d="M32 38c0-9 6-15 16-15 0 10-6 15-16 15z" fill="#a67c52" /></svg>
+          <span className="big-card-title">品種・系統を調べる</span><span>お茶の品種とカカオの系統の図鑑</span>
         </button>
       </div>
     </div>
@@ -214,10 +230,22 @@ function ChocoDetail({ id, saved, toggleFav, addHistory }: { id: string; saved: 
 function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFav: (k: 'pairings', id: string) => void; addHistory: (k: 'pairings', id: string) => void }) {
   const [teaId, setTeaId] = useState(() => teaItems.find((t) => t.id === 'oolong-tea')?.id ?? teaItems[0].id)
   const [chocoId, setChocoId] = useState(chocolateItems[0].id)
+  const [cultivarId, setCultivarId] = useState('')
+  const [cacaoSel, setCacaoSel] = useState<{ layer: CacaoLayer; id: string } | null>(null)
   const [tab, setTab] = useState<'tea' | 'choco' | 'pair'>('pair')
   const [selNote, setSelNote] = useState<string | null>(null)
   const tea = teaById(teaId)!; const choco = chocolateById(chocoId)!
   const result = analyzePairing(tea.profile, choco.profile)
+  // 品種の追加指定: 選んだお茶の茶類で確認済みの組み合わせがある品種だけを選べる
+  const cultivarOptions = useMemo(() => [...new Set(cultivarsForKind(tea.kindId))], [tea.kindId])
+  const effectiveCultivarId = cultivarOptions.includes(cultivarId) ? cultivarId : ''
+  const cultivar = effectiveCultivarId ? teaCultivarById(effectiveCultivarId) : undefined
+  const teaNote = cultivar ? teaCultivarPairingNote(cultivar, tea.kindId) : null
+  const cacaoEntity = cacaoSel
+    ? (cacaoSel.layer === 'traditional' ? traditionalGroupById(cacaoSel.id) : cacaoSel.layer === 'genetic' ? geneticGroupById(cacaoSel.id) : cacaoCloneById(cacaoSel.id))
+    : undefined
+  const cacaoNote = cacaoSel && cacaoEntity ? cacaoPairingNote(cacaoSel.layer, cacaoEntity) : null
+  const pickCacao = (layer: CacaoLayer, id: string) => setCacaoSel(id ? { layer, id } : null)
   const pairId = `${teaId}+${chocoId}`
   useEffect(() => { addHistory('pairings', pairId) }, [pairId])
   useEffect(() => { scrollTop() }, [tab])
@@ -227,9 +255,31 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
       <h2>組み合わせる</h2>
       <div className="pair-selects">
         <label>お茶 <select value={teaId} onChange={(e) => setTeaId(e.target.value)}>{teaItems.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
+        <label>お茶の品種（任意） <select value={effectiveCultivarId} onChange={(e) => setCultivarId(e.target.value)} aria-label="お茶の品種（任意）">
+          <option value="">指定しない</option>
+          {cultivarOptions.map((id) => <option key={id} value={id}>{teaCultivarById(id)?.name ?? id}</option>)}
+        </select></label>
         <label>チョコレート <select value={chocoId} onChange={(e) => setChocoId(e.target.value)}>{chocolateItems.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
         <button className="fav-btn" aria-pressed={fav} onClick={() => toggleFav('pairings', pairId)}>{fav ? '★ 保存済み' : '☆ この組み合わせを保存'}</button>
       </div>
+      <details className="advanced">
+        <summary>カカオの系統をさらに指定する（任意）</summary>
+        <p className="note-small">原料カカオの系統が分かっている場合だけ指定してください。系統の科学データがある場合は参考として併記しますが、系統だけでチョコレートの味や相性が決まるわけではありません。</p>
+        <div className="pair-selects">
+          <label>伝統的分類 <select value={cacaoSel?.layer === 'traditional' ? cacaoSel.id : ''} onChange={(e) => pickCacao('traditional', e.target.value)} aria-label="カカオの伝統的分類（任意）">
+            <option value="">指定しない</option>
+            {cacaoTraditionalGroups.map((g) => <option key={g.id} value={g.id}>{g.nameJa}（{g.name}）</option>)}
+          </select></label>
+          <label>遺伝集団 <select value={cacaoSel?.layer === 'genetic' ? cacaoSel.id : ''} onChange={(e) => pickCacao('genetic', e.target.value)} aria-label="カカオの遺伝集団（任意）">
+            <option value="">指定しない</option>
+            {cacaoGeneticGroups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+          </select></label>
+          <label>個別クローン <select value={cacaoSel?.layer === 'clone' ? cacaoSel.id : ''} onChange={(e) => pickCacao('clone', e.target.value)} aria-label="カカオの個別クローン（任意）">
+            <option value="">指定しない</option>
+            {cacaoClones.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select></label>
+        </div>
+      </details>
       <div className="tabs" role="tablist" aria-label="ホイールの切り替え">
         <button role="tab" aria-selected={tab === 'tea'} onClick={() => setTab('tea')}>お茶</button>
         <button role="tab" aria-selected={tab === 'choco'} onClick={() => setTab('choco')}>チョコ</button>
@@ -253,6 +303,25 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
           {result.contrasts.length > 0 && <>
             <h3>対比する特徴（対比の候補）</h3>
             {result.contrasts.map((c, i) => <div className="temporal-card" key={i}><h4>{c.label}</h4><p>{c.detail}</p></div>)}
+          </>}
+          {(teaNote || cacaoNote) && <>
+            <h3>品種・系統の指定について</h3>
+            {teaNote && cultivar && (
+              <div className="temporal-card">
+                <h4>お茶の品種：{cultivar.name}</h4>
+                <p><span className="badge">{DATA_LEVEL_LABEL[teaNote.level]}</span></p>
+                <p>{teaNote.text}</p>
+                <FindingsList findings={teaNote.findings} />
+              </div>
+            )}
+            {cacaoNote && cacaoEntity && (
+              <div className="temporal-card">
+                <h4>カカオの系統：{cacaoEntity.name}</h4>
+                <p><span className="badge">{DATA_LEVEL_LABEL[cacaoNote.level]}</span></p>
+                <p>{cacaoNote.text}</p>
+                <FindingsList findings={cacaoNote.findings} />
+              </div>
+            )}
           </>}
           <p className="note-small">組み合わせ後のホイールは、香りを足し算して作ることはしません。共通点と対比だけを示します。</p>
           <h3>食べる・飲む順序について（一般的な知見）</h3>

@@ -1,0 +1,203 @@
+import { useMemo, useState } from 'react'
+import type { TeaCultivar, TeaCultivarRank } from '../types'
+import { teaCultivars, teaCultivarById, usesForCultivar } from '../data/cultivars'
+import {
+  cacaoTraditionalGroups, cacaoGeneticGroups, cacaoClones,
+  traditionalGroupById, geneticGroupById, cacaoCloneById,
+} from '../data/cacao'
+import { teaKinds } from '../data/teas'
+import { go } from '../nav'
+import { FindingsList, ScienceNote, VerificationBadges, SCIENCE_LABEL } from './EntityViews'
+import { SourceLinks } from './SourceLinks'
+import type { CacaoLayer } from '../engine/pairingContext'
+import { CACAO_LAYER_LABEL } from '../engine/pairingContext'
+
+const norm = (s: string) => s.toLowerCase().replace(/[\s　]/g, '').replace(/ヶ/g, 'ケ')
+function matchesAny(query: string, names: string[]) {
+  if (!query.trim()) return true
+  const q = norm(query)
+  return names.some((n) => norm(n).includes(q) || (q.includes(norm(n)) && norm(n).length >= 2))
+}
+
+export const RANK_LABEL: Record<TeaCultivarRank, string> = {
+  cultivar: '品種',
+  clone: 'クローン',
+  landrace: '在来系統',
+  population: '集団（系統群）',
+  'cultivar-group': '品種群・系統群',
+}
+const USE_STATUS_LABEL: Record<string, string> = {
+  studied: '研究で供試された組み合わせ',
+  documented: '公的資料で確認できる組み合わせ',
+}
+export const kindNameOf = (kindId: string) => teaKinds.find((k) => k.id === kindId)?.name ?? kindId
+
+const COUNTRIES = ['日本', '台湾', '中国', 'インド', 'スリランカ']
+
+export function CultivarsPage() {
+  const [q, setQ] = useState('')
+  const teas = useMemo(() => teaCultivars.filter((c) => matchesAny(q, [c.name, c.originalName ?? '', ...c.aliases])), [q])
+  const trad = useMemo(() => cacaoTraditionalGroups.filter((g) => matchesAny(q, [g.name, g.nameJa, ...g.aliases])), [q])
+  const gen = useMemo(() => cacaoGeneticGroups.filter((g) => matchesAny(q, [g.name, ...g.aliases])), [q])
+  const clones = useMemo(() => cacaoClones.filter((c) => matchesAny(q, [c.name, ...c.aliases])), [q])
+  const empty = teas.length + trad.length + gen.length + clones.length === 0
+  return (
+    <div>
+      <h2>品種・系統を調べる</h2>
+      <p>お茶の品種とカカオの分類・系統の図鑑です。表示できるのは、出典のある分類・系譜と科学的な所見までです。科学データが確認できていない対象には、香味の特徴を表示しません。</p>
+      <input className="search" type="search" placeholder="名前・原語・別名で探す（例：やぶきた、Yabukita、CCN-51）" value={q} onChange={(e) => setQ(e.target.value)} aria-label="品種・系統を検索" />
+      {empty && <p className="unknown-box">見つかりませんでした。収録範囲外の品種・系統かもしれません。産地名や商品名は品種名ではないため、収録していない場合があります。</p>}
+
+      {teas.length > 0 && <h3>お茶の品種・系統</h3>}
+      {COUNTRIES.map((country) => {
+        const list = teas.filter((c) => c.country === country)
+        if (list.length === 0) return null
+        return (
+          <section key={country}>
+            <h4>{country}</h4>
+            <ul className="item-list">
+              {list.map((c) => (
+                <li key={c.id}><button className="item-card" onClick={() => go(`cultivar/${c.id}`)}>
+                  <span className="item-name">{c.name}</span>
+                  <span><span className="badge">{RANK_LABEL[c.rank]}</span> <span className="badge">{SCIENCE_LABEL[c.verification.science]}</span></span>
+                </button></li>
+              ))}
+            </ul>
+          </section>
+        )
+      })}
+
+      {(trad.length > 0 || gen.length > 0 || clones.length > 0) && <h3>カカオの分類・系統</h3>}
+      <p className="note-small">カカオには階層の異なる分類があります。伝統的分類（歴史的・商業的な呼称）と、遺伝学に基づく遺伝集団（Motamayor et al. 2008）は別の体系で、一対一には対応しません。個別クローンは、さらに下の階層の実体です。</p>
+      {trad.length > 0 && <>
+        <h4>伝統的分類</h4>
+        <ul className="item-list">
+          {trad.map((g) => (
+            <li key={g.id}><button className="item-card" onClick={() => go('cacao/traditional/' + g.id)}>
+              <span className="item-name">{g.nameJa}（{g.name}）</span>
+              <span className="badge">{SCIENCE_LABEL[g.verification.science]}</span>
+            </button></li>
+          ))}
+        </ul>
+      </>}
+      {gen.length > 0 && <>
+        <h4>遺伝集団（Motamayor et al. 2008 の10集団）</h4>
+        <ul className="item-list">
+          {gen.map((g) => (
+            <li key={g.id}><button className="item-card" onClick={() => go('cacao/genetic/' + g.id)}>
+              <span className="item-name">{g.name}</span>
+              <span className="badge">{SCIENCE_LABEL[g.verification.science]}</span>
+            </button></li>
+          ))}
+        </ul>
+      </>}
+      {clones.length > 0 && <>
+        <h4>個別クローン・系統</h4>
+        <ul className="item-list">
+          {clones.map((c) => (
+            <li key={c.id}><button className="item-card" onClick={() => go('cacao/clone/' + c.id)}>
+              <span className="item-name">{c.name}</span>
+              <span className="badge">{SCIENCE_LABEL[c.verification.science]}</span>
+            </button></li>
+          ))}
+        </ul>
+      </>}
+      <p><button className="linklike" onClick={() => go('compare-cultivars')}>品種・系統を比べる</button></p>
+    </div>
+  )
+}
+
+export function TeaCultivarDetail({ id }: { id: string }) {
+  const c = teaCultivarById(id)
+  if (!c) return <p className="unknown-box">その品種・系統は収録されていません。</p>
+  const uses = usesForCultivar(c.id)
+  const parents = (c.parentCultivarIds ?? []).map((pid) => teaCultivarById(pid)).filter((p): p is TeaCultivar => !!p)
+  return (
+    <div>
+      <button className="btn ghost" onClick={() => go('cultivars')}>← 品種・系統の一覧へ</button>
+      <h2>{c.name}{c.originalName && c.originalName !== c.name ? `（${c.originalName}）` : ''}</h2>
+      <p>
+        <span className="badge">{RANK_LABEL[c.rank]}</span> <span className="badge">{c.country}</span>
+        {c.aliases.length > 0 && <span className="note-small"> 別名：{c.aliases.join('、')}</span>}
+      </p>
+      <VerificationBadges v={c.verification} />
+      {c.registration && <p><strong>登録情報：</strong>{c.registration}</p>}
+      {c.breeding && <><h3>由来・育成</h3><p>{c.breeding}</p></>}
+      {parents.length > 0 && (
+        <p>親品種：
+          {parents.map((p, i) => <span key={p.id}>{i > 0 && '、'}<button className="linklike" onClick={() => go(`cultivar/${p.id}`)}>{p.name}</button></span>)}
+        </p>
+      )}
+      {c.regions.length > 0 && <p><strong>主な栽培地域：</strong>{c.regions.join('、')}</p>}
+      <h3>利用できる茶類（確認済みの組み合わせのみ）</h3>
+      {uses.length === 0
+        ? <p className="unknown-box">この品種と茶類の組み合わせは、公的資料・研究で未確認です。品種と茶類は固定の組み合わせではありません。</p>
+        : <ul>{uses.map((u) => (
+          <li key={u.kindId}><strong>{kindNameOf(u.kindId)}</strong>（{USE_STATUS_LABEL[u.status]}）
+            <SourceLinks ids={u.sourceIds} /></li>
+        ))}</ul>}
+      <p className="note-small">ここに無い組み合わせは「存在しない」ではなく「未確認」です。実測済みとは扱いません。</p>
+      <h3>科学的な所見</h3>
+      <ScienceNote science={c.verification.science} note={c.scienceNote} />
+      <FindingsList findings={c.findings} />
+      {c.note && <><h3>注記</h3><p>{c.note}</p></>}
+      <SourceLinks ids={c.sourceIds} />
+      <p><button className="linklike" onClick={() => go('compare-cultivars')}>他の品種と比べる／同じ品種の茶類を比べる</button></p>
+    </div>
+  )
+}
+
+export function CacaoDetail({ layer, id }: { layer: CacaoLayer; id: string }) {
+  const trad = layer === 'traditional' ? traditionalGroupById(id) : undefined
+  const gen = layer === 'genetic' ? geneticGroupById(id) : undefined
+  const clone = layer === 'clone' ? cacaoCloneById(id) : undefined
+  const entity = trad ?? gen ?? clone
+  if (!entity) return <p className="unknown-box">その分類・系統は収録されていません。</p>
+  const title = trad ? `${trad.nameJa}（${trad.name}）` : entity.name
+  return (
+    <div>
+      <button className="btn ghost" onClick={() => go('cultivars')}>← 品種・系統の一覧へ</button>
+      <h2>{title}</h2>
+      <p>
+        <span className="badge">{CACAO_LAYER_LABEL[layer]}</span>
+        {entity.aliases.length > 0 && <span className="note-small"> 別名：{entity.aliases.join('、')}</span>}
+      </p>
+      <VerificationBadges v={entity.verification} />
+      {trad && <><h3>この分類について</h3><p>{trad.nature}</p></>}
+      {gen && <>
+        <p><strong>命名の由来：</strong>{gen.namingBasis}</p>
+        {gen.distribution && <p><strong>分布：</strong>{gen.distribution}</p>}
+        <p><strong>分類体系：</strong>{gen.classificationSystem}</p>
+        <p className="note-small">遺伝集団は伝統的分類とは別の体系です。無条件に一対一対応させることはしません。また、遺伝的分類だけから個別のチョコレートの味を断定することはできません（発酵・乾燥・焙煎・配合の影響が別にあります）。</p>
+      </>}
+      {clone && <>
+        <p><strong>原産・由来：</strong>{clone.origin}</p>
+        {clone.breeding && <><h3>育成・系譜</h3><p>{clone.breeding}</p></>}
+        {clone.ancestry && clone.ancestry.length > 0 && <>
+          <h3>遺伝的背景（祖先構成）</h3>
+          <ul>{clone.ancestry.map((a) => {
+            const g = geneticGroupById(a.groupId)
+            return <li key={a.groupId}>{g ? <button className="linklike" onClick={() => go('cacao/genetic/' + g.id)}>{g.name}</button> : a.groupId}：{a.sharePercent}%</li>
+          })}</ul>
+          <p className="note-small">単一の遺伝集団に帰属するのではなく、複数の集団の混合として実測された構成です。</p>
+          <SourceLinks ids={clone.ancestrySourceIds ?? []} />
+        </>}
+        {clone.associatedGroupIds && clone.associatedGroupIds.length > 0 && (
+          <p>関連する系列：
+            {clone.associatedGroupIds.map((gid, i) => {
+              const g = geneticGroupById(gid)
+              return <span key={gid}>{i > 0 && '、'}{g ? <button className="linklike" onClick={() => go('cacao/genetic/' + g.id)}>{g.name}</button> : gid}</span>
+            })}
+            <span className="note-small">（系列の本拠を示す関連であり、単一集団への帰属の断定ではありません）</span>
+          </p>
+        )}
+      </>}
+      <h3>科学的な所見</h3>
+      <ScienceNote science={entity.verification.science} note={entity.scienceNote} />
+      <FindingsList findings={entity.findings} />
+      {entity.note && <><h3>注記</h3><p>{entity.note}</p></>}
+      <SourceLinks ids={entity.sourceIds} />
+      <p><button className="linklike" onClick={() => go('compare-cultivars')}>他の系統と比べる</button></p>
+    </div>
+  )
+}
