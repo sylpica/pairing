@@ -381,7 +381,7 @@ export const sources: Source[] = [
     title: 'Sequential consumption and temporal perception (Galmarini et al. 2017 として調査で確認)',
     authors: 'Galmarini MV, et al.',
     year: 2017, journal: 'Journal of Food Science 82(11):2669–2678',
-    doi: '（未確認）', pmid: '29023703',
+    pmid: '29023703',
     url: 'https://pubmed.ncbi.nlm.nih.gov/29023703/',
     scope: '逆方向の順序でも時間的知覚が変化した一方、嗜好は変わらなかった原著。順序効果の一般例として使用。DOI は調査で確定できていないため PubMed リンクを用いる（未確認事項として明記）。タイトルは調査記録に基づく要約的表記。',
     license: '未確認（Wiley）', verified: true,
