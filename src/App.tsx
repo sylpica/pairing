@@ -9,6 +9,9 @@ import { categoryById } from './data/flavors'
 import { loadSaved, persistSaved, pushHistory, validateSaved, type SavedData } from './storage'
 import { go, scrollTop } from './nav'
 import NoteDetail from './components/NoteDetail'
+import { CollapsibleSheet } from './components/Sheet'
+import CompoundCard from './components/CompoundCard'
+import { PairNoteCompounds, PairCategoryCompounds } from './components/PairCompounds'
 import { compounds } from './data/compounds'
 import { noteById } from './data/flavors'
 import { CultivarsPage, TeaCultivarDetail, CacaoDetail } from './components/CultivarPages'
@@ -70,7 +73,7 @@ export default function App() {
         {route.name === 'compare' && <ComparePage />}
         {route.name === 'saved' && <SavedPage saved={saved} setSaved={setSaved} />}
         {route.name === 'sources' && <SourcesPage />}
-        {route.name === 'compounds' && <CompoundsPage />}
+        {route.name === 'compounds' && <CompoundsPage highlightId={route.id} />}
         {route.name === 'cultivars' && <CultivarsPage />}
         {route.name === 'cultivar' && route.id && <TeaCultivarDetail id={route.id} />}
         {route.name === 'cacao' && route.id && route.sub && <CacaoDetail layer={route.id as CacaoLayer} id={route.sub} />}
@@ -166,7 +169,7 @@ function TeaDetail({ id, saved, toggleFav, addHistory }: { id: string; saved: Sa
       <button className="btn ghost" onClick={() => go('tea')}>← 一覧へ</button>
       <h2>{tea.name} <button className="fav-btn" aria-pressed={fav} onClick={() => toggleFav('teas', tea.id)}>{fav ? '★ お気に入り' : '☆ お気に入り'}</button></h2>
       <p><span className="badge">{LEVEL_LABEL[tea.evidenceLevel]}</span></p>
-      <ProfileView profile={tea.profile} scopeNote={tea.scopeNote} sourceIds={tea.sourceIds} />
+      <ProfileView profile={tea.profile} scopeNote={tea.scopeNote} sourceIds={tea.sourceIds} context={{ side: 'tea', kindId: tea.kindId, itemName: tea.name }} />
       <h3>組み合わせの候補を探す</h3>
       <p className="note-small">相性の良し悪しではなく、香味の共通・対比からの探索の手がかりです。</p>
       <h4>調和型の候補（共通する香り）</h4>
@@ -218,7 +221,7 @@ function ChocoDetail({ id, saved, toggleFav, addHistory }: { id: string; saved: 
       <button className="btn ghost" onClick={() => go('choco')}>← 一覧へ</button>
       <h2>{choco.name} <button className="fav-btn" aria-pressed={fav} onClick={() => toggleFav('chocolates', choco.id)}>{fav ? '★ お気に入り' : '☆ お気に入り'}</button></h2>
       <p><span className="badge">{LEVEL_LABEL[choco.evidenceLevel]}</span></p>
-      <ProfileView profile={choco.profile} scopeNote={choco.scopeNote} sourceIds={choco.sourceIds} />
+      <ProfileView profile={choco.profile} scopeNote={choco.scopeNote} sourceIds={choco.sourceIds} context={{ side: 'chocolate', kindId: choco.kind, itemName: choco.name }} />
       {choco.profile.aromas.length > 0 && <>
         <h3>組み合わせの候補（調和型）</h3>
         <div className="filter-row">{harmony.map((t) => <button key={t.id} className="chip" onClick={() => go('pair')}>{t.name}</button>)}</div>
@@ -234,6 +237,8 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
   const [cacaoSel, setCacaoSel] = useState<{ layer: CacaoLayer; id: string } | null>(null)
   const [tab, setTab] = useState<'tea' | 'choco' | 'pair'>('pair')
   const [selNote, setSelNote] = useState<string | null>(null)
+  const [pairNote, setPairNote] = useState<string | null>(null)
+  const [pairCat, setPairCat] = useState<string | null>(null)
   const tea = teaById(teaId)!; const choco = chocolateById(chocoId)!
   const result = analyzePairing(tea.profile, choco.profile)
   // 品種の追加指定: 選んだお茶の茶類で確認済みの組み合わせがある品種だけを選べる
@@ -287,23 +292,36 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
       </div>
       {tab === 'tea' && <FlavorWheel profile={tea.profile} onSelectNote={setSelNote} />}
       {tab === 'choco' && <FlavorWheel profile={choco.profile} onSelectNote={setSelNote} />}
-      {tab !== 'pair' && selNote && <NoteDetail noteId={selNote} profile={tab === 'tea' ? tea.profile : choco.profile} />}
+      {tab !== 'pair' && selNote && (
+        <CollapsibleSheet resetKey={`${tab}:${selNote}`} title={noteById(selNote)?.name ?? selNote} onDismiss={() => setSelNote(null)}>
+          <NoteDetail noteId={selNote} profile={tab === 'tea' ? tea.profile : choco.profile}
+            context={tab === 'tea'
+              ? { side: 'tea', kindId: tea.kindId, itemName: tea.name }
+              : { side: 'chocolate', kindId: choco.kind, itemName: choco.name }} />
+        </CollapsibleSheet>
+      )}
       {tab === 'pair' && (
         <section>
           <p><span className="badge">{LEVEL_LABEL[result.level]}</span></p>
           <p>{result.message}</p>
           {result.sharedNotes.length > 0 && <>
             <h3>共通する香り（調和の候補）</h3>
-            <ul>{result.sharedNotes.map((s) => <li key={s.noteId}>{s.name}</li>)}</ul>
+            <p className="note-small">香りを押すと、その香りに関係する成分を、お茶側・チョコレート側に分けて確認できます。</p>
+            <div className="filter-row">{result.sharedNotes.map((s) => <button key={s.noteId} className="chip" onClick={() => { setPairNote(s.noteId); setPairCat(null) }}>{s.name}の成分を見る</button>)}</div>
           </>}
           {result.sharedCategories.length > 0 && <>
             <h3>同じ分類の香り</h3>
-            <ul>{result.sharedCategories.map((s) => <li key={s.categoryId}>{categoryById(s.categoryId)?.name ?? s.categoryId}</li>)}</ul>
+            <p className="note-small">分類が似ているだけの共通点です。同じ成分が確認されているわけではありません。</p>
+            <div className="filter-row">{result.sharedCategories.map((s) => <button key={s.categoryId} className="chip" onClick={() => { setPairCat(s.categoryId); setPairNote(null) }}>{categoryById(s.categoryId)?.name ?? s.categoryId}</button>)}</div>
           </>}
           {result.contrasts.length > 0 && <>
             <h3>対比する特徴（対比の候補）</h3>
-            {result.contrasts.map((c, i) => <div className="temporal-card" key={i}><h4>{c.label}</h4><p>{c.detail}</p></div>)}
+            {result.contrasts.map((c, i) => <div className="temporal-card" key={i}><h4>{c.label}</h4><p>{c.detail}</p>
+              {c.noteId && <button className="chip" onClick={() => { setPairNote(c.noteId as string); setPairCat(null) }}>{noteById(c.noteId)?.name ?? c.noteId}の成分を見る</button>}
+            </div>)}
           </>}
+          {pairNote && <PairNoteCompounds noteId={pairNote} teaKindId={tea.kindId} chocoKindId={choco.kind} />}
+          {pairCat && <PairCategoryCompounds categoryId={pairCat} tea={tea.profile} choco={choco.profile} onPickNote={(id) => { setPairNote(id); setPairCat(null) }} />}
           {(teaNote || cacaoNote) && <>
             <h3>品種・系統の指定について</h3>
             {teaNote && cultivar && (
@@ -354,7 +372,12 @@ function ComparePage() {
         <div><h3>{ta.name}</h3><FlavorWheel profile={ta.profile} onSelectNote={(id) => setSel({ noteId: id, side: 'a' })} /></div>
         <div><h3>{tb.name}</h3><FlavorWheel profile={tb.profile} onSelectNote={(id) => setSel({ noteId: id, side: 'b' })} /></div>
       </div>
-      {sel && <NoteDetail noteId={sel.noteId} profile={sel.side === 'a' ? ta.profile : tb.profile} />}
+      {sel && (
+        <CollapsibleSheet resetKey={`${sel.side}:${sel.noteId}`} title={noteById(sel.noteId)?.name ?? sel.noteId} onDismiss={() => setSel(null)}>
+          <NoteDetail noteId={sel.noteId} profile={sel.side === 'a' ? ta.profile : tb.profile}
+            context={{ side: 'tea', kindId: (sel.side === 'a' ? ta : tb).kindId, itemName: (sel.side === 'a' ? ta : tb).name }} />
+        </CollapsibleSheet>
+      )}
       <p className="note-small">各ホイールは総説に基づく茶類・製法レベルの一般的特徴です。異なる品種・条件の試料では、違いが製法だけによるものとは限りません。</p>
     </div>
   )
@@ -391,22 +414,27 @@ function SavedPage({ saved, setSaved }: { saved: SavedData; setSaved: (d: SavedD
   )
 }
 
-function CompoundsPage() {
+function CompoundsPage({ highlightId }: { highlightId?: string }) {
+  const [q, setQ] = useState('')
+  const shown = compounds.filter((c) => {
+    if (!q.trim()) return true
+    const hay = [c.name, ...c.aliases, c.detectedIn, ...c.noteIds.map((n) => noteById(n)?.name ?? n),
+      ...(c.tasteLinks ?? []).map((l) => (l.taste === 'sweet' ? '甘味' : l.taste === 'sour' ? '酸味' : l.taste === 'bitter' ? '苦味' : l.taste === 'astringent' ? '渋味' : 'うま味'))]
+    return matches(q, hay)
+  })
+  useEffect(() => {
+    if (highlightId) document.getElementById(`compound-${highlightId}`)?.scrollIntoView?.()
+  }, [highlightId])
   return (
     <div>
       <h2>成分一覧</h2>
-      <p>香味に寄与することが研究で示された化学成分です。「検出された」ことと「香りに寄与する」ことは分けて記録しています。香りの記述がない成分は、その旨を明記しています。</p>
-      {compounds.map((c) => (
-        <article className="temporal-card" key={c.id}>
-          <h3>{c.name}（{c.aliases[0] ?? ''}）</h3>
-          <p><strong>寄与する香り：</strong>{c.aromaKnowledge}</p>
-          <p>{c.plainDescription}</p>
-          {c.noteIds.length > 0 && <p className="note-small">関係する香味：{c.noteIds.map((n) => noteById(n)?.name ?? n).join('、')}</p>}
-          <dl>
-            <dt>検出の事実</dt><dd>{c.detectedIn}</dd>
-            <dt>寄与の根拠</dt><dd>{c.contributionEvidence}</dd>
-          </dl>
-          <SourceLinks ids={c.sourceIds} />
+      <p>香味や味に寄与することが研究で示された化学成分です。「検出された」ことと「香り・味に寄与する」ことは分けて記録しています。香り・味の記述がない成分は、その旨を明記しています。成分名・別名・香味名・味の名前で探せます（成分→香味・食品の逆引き）。</p>
+      <input className="search" type="search" placeholder="成分・香味・味で探す（例：リナロール、青草・若葉、苦味）" value={q} onChange={(e) => setQ(e.target.value)} aria-label="成分を検索" />
+      {shown.length === 0 && <p className="unknown-box">見つかりませんでした。根拠が確認できない成分は登録していないため、収録範囲外かもしれません。</p>}
+      {shown.map((c) => (
+        <article className={highlightId === c.id ? 'temporal-card compound-highlight' : 'temporal-card'} key={c.id} id={`compound-${c.id}`}>
+          <CompoundCard compound={c} />
+          {highlightId === c.id && <p className="note-small">品種・系統の図鑑から参照された成分です。</p>}
         </article>
       ))}
     </div>

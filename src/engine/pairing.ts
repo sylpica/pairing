@@ -5,7 +5,7 @@ export interface PairingResult {
   level: EvidenceLevel
   sharedNotes: { noteId: string; name: string }[]
   sharedCategories: { categoryId: string }[]
-  contrasts: { label: string; detail: string }[]
+  contrasts: { label: string; detail: string; noteId?: string }[]
   message: string
 }
 
@@ -39,12 +39,12 @@ export function analyzePairing(tea: FlavorProfile, choco: FlavorProfile): Pairin
   const contrasts: PairingResult['contrasts'] = []
   for (const [cat, entry] of teaCats) {
     if (cat && !chocoCats.has(cat) && rank(entry.intensity) === 3) {
-      contrasts.push({ label: 'お茶だけの特徴', detail: `お茶には「${noteById(entry.noteId)?.name}」を含む分類の香りが際立ち、チョコレートには見られません。並べて味わうと違いが感じられる可能性があります（未検証の探索的な見方です）。` })
+      contrasts.push({ label: 'お茶だけの特徴', noteId: entry.noteId, detail: `お茶には「${noteById(entry.noteId)?.name}」を含む分類の香りが際立ち、チョコレートには見られません。並べて味わうと違いが感じられる可能性があります（未検証の探索的な見方です）。` })
     }
   }
   for (const [cat, entry] of chocoCats) {
     if (cat && !teaCats.has(cat) && rank(entry.intensity) === 3) {
-      contrasts.push({ label: 'チョコだけの特徴', detail: `チョコレートには「${noteById(entry.noteId)?.name}」を含む分類の香りが際立ち、お茶には見られません。並べて味わうと違いが感じられる可能性があります（未検証の探索的な見方です）。` })
+      contrasts.push({ label: 'チョコだけの特徴', noteId: entry.noteId, detail: `チョコレートには「${noteById(entry.noteId)?.name}」を含む分類の香りが際立ち、お茶には見られません。並べて味わうと違いが感じられる可能性があります（未検証の探索的な見方です）。` })
     }
   }
   // 味覚の対比は「合成」せず、両方にデータがある場合だけ並置として示す

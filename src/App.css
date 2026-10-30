@@ -59,4 +59,24 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 .advanced { margin: 4px 0 12px; }
 .advanced summary { cursor: pointer; font-weight: 700; min-height: 32px; }
 .advanced select { font: inherit; padding: 10px; border-radius: 10px; border: 1.5px solid var(--line); min-height: 44px; }
+/* 成分情報シート: 広幅では通常カード、狭幅（スマホ）では下部シート */
+.bottom-sheet { background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; padding: 10px 14px 14px; margin: 12px 0; }
+.bottom-sheet .note-detail { border: none; margin: 0; padding: 2px; background: none; }
+.sheet-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sheet-grip { display: none; }
+.sheet-close { background: #f3ede2; border: 1.5px solid var(--line); border-radius: 999px; padding: 6px 14px; font: inherit; font-size: 0.9rem; cursor: pointer; min-height: 40px; }
+.sheet-reopen-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 10px 0; }
+@media (max-width: 639px) {
+  .bottom-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; margin: 0; border-radius: 18px 18px 0 0; border-bottom: none; box-shadow: 0 -8px 28px rgba(61, 49, 41, 0.25); max-height: 74vh; display: flex; flex-direction: column; }
+  .sheet-grip { display: block; width: 44px; height: 5px; border-radius: 3px; background: var(--line); margin: 2px auto; }
+  .sheet-bar { flex-direction: column; align-items: stretch; gap: 2px; }
+  .sheet-close { align-self: flex-end; }
+  .sheet-body { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+}
+.taste-row-btn { width: 100%; background: none; border: none; font: inherit; color: inherit; cursor: pointer; text-align: left; padding: 6px 4px; border-radius: 10px; }
+.taste-row-btn:hover { background: #f7ead2; }
+.tier-head { margin: 12px 0 4px; font-size: 0.95rem; border-left: 4px solid var(--accent); padding-left: 8px; }
+.compound-card { border-top: 1px solid var(--line); padding: 8px 0 2px; }
+.compound-card h5 { margin: 4px 0; font-size: 1rem; }
+.compound-highlight { border-color: var(--accent2); box-shadow: 0 0 0 2px #f2d8ae; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

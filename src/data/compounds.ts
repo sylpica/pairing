@@ -1,10 +1,16 @@
-import type { Compound } from '../types'
+import type { Compound, TasteKey } from '../types'
+import { flavorNotes } from './flavors'
 
-// すべて Zeng et al. 2025 の本文・Table 1（OAV>1 の Key Aroma Compounds）または
-// Ac-Pangan et al. 2023 のアブストラクトで確認できる範囲のみ収録する。
-// 「検出事実」「香りの知見」「寄与の根拠」を分けて記録する（指示書§7）。
+// 化合物データベース。「検出の事実」「香り・味の知見」「寄与の根拠」を分けて記録する。
+// 根拠区分（docs/research/flavor-compounds.md）:
+// (1) 検出のみ (2) 化合物単体の香り・味の知見 (3) 対象試料での寄与の実証（GC-O/OAV/AEDA/再構成/除去/官能）
+// (4) 総説・一般知見からの推定。GC-MS 検出のみの成分を寄与成分とは書かない。
+// scopes は根拠が基づく試料の範囲（階層表示用）。tasteLinks は呈味成分の味覚対応（香気の noteIds とは別管理）。
 const Z = 'zeng-2025-tea-vocs'
 const A = 'acpangan-2023-dark-chocolate-aroma'
+const CHEN = 'chen-2020-white-tea-odorants'
+const RAZA = 'raza-2025-yunnan-white-tea'
+const DEUS = 'deuscher-2020-dark-chocolate-gco'
 export const compounds: Compound[] = [
   {
     id: 'linalool', name: 'リナロール', aliases: ['Linalool'],
@@ -14,6 +20,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: '総説の成分表で「柑橘様・花様」と記載されています。',
     contributionEvidence: '総説 Table 1 で六大茶類すべてについて OAV>1 の重要香気成分として掲載されています。',
     sourceIds: [Z],
+    scopes: [{ side: 'tea' }],
   },
   {
     id: 'geraniol', name: 'ゲラニオール', aliases: ['Geraniol'],
@@ -23,6 +30,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: '総説の成分表で「バラ様・柑橘様」と記載されています。',
     contributionEvidence: '総説 Table 1 で六大茶類すべてについて OAV>1 の重要香気成分として掲載されています。',
     sourceIds: [Z],
+    scopes: [{ side: 'tea' }],
   },
   {
     id: 'benzaldehyde', name: 'ベンズアルデヒド', aliases: ['Benzaldehyde'],
@@ -32,6 +40,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: '総説の成分表で「苦いアーモンド様」と記載されています。',
     contributionEvidence: '総説 Table 1 で緑茶・黄茶・紅茶・黒茶について OAV>1 の重要香気成分として掲載されています。',
     sourceIds: [Z],
+    scopes: [{ side: 'tea' }],
   },
   {
     id: 'phenylacetaldehyde', name: 'フェニルアセトアルデヒド', aliases: ['Phenylacetaldehyde', 'Benzeneacetaldehyde'],
@@ -41,6 +50,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: '白茶では蜂蜜様の香りをもたらすと総説に記載されています。',
     contributionEvidence: '総説 Table 1 で緑茶・白茶・烏龍茶・紅茶・黒茶について OAV>1 の重要香気成分として掲載されています。',
     sourceIds: [Z],
+    scopes: [{ side: 'tea' }],
   },
   {
     id: 'cis-3-hexen-1-ol', name: '(Z)-3-ヘキセン-1-オール', aliases: ['(Z)-3-Hexen-1-ol'],
@@ -50,6 +60,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: '総説では白茶・黄茶の「フレッシュ」な香りの代表成分として図に示されています。',
     contributionEvidence: '白茶の主要揮発性成分の一つとして総説本文に列挙されています。主要寄与の程度は個別研究の確認が必要です。',
     sourceIds: [Z],
+    scopes: [{ side: 'tea', kindId: 'white' }, { side: 'tea' }],
   },
   {
     id: 'methyl-salicylate', name: 'サリチル酸メチル', aliases: ['Methyl salicylate'],
@@ -59,6 +70,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: '白茶では「爽やかでミント様」と総説に記載されています。紅茶では果実様のニュアンスとの相関が総説に記載されています。',
     contributionEvidence: '紅茶の重要香気成分の一つとして総説本文に列挙されています。',
     sourceIds: [Z],
+    scopes: [{ side: 'tea' }],
   },
   {
     id: '3-methylbutanal', name: '3-メチルブタナール', aliases: ['3-Methylbutanal'],
@@ -68,6 +80,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: '緑茶の栗様の香りをもたらす成分の一つとして総説に記載されています。',
     contributionEvidence: '焙煎ダークチョコレートでは、未焙煎品と比べて香りへの影響が大きい成分の一つとして原著アブストラクトに記載されています。',
     sourceIds: [Z, A],
+    scopes: [{ side: 'tea', kindId: 'green' }, { side: 'chocolate', kindId: 'dark' }],
   },
   {
     id: '2-ethyl-3-5-dimethylpyrazine', name: '2-エチル-3,5-ジメチルピラジン', aliases: ['2-Ethyl-3,5-dimethylpyrazine'],
@@ -77,6 +90,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: 'この成分自体の香りの言葉は、確認した原著アブストラクトには記載がありません（未確認）。',
     contributionEvidence: '焙煎ダークチョコレートでは、未焙煎品と比べて香りへの影響が大きい成分の一つとして原著アブストラクトに記載されています。',
     sourceIds: [A],
+    scopes: [{ side: 'chocolate', kindId: 'dark' }],
   },
   {
     id: 'acetic-acid', name: '酢酸', aliases: ['Acetic acid'],
@@ -85,7 +99,11 @@ export const compounds: Compound[] = [
     detectedIn: 'ダークチョコレート（未焙煎・焙煎の両方）',
     aromaKnowledge: '官能評価では「ビネガー（酢）」の香りとして評価項目に含まれていました。',
     contributionEvidence: '未焙煎・焙煎の両方で最も高い OAV を示し、未焙煎品でよりよく保持されていたと原著アブストラクトに記載されています。',
-    sourceIds: [A],
+    sourceIds: [A, 'afoakwa-2008-cocoa-flavour-review'],
+    scopes: [{ side: 'chocolate', kindId: 'dark' }],
+    tasteLinks: [
+      { taste: 'sour', evidence: '単体では酸味を呈します。発酵由来の有機酸がカカオ・チョコレートの酸味に関与することは総説で整理されていますが、個別の製品の酸味への寄与が実証された例は未確認です（一般的な知見）。香り（酢の香り）への寄与とは別に記録します。' },
+    ],
   },
   {
     id: 'indole', name: 'インドール', aliases: ['indole'],
@@ -95,6 +113,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: '総説（Zeng et al. 2025）では緑茶の栗様香りの寄与成分の一つに挙げられていますが、煎茶の原著（Kumazawa & Masuda 1999）では動物様の香りとして同定されており、文献で扱いが一致していないため、特定の香りへの紐づけはしていません。',
     contributionEvidence: 'Tan et al. 2019 で煎茶・玉露の主要香気成分として最高 FD値（27）を示しました（AEDA）。',
     sourceIds: ['tan-2019-japanese-green-tea', 'zeng-2025-tea-vocs'],
+    scopes: [{ side: 'tea', kindId: 'green' }],
   },
   {
     id: 'methional', name: 'メチオナール', aliases: ['methional'],
@@ -104,6 +123,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: '本アプリで確認した範囲（アブストラクト）では香りの記述は未確認です。',
     contributionEvidence: 'Tan et al. 2019 で煎茶の主要香気成分として最高 FD値（27）を示しました（AEDA）。',
     sourceIds: ['tan-2019-japanese-green-tea'],
+    scopes: [{ side: 'tea', kindId: 'green' }],
   },
   {
     id: 'nonanal', name: 'ノナナール', aliases: ['nonanal'],
@@ -113,6 +133,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: '本アプリで確認した範囲（アブストラクト）では香りの記述は未確認です。',
     contributionEvidence: 'Tan et al. 2019 で抹茶の主要香気成分として最も高い FD値（243）を示しました（AEDA）。',
     sourceIds: ['tan-2019-japanese-green-tea'],
+    scopes: [{ side: 'tea', kindId: 'green' }],
   },
   {
     id: 'diethyl-methylpyrazine', name: '2,3-ジエチル-5-メチルピラジン', aliases: ['2,3-diethyl-5-methylpyrazine'],
@@ -122,6 +143,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: 'ピラジン類は一般に焙煎様の香りと結びつきます。',
     contributionEvidence: 'Tan et al. 2019 でほうじ茶の主要香気成分として FD 243、近縁の 2,3-diethylpyrazine は FD 729 を示しました（AEDA）。',
     sourceIds: ['tan-2019-japanese-green-tea'],
+    scopes: [{ side: 'tea', kindId: 'green' }],
   },
   {
     id: 'delta-decalactone', name: 'δ-デカラクトン', aliases: ['δ-decalactone'],
@@ -131,6 +153,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: 'Schnermann & Schieberle 1997 は R体を甘い・桃様の香りと記述しています。',
     contributionEvidence: 'ミルクチョコレートの AEDA で高 FD値で同定（Schnermann & Schieberle 1997）。なお、鼻後香のクリーミーさ増強が実証されているのは、同族でも別化合物の δ-テトラデカラクトンであり、本化合物自体の寄与ではありません（Samfaß et al. 2021）。',
     sourceIds: ['schnermann-1997-milk-chocolate', 'samfass-2021-crumb-chocolate-lactones'],
+    scopes: [{ side: 'chocolate', kindId: 'milk' }],
   },
   {
     id: 'methyl-heptenone', name: '5-メチル-(E)-2-ヘプテン-4-オン', aliases: ['5-methyl-(E)-2-hepten-4-one'],
@@ -140,6 +163,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: 'Schnermann & Schieberle 1997 の記述に基づきます。',
     contributionEvidence: 'ミルクチョコレートの AEDA で高 FD値の香気活性化合物として同定されました。',
     sourceIds: ['schnermann-1997-milk-chocolate'],
+    scopes: [{ side: 'chocolate', kindId: 'milk' }],
   },
   {
     id: 'nerolidol', name: '(E)-ネロリドール', aliases: ['(E)-nerolidol'],
@@ -149,6 +173,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: '総説（Zeng et al. 2025）は烏龍茶の花様・果実様の香りの寄与成分に挙げています。',
     contributionEvidence: '鳳凰単叢の香型識別で重要な成分に挙げられています（Li & Wang 2020）。',
     sourceIds: ['zeng-2025-tea-vocs', 'li-wang-2020-dancong-types'],
+    scopes: [{ side: 'tea', kindId: 'oolong' }],
   },
   {
     id: 'alpha-ionone', name: 'α-イオノン', aliases: ['α-ionone'],
@@ -158,6 +183,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: '本アプリで確認した範囲（アブストラクト）では香りの記述は未確認です。',
     contributionEvidence: '鳳凰単叢のカップアロマの主要香気成分として GC-O 強度3以上で同定され、再構成実験で検証されました（Kun et al. 2025）。',
     sourceIds: ['kun-2025-dancong-cup-aroma'],
+    scopes: [{ side: 'tea', kindId: 'oolong' }],
   },
   {
     id: 'beta-damascenone', name: 'β-ダマセノン', aliases: ['β-damascenone'],
@@ -167,6 +193,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: 'Kumazawa & Masuda 1999 で、蜂蜜様の香りをもつ強力な香気成分として同定されています。煎茶の「蜂蜜」ノートに寄与します。',
     contributionEvidence: '煎茶の AEDA で最も高い FD値を示した成分群の一つです（FD 10–5000 の範囲で評価）。',
     sourceIds: ['kumazawa-1999-sencha-odorants'],
+    scopes: [{ side: 'tea', kindId: 'green' }],
   },
   {
     id: 'methyl-jasmonate', name: '(Z)-ジャスモン酸メチル', aliases: ['(Z)-methyl jasmonate'],
@@ -176,6 +203,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: 'Kumazawa & Masuda 1999 で、花様の香りをもつ強力な香気成分として同定されています。煎茶の「花全般」ノートに寄与します。',
     contributionEvidence: '煎茶の AEDA で最も高い FD値を示した成分群の一つです。',
     sourceIds: ['kumazawa-1999-sencha-odorants'],
+    scopes: [{ side: 'tea', kindId: 'green' }],
   },
   {
     id: 'octenone', name: '1-オクテン-3-オン', aliases: ['1-octen-3-one'],
@@ -185,6 +213,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: 'Schnermann & Schieberle 1997 で、キノコ様の香りをもつ香気活性化合物として同定されています。',
     contributionEvidence: 'ミルクチョコレートの AEDA で高 FD値で同定されました。',
     sourceIds: ['schnermann-1997-milk-chocolate'],
+    scopes: [{ side: 'chocolate', kindId: 'milk' }],
   },
   {
     id: 'ethyl-3-6-dimethylpyrazine', name: '2-エチル-3,6-ジメチルピラジン', aliases: ['2-ethyl-3,6-dimethylpyrazine'],
@@ -194,6 +223,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: 'Schnermann & Schieberle 1997 で、ナッツ様・土様の香りをもつ化合物として挙げられています。ミルクチョコレートの「木の実全般」ノートに寄与します。',
     contributionEvidence: 'ミルクチョコレートの AEDA で高 FD値の香気活性化合物として同定されました。',
     sourceIds: ['schnermann-1997-milk-chocolate'],
+    scopes: [{ side: 'chocolate', kindId: 'milk' }],
   },
   {
     id: 'methyl-anthranilate', name: 'アントラニル酸メチル', aliases: ['Methyl anthranilate'],
@@ -203,6 +233,7 @@ export const compounds: Compound[] = [
     aromaKnowledge: '煎茶の AEDA 研究では、そうふう の果実様の香りの主要因とされています（水上・松永 2012）。',
     contributionEvidence: 'そうふう の香気抽出物から、供試した他の品種には見られないピークとして同定され、品種特異的な香りの原因成分と結論づけられました（Sawai et al. 2004）。花粉親の静印雑131 から受け継がれた形質です。',
     sourceIds: ['sawai-2004-sofu-methyl-anthranilate', 'mizukami-2012-sofu-yabukita-aeda'],
+    scopes: [{ side: 'tea', kindId: 'green' }],
   },
   {
     id: 'egcg3me', name: 'EGCG3″Me（O-メチル化カテキン）', aliases: ['EGCG3″Me', '(-)-epigallocatechin-3-O-(3-O-methyl)gallate', 'O-メチル化EGCG'],
@@ -212,6 +243,418 @@ export const compounds: Compound[] = [
     aromaKnowledge: '香りへの寄与を示す知見は確認していません。紅茶に加工するとポリフェノール酸化酵素により消失します。',
     contributionEvidence: '香味への寄与の根拠はありません。ここに記録するのは「多く含む」という含有の事実のみです（Maeda-Yamamoto et al. 2007/2012）。',
     sourceIds: ['maeda-yamamoto-2007-benifuuki', 'maeda-yamamoto-2012-benifuuki'],
+    scopes: [{ side: 'tea', kindId: 'green' }],
+  },
+  // ===== 白茶の香気成分（Chen et al. 2020 / Raza et al. 2025、2026-10-30 追加）=====
+  {
+    id: 'hexanal', name: 'ヘキサナール', aliases: ['Hexanal'],
+    noteIds: ['green-leaf'],
+    plainDescription: '草を刈ったときのような、青い香りのもとになる成分です。',
+    detectedIn: '白茶（福建産の白毫銀針・白牡丹・寿眉、雲南産白茶）',
+    aromaKnowledge: '成分そのものは「草様・脂肪様」と記述されています。雲南白茶の官能評価では「刈りたての草（Grassy/fresh leaves）」の香りの参照標準そのものにヘキサナールが使われました（Raza et al. 2025）。',
+    contributionEvidence: '白茶で GC-O により香気活性が確認され、多変量解析（PLS-DA, VIP>1）との共通集合として14の主要香気成分の一つに選ばれました（Chen et al. 2020）。雲南白茶でも GC×GC-O-MS で香気活性が確認され r-OAV が算出されています（試料により変動）（Raza et al. 2025）。',
+    sourceIds: [CHEN, RAZA],
+    scopes: [{ side: 'tea', kindId: 'white' }],
+  },
+  {
+    id: 'beta-ionone', name: 'β-イオノン', aliases: ['(E)-β-Ionone', 'trans-β-Ionone'],
+    noteIds: ['orchid'],
+    plainDescription: 'カロテノイドから生まれる成分で、すみれのような花の香りと結びつけて語られることが多い成分です。',
+    detectedIn: '白茶（白毫銀針・白牡丹・寿眉、雲南産白茶）',
+    aromaKnowledge: '単体ではすみれ様の花香が代表的な記述です。ただし感じられる香りは濃度や試料で変わります。白茶の研究では木質の香りは示されませんでした（Chen et al. 2020）。同論文は普洱（黒）茶では低閾値の木質フレーバー寄与成分として既報があると紹介していますが、本アプリでは黒茶の「木・樹皮」への寄与としては扱いません。',
+    contributionEvidence: '白茶で GC-O の香気活性が確認され、白茶3亜型の香気特性を分ける6つの主要オドラントの一つに選ばれました（白牡丹・寿眉で強い香気強度）（Chen et al. 2020）。雲南白茶でも GC-O で検出され r-OAV の算出対象となりましたが、r-OAV が1未満の試料もあり、寄与は試料で大きく変わります（Raza et al. 2025）。',
+    sourceIds: [CHEN, RAZA],
+    scopes: [{ side: 'tea', kindId: 'white' }],
+  },
+  {
+    id: '2-phenylethanol', name: 'フェニルエチルアルコール', aliases: ['2-Phenylethanol', 'Phenylethyl alcohol'],
+    noteIds: ['rose', 'floral-general'],
+    plainDescription: 'バラのような花の香りのもとになる成分です。',
+    detectedIn: '白茶（相対含量が高く、ベンズアルデヒドに次ぐ水準）',
+    aromaKnowledge: '「花様で甘い香り」（Chen et al. 2020）、「ワックス様でバラ様」（Raza et al. 2025）と記述されています。',
+    contributionEvidence: '白茶で GC-O の最高水準の香気強度を示し（白毫銀針で 2.6–2.8、白牡丹でも上位）、3亜型の香気特性を分ける6つの主要オドラントの一つです。含量と香気強度の変動傾向が亜型間で一致した成分の一つでもあります（Chen et al. 2020）。雲南白茶でも高い r-OAV 群に含まれます（Raza et al. 2025）。',
+    sourceIds: [CHEN, RAZA],
+    scopes: [{ side: 'tea', kindId: 'white' }],
+  },
+  {
+    id: 'gamma-nonalactone', name: 'γ-ノナラクトン', aliases: ['γ-Nonalactone'],
+    noteIds: ['cream'],
+    plainDescription: '甘くクリームのような香りのもとになる成分（ラクトン類）です。',
+    detectedIn: '白茶（白毫銀針・白牡丹で検出。寿眉では GC-O で嗅ぎ取られなかった）',
+    aromaKnowledge: '「甘くクリーム様の香り」と記述されています（Chen et al. 2020）。',
+    contributionEvidence: '白茶で GC-O の香気活性が確認され、白毫銀針・白牡丹の香気品質に関わる6つの主要オドラントの一つに選ばれました（Chen et al. 2020）。',
+    sourceIds: [CHEN],
+    scopes: [{ side: 'tea', kindId: 'white' }],
+  },
+  {
+    id: 'cis-3-hexenal', name: '(Z)-3-ヘキセナール', aliases: ['(Z)-3-Hexenal'],
+    noteIds: ['green-leaf'],
+    plainDescription: '葉の青い香りのもとになる成分です。',
+    detectedIn: '白茶（雲南産白茶16種）',
+    aromaKnowledge: 'GC-O では「緑・葉様（Green and leafy）」と記述されています（Raza et al. 2025）。',
+    contributionEvidence: '雲南白茶で GC×GC-O-MS により同定と香気活性の確認がされ、ヘキサナール・ヘプタナール等と並んで白茶の緑の香りに寄与するアルデヒド類の一つとして総括されています（Raza et al. 2025）。',
+    sourceIds: [RAZA],
+    scopes: [{ side: 'tea', kindId: 'white' }],
+  },
+  {
+    id: 'trans-2-hexenal', name: '(E)-2-ヘキセナール', aliases: ['(E)-2-Hexenal'],
+    noteIds: ['green-leaf', 'fruit-general'],
+    plainDescription: '青い葉やりんごを思わせる香りの成分です。',
+    detectedIn: '白茶（相対含量が高く上位成分の一つ。寿眉の特徴的な香気組成の候補）',
+    aromaKnowledge: 'GC-O では「りんご様・緑（Apple-like and green）」と記述されています（Raza et al. 2025）。',
+    contributionEvidence: '雲南白茶で GC×GC-O-MS により香気活性が確認されています（Raza et al. 2025）。福建産白茶では検出と含量の記録が中心で、寄与の程度は試料によります（Chen et al. 2020）。',
+    sourceIds: [CHEN, RAZA],
+    scopes: [{ side: 'tea', kindId: 'white' }],
+  },
+  {
+    id: 'heptanal', name: 'ヘプタナール', aliases: ['Heptanal'],
+    noteIds: ['herb', 'green-leaf'],
+    plainDescription: '緑の葉やハーブを思わせる香りの成分です。',
+    detectedIn: '白茶（雲南産白茶16種）',
+    aromaKnowledge: 'GC-O では「緑・ハーブ様（Green and herbal）」と記述されています（Raza et al. 2025）。',
+    contributionEvidence: '雲南白茶で GC×GC-O-MS により同定と香気活性の確認がされ、白茶の緑の香りに寄与するアルデヒド類の一つとして総括されています。個別の強度の詳細確認は限定的です（Raza et al. 2025）。',
+    sourceIds: [RAZA],
+    scopes: [{ side: 'tea', kindId: 'white' }],
+  },
+  {
+    id: '1-octen-3-ol', name: '1-オクテン-3-オール', aliases: ['1-Octen-3-ol'],
+    noteIds: ['mushroom', 'earth'],
+    plainDescription: 'きのこのような香りのもとになる成分です。名前の似た 1-オクテン-3-オン（ケトン）とは別の化合物です。',
+    detectedIn: '白茶（雲南産白茶、福建産白茶の寿眉）',
+    aromaKnowledge: 'GC-O では「きのこ様・土様（Mushroom-like and earthy）」と記述されています（Raza et al. 2025）。',
+    contributionEvidence: '雲南白茶で GC×GC-O-MS により同定され、r-OAV は圧縮白茶で 1704 と最高値を示すなど試料により大きく変動しつつ香気活性が確認されました（Raza et al. 2025）。福建産白茶（寿眉）の GC-O でも香気強度 3.0–3.2 の群に含まれます（Chen et al. 2020）。',
+    sourceIds: [RAZA, CHEN],
+    scopes: [{ side: 'tea', kindId: 'white' }],
+  },
+  {
+    id: '2-pentylfuran', name: '2-ペンチルフラン', aliases: ['2-Pentylfuran'],
+    noteIds: ['green-vegetable'],
+    plainDescription: '豆や青い野菜を思わせる香りの成分です。',
+    detectedIn: '白茶（相対含量 47.0‰ と上位）',
+    aromaKnowledge: 'GC-O では「豆様・野菜様（Beany and vegetable-like）」と記述されています（Raza et al. 2025）。',
+    contributionEvidence: '雲南白茶で r-OAV が算出され、圧縮白茶で最高 431、最低の試料では 7 と、製法によって寄与の大きさが大きく変わることが示されています（Raza et al. 2025）。福建産白茶では検出と含量が記録されています（Chen et al. 2020）。',
+    sourceIds: [RAZA, CHEN],
+    scopes: [{ side: 'tea', kindId: 'white' }],
+  },
+  {
+    id: 'furfural', name: 'フルフラール', aliases: ['Furfural'],
+    noteIds: ['wood', 'caramelized'],
+    plainDescription: '甘く木を思わせる香りの成分です。糖の加熱などでも生じます。',
+    detectedIn: '白茶（雲南産白茶16種）',
+    aromaKnowledge: 'GC-O では「甘く木質様（Sweet and woody）」と記述されています（Raza et al. 2025）。',
+    contributionEvidence: '雲南白茶で GC×GC-O-MS により同定と香気活性の確認がされ、「繊細な甘い香りのノートを加えるアルデヒド」の一つとして総括されています。白茶はメイラード反応生成物に乏しい茶類であり、含量・寄与は限定的とみるべきものです。焙煎したお茶やチョコレートでの寄与は、確認した範囲では未確認です（Raza et al. 2025）。',
+    sourceIds: [RAZA],
+    scopes: [{ side: 'tea', kindId: 'white' }],
+  },
+  // ===== ダークチョコレートの香気成分（Deuscher et al. 2020 等、2026-10-30 追加）=====
+  {
+    id: '2-methylbutanal', name: '2-メチルブタナール', aliases: ['2-Methylbutanal'],
+    noteIds: ['cacao', 'malt'],
+    plainDescription: 'カカオやチョコレートの香りのもとになる成分（ストレッカーアルデヒド）です。',
+    detectedIn: 'ダークチョコレート（カカオ65%、同一標準製法の12試料）',
+    aromaKnowledge: 'GC-O パネルでは「カカオ・チョコレート」と記述され、データベース記述は「カカオ・ナッツ様」です（Deuscher et al. 2020）。',
+    contributionEvidence: '官能特性の異なるダークチョコレート12試料の GC-O（検出頻度分析 cDFA、パネル12名）で主要オドラントとして同定され、3-メチルブタナールと並んで「特徴的なカカオ・チョコレートの香り」と明記されています（Deuscher et al. 2020）。',
+    sourceIds: [DEUS],
+    scopes: [{ side: 'chocolate', kindId: 'dark' }],
+  },
+  {
+    id: '2-5-dimethylpyrazine', name: '2,5-ジメチルピラジン', aliases: ['2,5-Dimethylpyrazine'],
+    noteIds: ['toast', 'cacao'],
+    plainDescription: '焙煎したような香ばしい香りの成分（ピラジン類）です。名前の似た他のピラジン類とは別の化合物です。',
+    detectedIn: 'ダークチョコレート（カカオ65%、同一標準製法の12試料）',
+    aromaKnowledge: 'GC-O では「焙煎・チョコレート様」と記述され、データベース記述は「カカオ・焙煎ナッツ様」です（Deuscher et al. 2020）。',
+    contributionEvidence: 'ダークチョコレートの試料群を分ける判別力のある主要オドラント（discriminant key odorant）として GC-O で同定され、「既にダークチョコレートの主要オドラントとして確立」と本文に記されています（Deuscher et al. 2020）。',
+    sourceIds: [DEUS],
+    scopes: [{ side: 'chocolate', kindId: 'dark' }],
+  },
+  {
+    id: 'furaneol', name: 'フラネオール', aliases: ['Furaneol', '4-Hydroxy-2,5-dimethyl-3(2H)-furanone', 'HDMF'],
+    noteIds: ['caramel', 'berry'],
+    plainDescription: 'キャラメルやいちごのような甘い香りの成分です。「フラネオール」は通称で、学術名は 4-ヒドロキシ-2,5-ジメチル-3(2H)-フラノンです。',
+    detectedIn: 'ダークチョコレート、ミルクチョコレート',
+    aromaKnowledge: 'GC-O では「キャラメル・いちご様」と記述されています（Deuscher et al. 2020）。',
+    contributionEvidence: 'ダークチョコレートで主要香気成分（key aroma）として GC-O で同定され、試料群を分ける判別オドラントの一つです（Deuscher et al. 2020）。ミルクチョコレートでも AEDA で主要オドラントとして同定されたことが、総説の表で確認できます（Schnermann & Schieberle 1997、Afoakwa et al. 2008 経由の確認）。',
+    sourceIds: [DEUS, 'schnermann-1997-milk-chocolate', 'afoakwa-2008-cocoa-flavour-review'],
+    scopes: [{ side: 'chocolate', kindId: 'dark' }, { side: 'chocolate', kindId: 'milk' }],
+  },
+  {
+    id: 'sotolon', name: 'ソトロン', aliases: ['Sotolon', '3-Hydroxy-4,5-dimethyl-2(5H)-furanone'],
+    noteIds: ['warm-spice', 'caramel'],
+    plainDescription: 'メープルシロップや調味料を思わせる、強く甘い香りの成分です。',
+    detectedIn: 'ミルクチョコレート（酸性揮発分）',
+    aromaKnowledge: '総説の表では「調味料様・スパイシー」と記述されています（Afoakwa et al. 2008）。成分そのものはフェヌグリーク／メープル様の強い香りで知られます。',
+    contributionEvidence: 'ミルクチョコレートの AEDA で香気活性が確認され、最も高い香気強度を示した成分の一つと総説が整理しています。ただしこの位置づけは総説（Afoakwa et al. 2008）経由の確認であり、原著（Schnermann & Schieberle 1997）の要旨で確認できる最高FD群には含まれていなかったため、寄与の強さの順位付けには使いません。',
+    sourceIds: ['afoakwa-2008-cocoa-flavour-review', 'schnermann-1997-milk-chocolate'],
+    scopes: [{ side: 'chocolate', kindId: 'milk' }],
+  },
+  {
+    id: 'trans-2-nonenal', name: '(E)-2-ノネナール', aliases: ['(E)-2-Nonenal'],
+    noteIds: ['green-leaf', 'green-vegetable'],
+    plainDescription: '脂肪のような、緑の香りの成分です。',
+    detectedIn: '白茶（白毫銀針）',
+    aromaKnowledge: '白茶の研究文脈では緑の香りに関連します。具体的な香りの言葉は、確認した出典の範囲では限定的です。',
+    contributionEvidence: '福建産白茶の GC-O で、白毫銀針において最高の香気強度（3.0）を示した成分の一つです。ただし白茶での役割は補助的で、香気特性を分ける主要6オドラントには含まれていません（Chen et al. 2020）。',
+    sourceIds: [CHEN],
+    scopes: [{ side: 'tea', kindId: 'white' }],
+  },
+  {
+    id: 'cis-3-hexenyl-butyrate', name: 'cis-3-ヘキセニルブチレート', aliases: ['cis-3-Hexenyl butyrate'],
+    noteIds: ['herb', 'green-leaf'],
+    plainDescription: 'ハーブのような新鮮な香りの成分（エステル類）です。',
+    detectedIn: '白茶（寿眉）',
+    aromaKnowledge: '「ハーブ様・新鮮な香り」と記述されています（Chen et al. 2020）。',
+    contributionEvidence: '福建産白茶で寿眉のみに GC-O で検出され、含量・強度とも寿眉で有意に高く、寿眉の香気特性を担う主要オドラントの一つに選ばれました（Chen et al. 2020）。',
+    sourceIds: [CHEN],
+    scopes: [{ side: 'tea', kindId: 'white' }],
+  },
+  {
+    id: 'trans-linalool-oxide', name: 'trans-リナロールオキシド（フラノイド）', aliases: ['trans-Linalool oxide (furanoid)'],
+    noteIds: ['floral-general'],
+    plainDescription: 'リナロールから生まれる、花の香りの成分です。',
+    detectedIn: '白茶（白毫銀針・白牡丹・寿眉、雲南産白茶）',
+    aromaKnowledge: '(E)-体は「花様」、(Z)-体は「土様・花様」と記述されています（Raza et al. 2025）。',
+    contributionEvidence: '福建産白茶で、香気特性を分ける6つの主要オドラントの一つに選ばれました（寿眉で含量・強度が高い）（Chen et al. 2020）。雲南白茶でも同定と香気活性の確認がされています（Raza et al. 2025）。',
+    sourceIds: [CHEN, RAZA],
+    scopes: [{ side: 'tea', kindId: 'white' }],
+  },
+  // ===== 呈味成分（お茶）2026-10-30 追加。香気成分とは分け、tasteLinks で味覚項目に対応付ける =====
+  {
+    id: 'caffeine', name: 'カフェイン', aliases: ['Caffeine'],
+    noteIds: [],
+    plainDescription: 'お茶やカカオに含まれる、苦味のもとになる成分（アルカロイド）です。香りの成分ではありません。',
+    detectedIn: 'お茶全般、紅茶浸出液、焙煎カカオニブ',
+    aromaKnowledge: '香りへの寄与ではなく、味（苦味）との関連だけを記録します。',
+    contributionEvidence: '紅茶浸出液では、呈味候補51化合物の定量と再構成・除去（オミッション）実験で、苦味の主要呈味化合物として確認されました（Scharbert & Hofmann 2005）。焙煎カカオニブでも、苦味に寄与するアルカロイドとして定量・官能実験で確認されています（Stark et al. 2006）。苦味の感じ方は共存する甘味などの影響を受けるため、カフェインの量だけで個別商品の苦味は決まりません。',
+    sourceIds: ['scharbert-2005-black-tea-taste', 'stark-2006-cocoa-nibs-taste', 'zhang-2020-tea-chemistry-taste'],
+    scopes: [{ side: 'tea', kindId: 'black' }, { side: 'cacao' }],
+    tasteLinks: [
+      { taste: 'bitter', evidence: '単体でも苦味を呈する代表的な苦味物質です（総説による整理）。紅茶浸出液では再構成・除去実験で苦味の主要呈味化合物として実証され、焙煎カカオニブでも苦味への寄与が確認されています。' },
+    ],
+  },
+  {
+    id: 'gallate-catechins', name: 'ガレート型カテキン類', aliases: ['Gallate-type catechins', 'EGCG', 'ECG'],
+    noteIds: [],
+    plainDescription: 'お茶の渋みと苦味のもとになるポリフェノールの一群です。ガロイル基を持つカテキン（EGCG、ECGなど）を指します。',
+    detectedIn: 'お茶全般、紅茶浸出液',
+    aromaKnowledge: '香りへの寄与ではなく、味（渋味・苦味）との関連だけを記録します。',
+    contributionEvidence: '紅茶浸出液の再構成・除去実験で、カテキン類・EGCG が渋みの主要寄与成分群に含まれることが確認されました（Scharbert & Hofmann 2005）。被覆・酸化・焙煎・発酵で苦味・渋みが低下する方向にあることも総説で整理されています（Ye et al. 2022）。',
+    sourceIds: ['scharbert-2005-black-tea-taste', 'zhang-2020-tea-chemistry-taste', 'ye-2022-bitterness-astringency'],
+    scopes: [{ side: 'tea', kindId: 'black' }, { side: 'tea' }],
+    tasteLinks: [
+      { taste: 'astringent', evidence: 'ガロイル化カテキンは収れん性（渋味）が強いことが知られ、紅茶浸出液では再構成・除去実験で渋みの主要寄与成分群として実証されています。' },
+      { taste: 'bitter', evidence: '苦味も呈することが単体の知見・総説で整理されています。紅茶での寄与の実証は渋みほど明確ではありません。' },
+    ],
+  },
+  {
+    id: 'non-gallate-catechins', name: '非ガレート型カテキン類', aliases: ['Non-gallate catechins', 'EC', 'EGC'],
+    noteIds: [],
+    plainDescription: 'ガロイル基を持たないカテキン（EC、EGCなど）の一群です。お茶の苦味に関わるとされます。',
+    detectedIn: 'お茶全般',
+    aromaKnowledge: '香りへの寄与ではなく、味（苦味・渋味）との関連だけを記録します。',
+    contributionEvidence: '苦味への寄与は総説による整理の範囲であり、個別のお茶試料で寄与が実証された例は、確認した範囲では未確認です（一般的な知見）。ガレート型より収れん性は弱いという対比も総説レベルの知見です。',
+    sourceIds: ['zhang-2020-tea-chemistry-taste'],
+    scopes: [{ side: 'tea' }],
+    tasteLinks: [
+      { taste: 'bitter', evidence: '総説では苦味側の寄与として整理されています。一般的な知見の区分で、個別試料での寄与の実証は未確認です。' },
+      { taste: 'astringent', evidence: '収れん性も持つとされますが、ガレート型より弱いという総説レベルの対比にとどまります。' },
+    ],
+  },
+  {
+    id: 'flavonol-glycosides', name: 'フラボノール配糖体', aliases: ['Flavonol glycosides'],
+    noteIds: [],
+    plainDescription: 'ケルセチンやケンフェロールに糖がついた成分の一群です。お茶の渋み（口に残る収れん感）に関わります。',
+    detectedIn: '紅茶浸出液、お茶全般',
+    aromaKnowledge: '香りへの寄与ではなく、味（渋味）との関連だけを記録します。',
+    contributionEvidence: '紅茶浸出液の再構成・除去実験で、口に残るベルベット様の収れん（渋み）の主要寄与群として確認されました。カテキン類とは別の渋み寄与の経路です（Scharbert & Hofmann 2005）。総説でも渋みの主要因として整理されています（Zhang et al. 2020）。',
+    sourceIds: ['scharbert-2005-black-tea-taste', 'zhang-2020-tea-chemistry-taste'],
+    scopes: [{ side: 'tea', kindId: 'black' }],
+    tasteLinks: [
+      { taste: 'astringent', evidence: '紅茶浸出液で、再構成・除去実験により渋みの主要寄与群として実証されています。' },
+    ],
+  },
+  {
+    id: 'theaflavins', name: 'テアフラビン類', aliases: ['Theaflavins'],
+    noteIds: [],
+    plainDescription: '紅茶の発酵（酵素酸化）で生まれる色素成分の一群です。口にまとわりつくような渋みに関わります。',
+    detectedIn: '紅茶浸出液',
+    aromaKnowledge: '香りへの寄与ではなく、味（渋味）との関連だけを記録します。',
+    contributionEvidence: 'カテキン類よりはるかに低い渋み閾値を持ち、口にまとわりつく持続性の渋みを与えることが示されています（Scharbert et al. 2004）。ただし再構成研究（Scharbert & Hofmann 2005）では主要呈味化合物には含まれておらず、「閾値が低い＝実際の寄与が大きい」とは限りません。両方の知見を併記します。',
+    sourceIds: ['scharbert-2004-theaflavins', 'scharbert-2005-black-tea-taste'],
+    scopes: [{ side: 'tea', kindId: 'black' }],
+    tasteLinks: [
+      { taste: 'astringent', evidence: '渋みの閾値がカテキン類よりはるかに低いことが示されています。ただし実際の浸出液での寄与の大きさについては、研究間で位置づけが異なります。' },
+    ],
+  },
+  {
+    id: 'l-theanine', name: 'L-テアニン', aliases: ['L-Theanine'],
+    noteIds: [],
+    plainDescription: 'お茶に特徴的なアミノ酸で、うま味を支える成分です。',
+    detectedIn: 'お茶全般（寄与の研究試料は高級抹茶）',
+    aromaKnowledge: '香りへの寄与ではなく、味（うま味）との関連だけを記録します。',
+    contributionEvidence: '高級抹茶を対象に、活性誘導型分画とヒト官能試験で、うま味を増強する成分の一つとして同定されました（コハク酸、没食子酸、テオガリンと併せて）（Kaneko et al. 2006）。試料は高級抹茶であり、煎茶・玉露への直接の適用はできません。総説では茶のうま味の中心的な成分として整理されています（Zhang et al. 2020）。',
+    sourceIds: ['kaneko-2006-matcha-umami', 'zhang-2020-tea-chemistry-taste'],
+    scopes: [{ side: 'tea', kindId: 'green' }],
+    tasteLinks: [
+      { taste: 'umami', evidence: '単体でもうま味・甘みを伴う呈味を持ちます。高級抹茶では官能試験でうま味増強成分として実証されています（抹茶以外の茶類への直接の適用はできません）。' },
+    ],
+  },
+  {
+    id: 'glutamic-acid', name: 'グルタミン酸', aliases: ['L-Glutamic acid'],
+    noteIds: [],
+    plainDescription: 'うま味の代表的な物質として知られるアミノ酸です。',
+    detectedIn: 'お茶全般（遊離アミノ酸として）',
+    aromaKnowledge: '香りへの寄与ではなく、味（うま味）との関連だけを記録します。',
+    contributionEvidence: 'グルタミン酸（塩）のうま味そのものは確立した知見です。ただしお茶のうま味への寄与は、遊離アミノ酸組成との相関として総説レベルで整理される範囲であり、個別のお茶試料で主要な寄与が実証された例は、確認した範囲では未確認です。抹茶の原著で同定された主要なうま味（増強）成分はテアニン・コハク酸・没食子酸・テオガリンであり、「お茶のうま味＝グルタミン酸」とは表示しません。',
+    sourceIds: ['zhang-2020-tea-chemistry-taste'],
+    scopes: [{ side: 'tea' }],
+    tasteLinks: [
+      { taste: 'umami', evidence: '単体のうま味は確立していますが、お茶での主要な寄与は未確認です。一般的な知見からの推定としてのみ扱います。' },
+    ],
+  },
+  {
+    id: 'matcha-umami-enhancers', name: 'コハク酸・没食子酸・テオガリン', aliases: ['Succinic acid', 'Gallic acid', 'Theogallin'],
+    noteIds: [],
+    plainDescription: '高級抹茶で、うま味を増強する働きが確認された3つの成分です。',
+    detectedIn: '高級抹茶',
+    aromaKnowledge: '香りへの寄与ではなく、味（うま味の増強）との関連だけを記録します。',
+    contributionEvidence: '高級抹茶を対象に、活性誘導型分画とヒト官能試験で、L-テアニンと並んでうま味増強成分として同定されました（Kaneko et al. 2006）。対象は抹茶に限られます。',
+    sourceIds: ['kaneko-2006-matcha-umami'],
+    scopes: [{ side: 'tea', kindId: 'green' }],
+    tasteLinks: [
+      { taste: 'umami', evidence: '高級抹茶で、官能試験によりうま味増強成分として実証されています（抹茶限定の知見です）。' },
+    ],
+  },
+  {
+    id: 'tea-organic-acids', name: '有機酸類（お茶）', aliases: ['Organic acids in tea'],
+    noteIds: [],
+    plainDescription: 'クエン酸やリンゴ酸など、酸味のもとになる成分の一群です。',
+    detectedIn: 'お茶全般',
+    aromaKnowledge: '香りへの寄与ではなく、味（酸味）との関連だけを記録します。',
+    contributionEvidence: '有機酸が酸味を呈すること自体は基礎的な知見で、総説でも茶の酸味成分として整理されています。ただし個別のお茶試料で酸味への寄与が実証された例（除去・添加実験など）は、確認した範囲では未確認です（一般的な知見）。お茶は一般に酸味が前面に出る飲み物ではありません。',
+    sourceIds: ['zhang-2020-tea-chemistry-taste'],
+    scopes: [{ side: 'tea' }],
+    tasteLinks: [
+      { taste: 'sour', evidence: '単体では酸味を呈しますが、お茶での寄与は一般的な知見の区分で、個別試料での実証は未確認です。' },
+    ],
+  },
+  {
+    id: 'tea-soluble-sugars', name: '可溶性糖類（お茶）', aliases: ['Soluble sugars in tea'],
+    noteIds: [],
+    plainDescription: 'グルコースなど、お茶に溶けている糖の一群です。甘い後味に関わるとされます。',
+    detectedIn: 'お茶全般',
+    aromaKnowledge: '香りへの寄与ではなく、味（甘味）との関連だけを記録します。',
+    contributionEvidence: '総説では、緑茶の「甘い後味（回甘）」を含む甘味と、糖類・アミノ酸の関係が整理されています（Zhang et al. 2020）。祁門紅茶ではグルコース濃度と甘味評価の対応が報告されていますが、官能と機器測定の不一致も併記されており、寄与の実証としては扱いません（Moreira et al. 2024）。',
+    sourceIds: ['zhang-2020-tea-chemistry-taste', 'moreira-2024-tea-quality'],
+    scopes: [{ side: 'tea' }],
+    tasteLinks: [
+      { taste: 'sweet', evidence: 'お茶の甘味・甘い後味との関係が総説レベルで整理されています。一般的な知見の区分です。' },
+    ],
+  },
+  {
+    id: 'sweet-amino-acids', name: '甘味アミノ酸', aliases: ['Sweet amino acids'],
+    noteIds: [],
+    plainDescription: 'アラニン、グリシン、セリン、プロリンなど、単体では甘く感じるアミノ酸の一群です。',
+    detectedIn: 'お茶全般',
+    aromaKnowledge: '香りへの寄与ではなく、味（甘味）との関連だけを記録します。',
+    contributionEvidence: '単体では甘味を呈するアミノ酸として知られ、お茶の甘味への寄与は組成との相関レベルで言及されています（Moreira et al. 2024）。個別試料での寄与の実証は未確認です（一般的な知見）。',
+    sourceIds: ['moreira-2024-tea-quality'],
+    scopes: [{ side: 'tea' }],
+    tasteLinks: [
+      { taste: 'sweet', evidence: '単体では甘味を呈しますが、お茶での寄与は組成相関レベルの一般的な知見です。' },
+    ],
+  },
+  // ===== 呈味成分（チョコレート／カカオ）2026-10-30 追加。試料は原則として原料の焙煎カカオニブ（Stark et al. 2006）=====
+  // チョコレートの甘味は配合された糖によるもので、カカオ固有の「甘味成分」は登録しない（調査文書 C-7）。
+  {
+    id: 'theobromine', name: 'テオブロミン', aliases: ['Theobromine'],
+    noteIds: [],
+    plainDescription: 'カカオを特徴づける苦味の成分（アルカロイド）です。香りの成分ではありません。',
+    detectedIn: '焙煎カカオニブ（チョコレートの原料）',
+    aromaKnowledge: '香りへの寄与ではなく、味（苦味）との関連だけを記録します。',
+    contributionEvidence: '焙煎カカオニブで、苦味に寄与するアルカロイドの主成分として、定量と官能実験（用量反応）で確認されました（Stark et al. 2006）。試料は原料のニブであり、製品では糖や脂肪で苦味が抑えられるため、含有量から製品の苦味は直接決まりません。',
+    sourceIds: ['stark-2006-cocoa-nibs-taste'],
+    scopes: [{ side: 'cacao' }],
+    tasteLinks: [
+      { taste: 'bitter', evidence: '単体の苦味は確立した知見です。焙煎カカオニブでは苦味への寄与が定量・官能実験で実証されています（製品の苦味は配合に依存します）。' },
+    ],
+  },
+  {
+    id: 'diketopiperazines', name: 'ジケトピペラジン類', aliases: ['Diketopiperazines'],
+    noteIds: [],
+    plainDescription: 'カカオの焙煎で生まれる苦味の成分の一群です（アミノ酸・ペプチド由来の環状ジペプチド）。',
+    detectedIn: '焙煎カカオニブ',
+    aromaKnowledge: '香りへの寄与ではなく、味（苦味）との関連だけを記録します。',
+    contributionEvidence: '焙煎カカオニブで、焙煎により生成する苦味成分として定量・官能実験で同定されました（Stark et al. 2006）。焙煎条件で変動する成分であり、すべてのチョコレートで常に主要な苦味とは限りません。',
+    sourceIds: ['stark-2006-cocoa-nibs-taste'],
+    scopes: [{ side: 'cacao' }],
+    tasteLinks: [
+      { taste: 'bitter', evidence: '焙煎カカオニブで苦味への寄与が実証されています（焙煎条件で変動します）。' },
+    ],
+  },
+  {
+    id: 'flavan-3-ols', name: 'フラバン-3-オール類（カカオ）', aliases: ['Flavan-3-ols', 'Epicatechin', 'Procyanidins'],
+    noteIds: [],
+    plainDescription: 'エピカテキンやプロシアニジンなど、カカオのポリフェノールの一群です。苦味と渋みの両方に関わります。',
+    detectedIn: '焙煎カカオニブ',
+    aromaKnowledge: '香りへの寄与ではなく、味（苦味・渋味）との関連だけを記録します。',
+    contributionEvidence: '焙煎カカオニブで、苦味と渋みの両方への寄与が定量・官能実験で確認されました（Stark et al. 2006）。カカオの遺伝タイプごとのポリフェノール量の比較（Elwers et al. 2009）は組成の知見であり、官能への寄与の実証ではありません。系統の違いだけで味を断定する根拠にはしません。',
+    sourceIds: ['stark-2006-cocoa-nibs-taste', 'elwers-2009-cocoa-phenolics'],
+    scopes: [{ side: 'cacao' }],
+    tasteLinks: [
+      { taste: 'bitter', evidence: '焙煎カカオニブで苦味への寄与が実証されています。' },
+      { taste: 'astringent', evidence: '焙煎カカオニブで渋み（収れん感）への寄与が実証されています。' },
+    ],
+  },
+  {
+    id: 'n-phenylpropenoyl-amino-acids', name: 'N-フェニルプロペノイル-L-アミノ酸類', aliases: ['N-Phenylpropenoyl-L-amino acids'],
+    noteIds: [],
+    plainDescription: 'カカオに含まれる、渋み（収れん感）の成分の一群です。一般にはあまり知られていませんが、原著で寄与が確認されています。',
+    detectedIn: '焙煎カカオニブ',
+    aromaKnowledge: '香りへの寄与ではなく、味（渋味）との関連だけを記録します。',
+    contributionEvidence: '焙煎カカオニブで、渋みへの寄与成分として定量・官能実験で同定されました（Stark et al. 2006）。',
+    sourceIds: ['stark-2006-cocoa-nibs-taste'],
+    scopes: [{ side: 'cacao' }],
+    tasteLinks: [
+      { taste: 'astringent', evidence: '焙煎カカオニブで渋み（収れん感）への寄与が実証されています。' },
+    ],
   },
 ]
 export const compoundById = (id: string) => compounds.find((c) => c.id === id)
+
+/** 香味ノート → 関連成分（双方向探索の香味側）。 */
+export const compoundsForNote = (noteId: string) => compounds.filter((c) => c.noteIds.includes(noteId))
+/** 味覚項目 → 関連する呈味成分。 */
+export const compoundsForTaste = (taste: TasteKey) => compounds.filter((c) => c.tasteLinks?.some((l) => l.taste === taste))
+
+export interface CompoundContext { side: 'tea' | 'chocolate'; kindId: string; itemName: string }
+
+/** 成分の根拠が、表示中のアイテムに対してどの階層か。
+ *  1 = その茶類・種類の試料での研究例 / 2 = その食品全般（原料カカオ含む）の研究例 / 3 = 他の食品・茶類での研究例。
+ *  scopes が無い成分は 2（全般）として扱う。 */
+export function compoundTier(c: Compound, ctx: { side: 'tea' | 'chocolate'; kindId: string }): 1 | 2 | 3 {
+  if (!c.scopes || c.scopes.length === 0) return 2
+  let best: 1 | 2 | 3 = 3
+  for (const s of c.scopes) {
+    let t: 1 | 2 | 3 = 3
+    if (s.side === ctx.side) {
+      t = s.kindId === undefined ? 2 : s.kindId === ctx.kindId ? 1 : 3
+    } else if (s.side === 'cacao' && ctx.side === 'chocolate') {
+      t = 2
+    }
+    if (t < best) best = t
+  }
+  return best
+}
+
+/** 全香味ノートについて、対応成分の有無と出典の充足を一覧化する（自動検査・充足確認用）。 */
+export function noteCompoundCoverage() {
+  return flavorNotes.map((n) => {
+    const linked = compoundsForNote(n.id)
+    return {
+      noteId: n.id,
+      categoryId: n.categoryId,
+      compoundIds: linked.map((c) => c.id),
+      sourceIds: [...new Set(linked.flatMap((c) => c.sourceIds))],
+    }
+  })
+}

@@ -1,6 +1,7 @@
 import type { EntityFinding, EntityVerification, FindingKind, ScienceStatus, VerificationStatus } from '../types'
 import { compounds } from '../data/compounds'
 import { SourceLinks } from './SourceLinks'
+import { go } from '../nav'
 
 // 品種・系統エンティティ（TeaCultivar / Cacao*）の共通表示部品。
 // 品種・系統は香味プロファイル（ホイール・味覚グラフ）を持たないため、
@@ -44,7 +45,7 @@ export function FindingsList({ findings }: { findings: EntityFinding[] }) {
         const compound = f.compoundId ? compounds.find((c) => c.id === f.compoundId) : undefined
         return (
           <article className="temporal-card" key={i}>
-            <p><span className="badge">{FINDING_LABEL[f.kind]}</span>{compound && <> 関連成分：{compound.name}</>}</p>
+            <p><span className="badge">{FINDING_LABEL[f.kind]}</span>{compound && <> 関連成分：<button className="linklike" onClick={() => go(`compounds/${compound.id}`)}>{compound.name}の詳細を見る</button></>}</p>
             <p>{f.statement}</p>
             {f.conditions && <p className="note-small">条件・注意：{f.conditions}</p>}
             <SourceLinks ids={f.sourceIds} />

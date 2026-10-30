@@ -36,6 +36,21 @@ export interface FlavorProfile {
   temporal: { first: TemporalStage; middle: TemporalStage; finish: TemporalStage }
 }
 
+/** 呈味成分と味覚項目の対応。香気成分の noteIds とは分けて持ち、
+ *  evidence には根拠区分（単体の味の知見／試料での寄与実証／一般的推定）を文章で保持する。 */
+export interface CompoundTasteLink {
+  taste: TasteKey
+  evidence: string
+}
+
+/** 成分の根拠がどの範囲の試料に基づくか（階層表示用）。
+ *  kindId はお茶なら TeaKind.id（'white' 等）、チョコなら ChocolateKind（'dark' 等）。
+ *  kindId 省略は「その食品全般」。side 'cacao' は原料（ニブ等）の試料を指す。 */
+export interface CompoundScope {
+  side: 'tea' | 'chocolate' | 'cacao'
+  kindId?: string
+}
+
 export interface Compound {
   id: string
   name: string
@@ -46,6 +61,8 @@ export interface Compound {
   aromaKnowledge: string
   contributionEvidence: string
   sourceIds: string[]
+  tasteLinks?: CompoundTasteLink[]
+  scopes?: CompoundScope[]
 }
 
 export type TeaCategory = 'green' | 'white' | 'yellow' | 'oolong' | 'black' | 'dark'
