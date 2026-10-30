@@ -195,5 +195,23 @@ export const compounds: Compound[] = [
     contributionEvidence: 'ミルクチョコレートの AEDA で高 FD値の香気活性化合物として同定されました。',
     sourceIds: ['schnermann-1997-milk-chocolate'],
   },
+  {
+    id: 'methyl-anthranilate', name: 'アントラニル酸メチル', aliases: ['Methyl anthranilate'],
+    noteIds: ['fruit-general'],
+    plainDescription: 'ブドウや花を思わせる香りに関連付けられる成分です。日本の茶品種では、そうふう と藤かおり に特異的に含まれます。',
+    detectedIn: 'そうふう・藤かおり（煎茶）',
+    aromaKnowledge: '煎茶の AEDA 研究では、そうふう の果実様の香りの主要因とされています（水上・松永 2012）。',
+    contributionEvidence: 'そうふう の香気抽出物から、供試した他の品種には見られないピークとして同定され、品種特異的な香りの原因成分と結論づけられました（Sawai et al. 2004）。花粉親の静印雑131 から受け継がれた形質です。',
+    sourceIds: ['sawai-2004-sofu-methyl-anthranilate', 'mizukami-2012-sofu-yabukita-aeda'],
+  },
+  {
+    id: 'egcg3me', name: 'EGCG3″Me（O-メチル化カテキン）', aliases: ['EGCG3″Me', '(-)-epigallocatechin-3-O-(3-O-methyl)gallate', 'O-メチル化EGCG'],
+    noteIds: [],
+    plainDescription: 'カテキン類の一種で、べにふうき に多く含まれることが知られています。機能性成分として研究されている成分で、香りや味への寄与が確認されている成分ではありません。',
+    detectedIn: 'べにふうき（緑茶・半発酵茶として製造した場合）',
+    aromaKnowledge: '香りへの寄与を示す知見は確認していません。紅茶に加工するとポリフェノール酸化酵素により消失します。',
+    contributionEvidence: '香味への寄与の根拠はありません。ここに記録するのは「多く含む」という含有の事実のみです（Maeda-Yamamoto et al. 2007/2012）。',
+    sourceIds: ['maeda-yamamoto-2007-benifuuki', 'maeda-yamamoto-2012-benifuuki'],
+  },
 ]
 export const compoundById = (id: string) => compounds.find((c) => c.id === id)
