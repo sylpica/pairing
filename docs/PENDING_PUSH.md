@@ -1,9 +1,9 @@
 # GitHub反映 保留リスト
 
-最終更新: 2026-10-30 17:15
+最終更新: 2026-10-30 19:50
 
 ## 保留中
-- **公開サイト（Pages配信）への反映のみ保留中**。gh-pages ブランチへの再デプロイは 2026-10-30 16:52 に再度完了（最新ビルド index-Di_ddlxs.js、新ヘッド b9e5301、読み戻し確認済み）だが、17:13 時点でも公開URLは旧ビルド（index-DkkSoSa7.js）を配信し続け、新ビルドのJS（index-Di_ddlxs.js／前回 index-DNXOw2Cd.js）は 404。Pages 側の配信反映待ち／Pages ビルド側の問題かは未確認。次回リトライではまず Pages の配信状態と設定（Settings → Pages のソース）を確認すること。
+- **公開サイト（Pages配信）への反映のみ保留中**。19:37 リトライで診断を実施し、原因が確定した: **gh-pages への push 後に Pages のビルド／デプロイ自体が起動していない**（詳細は末尾「2026-10-30 19:37 公開反映リトライ結果（Pages診断付き）」節）。最新の成功デプロイは 2026-10-29 22:35 UTC のコミット 51aaeb5 が最後で、それ以降の gh-pages push（6f659ae／b9e5301／今回 f8521e0）には Pages 実行・デプロイが一切発生していない。今回 .nojekyll（空ファイル）を追加して再デプロイしたが、push 後約6分時点でも新規 Pages 実行はなく、公開URLは旧ビルド（index-DkkSoSa7.js）を配信継続、新JS index-Di_ddlxs.js は 404。次回は Settings → Pages のソース設定（build_type が legacy＝ブランチ方式か workflow か）を確認すること（API の /pages・/pages/builds は未認証では 404 で確認できず）。
 - main への反映は下記の通り全て完了（今回の sources.ts DOI欄修正を含む）。
 - 対応方針（ユーザー確定 2026-10-30）: GitHub Actions 方式へは切り替えず、段階的リトライ（テスト→型→ビルド→少しずつ反映→公開確認）を繰り返す。2026-10-30 10:37 のリトライが失敗した場合も、間隔を空けて再リトライを続ける（次回予定はその都度このチャットに記録する）。
 - デプロイ後に行う公開確認の項目: (a) 鳳凰単叢ホイールが花様・トロピカルの2ノート (b) お茶一覧が六大茶類順 (c) 成分一覧ページ (d) 抹茶の味覚表示 (e) 時間変化の推測バッジ表示。実機・375px幅の確認メモは docs/device-check-memo.md。
@@ -87,3 +87,13 @@
 - 段階3 デプロイ: gh-pages へ push-files 1コールで3ファイル（index.html＋新JS＋CSS）を一括反映。新ヘッド b9e5301。読み戻しで gh-pages の index.html が新JSを参照し、blob SHA（4b5e7b10…）がローカル dist と一致することを確認。旧JS群は push-files では削除できないため残存（現行 index.html からは未参照）。
 - 段階4 公開確認: **配信は切り替わっていない**。デプロイ後約20分（17:13）時点でも公開側の新JS index-Di_ddlxs.js は 404、公開URLは旧ビルド（index-DkkSoSa7.js）を配信継続。実ブラウザ確認でも新JS2種（Di_ddlxs／DNXOw2Cd）が「Page not found」、旧JSのみ取得可だった。したがって確認項目 (a) 鳳凰単叢ホイールの2ノート (b) お茶一覧の六大茶類順 (c) 成分一覧ページ (d) 抹茶の味覚表示 (e) 時間変化の推測（未検証）バッジ (f) 出典ページで「DOI: 」の空表示がないこと、はいずれも新ビルドでは未確認（項目別の実ブラウザ判定報告はブラウザタスク終了時に未着のため、次回確認に含める）。新バンドル側には (a)〜(f) の実装・データが含まれ、テスト 75/75 合格済み。
 - 次回: ユーザー方針どおり GitHub Actions 方式へは切り替えず、間隔を空けて再リトライする。gh-pages 側は最新ビルド反映済みのため、次回は公開配信の切替有無の確認を先行し、切り替わっていなければ Pages の配信状態・設定（Settings → Pages のソース、デプロイ履歴）の確認を深めること。
+
+## 2026-10-30 19:37 公開反映リトライ結果（ジョブ pairing-pages-verify-20261030-5、Pages診断付き）
+- 診断(a) gh-pages 現行ヘッド（診断開始時点）: b9e53018d9d1b2460756ad430ad5d89a0bd2efb3、コミット時刻 2026-10-30T07:51:59Z（16:51:59 JST）。index.html は新JS index-Di_ddlxs.js を参照（blob SHA 4b5e7b10…、ローカル dist と一致）。
+- 診断(b) Pages ビルド／デプロイ状態: **最新成功デプロイはコミット 51aaeb5bbdf1c244e978642c979dba093852cb9c**。deployments API（github-pages 環境）の最新は id 7425853476、作成 2026-10-29T22:34:50Z、状態 success（2026-10-29T22:35:05Z）。Actions の「pages build and deployment」実行は合計4件のみで、最新は run 40966893088（head_branch gh-pages、head_sha 51aaeb5、completed／success、2026-10-29T22:34:26Z 開始〜22:35:05Z 完了）。**それ以降の gh-pages push（6f659ae、b9e5301、および今回の f8521e0）に対応する Pages 実行・デプロイは存在しない。すなわち未反映の原因は「デプロイが起動していない」ことであり、ビルド失敗や Jekyll 処理失敗ではない**（失敗した実行自体が無い）。なお GET /repos/minkohno-hub/pairing/pages と /pages/builds は未認証アクセスでは 404（ブラウザ実地確認でも 404）で、Pages 設定（build_type／source）の直接確認はできず。
+- 診断(c) gh-pages ツリー: ルートには dist 相当（index.html、assets/）以外に main 由来のファイル群（.gitignore、README.md、package.json、package-lock.json、tsconfig.json、vite.config.ts、src/、docs/）が残存する（gh-pages は main のツリーに dist を重ねた構成）。assets/ には旧JSが累積（index-DkkSoSa7.js、index-DfFXJO8i.js、index-DNXOw2Cd.js、index-Di_ddlxs.js の4種＋CSS2種）。**.nojekyll は診断開始時点で存在しなかった**（今回追加した）。
+- 段階1 テスト: vitest run が EPERM なく完走し 75/75 全合格（9ファイル）。
+- 段階2 型・ビルド: `tsc --noEmit -p tsconfig.json` 通過（exit 0）。`npm run build` 完走し、前回と同一の決定的ビルド（dist/index.html 580B、assets/index-Di_ddlxs.js 482,310B、assets/index-MIaqlyXt.css 6,837B、0バイトなし）。
+- 段階3 デプロイ: dist に空ファイル .nojekyll を含め、gh-pages へ push-files 1コールで4ファイル（index.html＋.nojekyll＋新JS＋CSS）を一括反映。新ヘッド f8521e008752a30316a4760cd238ddba0ba5f47b。読み戻しで .nojekyll の存在（空ファイル SHA e69de29…）と index.html の新JS参照・SHA一致を確認。
+- 段階4 公開確認: **配信は今回も切り替わっていない**。push 後約6分（19:49 JST）時点でも Actions 実行は合計4件のまま（新規実行なし）、deployments 最新も 51aaeb5 のまま、公開側の新JS index-Di_ddlxs.js は 404、旧JS index-DkkSoSa7.js は 200 で配信継続。したがって確認項目 (a) 鳳凰単叢ホイールの2ノート (b) お茶一覧の六大茶類順 (c) 成分一覧ページ (d) 抹茶の味覚 (e) 推測（未検証）バッジ (f) 出典ページで DOI 空表示なし (g) 品種・系統の図鑑ページ (h) 白茶「青草・若葉」から成分を辿れる、はいずれも新ビルドでは未確認。新バンドル側には (a)〜(h) の実装・データが含まれることを文字列照合で確認済み（品種・系統／成分一覧／推測（未検証）／青草・若葉／「出典ページを開く」フォールバック等）で、テスト 75/75 合格済み。
+- 次回への申し送り: ユーザー方針どおり GitHub Actions 方式（deploy-pages 等）へは切り替えない。push 方式のまま間隔を空けて再リトライする。あわせて、Pages 実行が起動しない原因として Settings → Pages のソース設定（build_type）が変わっていないかを、認証付きで確認できる手段があれば確認すること（今回の未認証 API では確認できず）。gh-pages 側は .nojekyll 付き最新ビルド反映済み（f8521e0）のため、次回は公開配信の切替有無と Pages 実行の新規発生を先行確認すること。
