@@ -1,5 +1,9 @@
-import { useMemo, useState } from 'react'
-import type { TeaCultivar, TeaCultivarRank } from '../types'
+import { useMemo, useState, type ReactNode } from 'react'
+import type { ComboNote, TeaCultivar, TeaCultivarRank } from '../types'
+import { FLAVOR_FINDING_KINDS } from '../types'
+import ComboWheel from './ComboWheel'
+import { COMBO_BASIS_FROM_LABEL, COMBO_LEVEL_LABEL } from '../engine/combo'
+import { cultivarWheels, lineageWheels } from '../engine/entityWheel'
 import { teaCultivars, teaCultivarById, usesForCultivar } from '../data/cultivars'
 import {
   cacaoTraditionalGroups, cacaoGeneticGroups, cacaoClones,
@@ -14,6 +18,51 @@ import type { CacaoLayer } from '../engine/pairingContext'
 import { CACAO_LAYER_LABEL } from '../engine/pairingContext'
 
 const norm = (s: string) => s.toLowerCase().replace(/[\s　]/g, '').replace(/ヶ/g, 'ケ')
+
+// 品種・系統ページの組み合わせホイール。土台は組み合わせページ（第2層）と同じ
+// エンジンの結果で、対象固有の実測プロファイルではないことを冒頭で明示する。
+interface WheelTab {
+  key: string
+  label: string
+  notes: ComboNote[]
+  overallLevel: ComboNote['level']
+  footer: ReactNode
+}
+function EntityWheelTabs({ tabs }: { tabs: WheelTab[] }) {
+  const [idx, setIdx] = useState(0)
+  const [selNote, setSelNote] = useState<string | null>(null)
+  const tab = tabs[Math.min(idx, tabs.length - 1)]
+  if (!tab) return null
+  const note = tab.notes.find((n) => n.noteId === selNote) ?? null
+  return (
+    <div>
+      {tabs.length > 1 && (
+        <label className="filter-field">
+          <span className="filter-label">分類を選ぶ</span>
+          <select className="big-select" value={tab.key} aria-label="ホイールを表示する分類"
+            onChange={(e) => { const i = tabs.findIndex((t) => t.key === e.target.value); setIdx(i < 0 ? 0 : i); setSelNote(null) }}>
+            {tabs.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+          </select>
+        </label>
+      )}
+      <p><span className="badge">この組み合わせ全体の根拠：{COMBO_LEVEL_LABEL[tab.overallLevel]}</span></p>
+      <ComboWheel notes={tab.notes} onSelectNote={(id) => setSelNote(selNote === id ? null : id)} selectedNoteId={selNote} />
+      {note && (
+        <div className="temporal-card">
+          <h4>この香りの根拠</h4>
+          {note.basis.map((b, i) => (
+            <div key={i}>
+              <p><span className="badge">{COMBO_BASIS_FROM_LABEL[b.from]}</span></p>
+              <p>{b.text}</p>
+              <SourceLinks ids={b.sourceIds} />
+            </div>
+          ))}
+        </div>
+      )}
+      {tab.footer}
+    </div>
+  )
+}
 function matchesAny(query: string, names: string[]) {
   if (!query.trim()) return true
   const q = norm(query)
@@ -121,6 +170,27 @@ export function CultivarsPage() {
   )
 }
 
+function CultivarWheelSection({ cultivarId, cultivarName }: { cultivarId: string; cultivarName: string }) {
+  const wheels = useMemo(() => cultivarWheels(cultivarId), [cultivarId])
+  if (wheels.length === 0) return null
+  const tabs: WheelTab[] = wheels.map((w) => ({
+    key: w.kindId,
+    label: w.kindName,
+    notes: w.notes,
+    overallLevel: w.overallLevel,
+    footer: w.comboPath
+      ? <p><button className="linklike" onClick={() => go(w.comboPath!)}>「{cultivarName} × {w.kindName}」の組み合わせページで、産地違いや根拠の内訳を見る</button></p>
+      : <p className="note-small">{w.kindName}は組み合わせページの対象外の形態のため、土台にしたアイテムのページへ案内します。<button className="linklike" onClick={() => go(w.itemPath!)}>{w.kindName}のページを見る</button></p>,
+  }))
+  return (
+    <>
+      <h3>分類との組み合わせで見る味わい（フレーバーホイール）</h3>
+      <p className="note-small">ホイールは、分類のプロファイルを土台に、品種の所見と製法の科学を重ねた<strong>組み合わせの推測</strong>です。{cultivarName}固有の実測プロファイルではありません。品種固有の実測がある部分は、下の「科学的な所見」に分けて示します。</p>
+      <EntityWheelTabs tabs={tabs} />
+    </>
+  )
+}
+
 export function TeaCultivarDetail({ id }: { id: string }) {
   const c = teaCultivarById(id)
   if (!c) return <p className="unknown-box">その品種・系統は収録されていません。</p>
@@ -151,6 +221,7 @@ export function TeaCultivarDetail({ id }: { id: string }) {
             <SourceLinks ids={u.sourceIds} /></li>
         ))}</ul>}
       <p className="note-small">ここに無い組み合わせは「存在しない」ではなく「未確認」です。実測済みとは扱いません。</p>
+      <CultivarWheelSection cultivarId={c.id} cultivarName={c.name} />
       <h3>科学的な所見</h3>
       <ScienceNote science={c.verification.science} note={c.scienceNote} />
       <FindingsList findings={c.findings} />
@@ -206,6 +277,7 @@ export function CacaoDetail({ layer, id }: { layer: CacaoLayer; id: string }) {
           </p>
         )}
       </>}
+      <LineageWheelSection layer={layer} id={id} entityName={title} hasFlavorFindings={entity.findings.some((f) => FLAVOR_FINDING_KINDS.includes(f.kind))} />
       <h3>科学的な所見</h3>
       <ScienceNote science={entity.verification.science} note={entity.scienceNote} />
       <FindingsList findings={entity.findings} />
@@ -213,6 +285,27 @@ export function CacaoDetail({ layer, id }: { layer: CacaoLayer; id: string }) {
       <SourceLinks ids={entity.sourceIds} />
       <p><button className="linklike" onClick={() => go('compare-cultivars')}>他の系統と比べる</button></p>
     </div>
+  )
+}
+
+function LineageWheelSection({ layer, id, entityName, hasFlavorFindings }: {
+  layer: CacaoLayer; id: string; entityName: string; hasFlavorFindings: boolean
+}) {
+  const wheels = useMemo(() => lineageWheels(layer, id), [layer, id])
+  const tabs: WheelTab[] = wheels.map((w) => ({
+    key: w.kind,
+    label: w.kindLabel,
+    notes: w.notes,
+    overallLevel: w.overallLevel,
+    footer: <p><button className="linklike" onClick={() => go(w.comboPath)}>「{entityName} × {w.kindLabel}」の組み合わせページで、産地違いや根拠の内訳を見る</button></p>,
+  }))
+  return (
+    <>
+      <h3>種類との組み合わせで見る味わい（フレーバーホイール）</h3>
+      <p className="note-small">ホイールは、種類のプロファイルを土台に、系統の所見を重ねた<strong>組み合わせの推測</strong>です。{entityName}固有の実測プロファイルではありません。系統固有の実測がある部分は、下の「科学的な所見」に分けて示します。</p>
+      {!hasFlavorFindings && <p className="unknown-box">この系統については、香味の科学的な所見が確認できていません。そのためホイールは種類一般のプロファイルの表示であり、系統の情報は味わいの推測に使っていません。遺伝的分類だけから味を断定することはしません。</p>}
+      <EntityWheelTabs tabs={tabs} />
+    </>
   )
 }
 
@@ -264,6 +357,17 @@ export function OriginDetail({ id }: { id: string }) {
       <h3>科学的な所見</h3>
       <ScienceNote science={o.verification.science} note={o.scienceNote} />
       <FindingsList findings={o.findings} />
+      {o.referenceNotes && o.referenceNotes.length > 0 && <>
+        <h3>参考情報（査読された実測ではありません）</h3>
+        <p className="note-small">メーカー・事業者・団体の発信です。上の科学的な所見とは区別して表示し、推測やペアリングの根拠には使いません。</p>
+        {o.referenceNotes.map((r, i) => (
+          <article className="temporal-card" key={i}>
+            <p><span className="badge">参考情報</span></p>
+            <p>{r.text}</p>
+            <SourceLinks ids={r.sourceIds} />
+          </article>
+        ))}
+      </>}
       {o.note && <><h3>注記</h3><p>{o.note}</p></>}
       <SourceLinks ids={o.sourceIds} />
     </div>

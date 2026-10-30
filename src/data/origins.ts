@@ -220,12 +220,25 @@ export const cacaoOrigins: CacaoOrigin[] = [
     relatedTraditionalIds: [],
     relatedGeneticGroupIds: [],
     relatedCloneIds: [],
-    flavorEvidence: 'none',
-    verification: { existence: 'confirmed', classification: 'confirmed', science: 'unconfirmed' },
-    scienceNote: '世界最大級のカカオ生産国ですが、本アプリで確認できた査読研究は発酵に関わる酵母など微生物に関するものが中心で、産地としての香味を実測した研究は確認できていません。そのため香味については何も表示しません。',
-    findings: [],
-    sourceIds: ['cote-divoire-yeast-2024'],
-    note: '産地名のみを登録しています。生産量の大きさと、香味の科学データの有無は別の問題です。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'peer-reviewed' },
+    scienceNote: '2026-10-30 の文献拡張（ラインB）で、この産地の豆とチョコレートを対象にした官能・揮発成分の査読実測が確認できたため、所見なしから実測ありへ更新しました。ただし実測の結論は「産地による違いは小さい」という側であり、強い産地個性を示すものではありません。その区別を明記して表示します。',
+    findings: [
+      {
+        kind: 'sensory',
+        statement: 'コートジボワール5産地（Agnibilékrou、Adzopé、Divo、Guibéroua、Méagui）のハイブリッド品種 Mercedes を統一条件で加工した研究では、豆の段階では産地や栽培体系による揮発プロファイルの違いが一部に見られましたが、発酵・焙煎後のチョコレートでは産地による影響は見られず、官能知覚にも有意な影響はありませんでした。「コートジボワール産の香味」を単一の個性として語る根拠にはなりません。',
+        conditions: '単一栽培品種（Mercedes）・統一発酵条件の実験系で、専門審査員12名の官能評価と SPME-GC-MS による実測（Amien et al. 2025）。論文自体も、コートジボワール産はファインアロマで知られていないと明記しています。',
+        sourceIds: ['amien-2025-cote-divoire-cocoa-origins'],
+      },
+      {
+        kind: 'sensory',
+        statement: '同一農園で収穫した豆をコートジボワール国内の5地点で発酵させると、発酵場所によって揮発性前駆体と最終チョコレートの官能が変わり、San Pedro での発酵が望ましい香気化合物と官能属性の両方を最も促しました。これは栽培地ではなく「発酵場所」の効果の実測です。',
+        conditions: '原料は単一農園由来、変動要因は発酵地の微生物・環境（Kouassi et al. 2022）。豆の香気前駆体プロファイルとチョコレートの官能は直接連動しなかった点も含みます。',
+        sourceIds: ['kouassi-2022-cote-divoire-fermentation-places'],
+      },
+    ],
+    sourceIds: ['amien-2025-cote-divoire-cocoa-origins', 'kouassi-2022-cote-divoire-fermentation-places', 'cote-divoire-yeast-2024'],
+    note: '産地名は品種名ではありません。実測が示すのは、産地名から香味を決めることはできないという点です。',
   },
   {
     id: 'tanzania',
@@ -238,10 +251,24 @@ export const cacaoOrigins: CacaoOrigin[] = [
     relatedCloneIds: [],
     flavorEvidence: 'none',
     verification: { existence: 'confirmed', classification: 'unconfirmed', science: 'unconfirmed' },
-    scienceNote: '遺伝・香味のどちらの査読データも、本アプリでは確認できていません。そのため産地名以外の情報は表示しません。',
+    scienceNote: '遺伝・香味のどちらの査読データも、本アプリでは確認できていません（文献拡張ラインB・Eで再探索しても、タンザニア単独の官能・揮発の査読研究は見つかりませんでした）。そのため科学的な所見は表示しません。代わりに、事業者・団体の発信を「参考情報」として区別して併記します。参考情報は推測やペアリングの根拠には使いません。',
     findings: [],
-    sourceIds: [],
-    note: '産地名のみを登録しています。業界の紹介文にある香味の説明は、査読された実測ではないため採用していません。',
+    referenceNotes: [
+      {
+        text: 'タンザニア・キロンベロ渓谷の中央発酵事業者 Kokoa Kamili の公式説明では、ウェット豆を農家から買い付け、3段カスケード式木箱で6日間発酵し、5–7日天日乾燥する工程が紹介されています（工程の参考情報であり、香味の実測ではありません）。',
+        sourceIds: ['kokoa-kamili-operations'],
+      },
+      {
+        text: 'Kokoa Kamili の豆を使う複数のメーカーのテイスティングノートでは、赤い果実・柑橘・明るい酸といった表現が共通して見られます（例：いちごレモネード、サワーチェリー、ベリー）。ただしこれはメーカー発信の参考情報で、年次によってノートは変わり、出所が同系統の説明資料に由来する可能性があるため、独立した裏付けとしては数えません。',
+        sourceIds: ['kokoa-kamili-operations'],
+      },
+      {
+        text: '専門家パネルの盲検で香味を評価する Heirloom Cacao Preservation Fund（HCP）の認定生産者に、タンザニアの Tujikomboe Farmers Group が含まれます。認定は専門家による評価の手続き的事実であり、香味の実測値ではありません。',
+        sourceIds: ['hcp-heirloom-cacao'],
+      },
+    ],
+    sourceIds: ['kokoa-kamili-operations', 'hcp-heirloom-cacao'],
+    note: '産地名のみを登録しています。業界の紹介文にある香味の説明は、査読された実測ではないため科学的な所見としては採用せず、「参考情報」として区別して表示します。',
   },
 ]
 

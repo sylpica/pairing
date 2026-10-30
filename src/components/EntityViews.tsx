@@ -63,7 +63,7 @@ export function ScienceNote({ science, note }: { science: ScienceStatus; note?: 
     <div className="unknown-box">
       <p><strong>{SCIENCE_LABEL[science]}</strong></p>
       {note && <p>{note}</p>}
-      {science === 'unconfirmed' && <p>科学データが確認できていないため、香味の特徴（フレーバーホイールや味覚）は表示しません。一般的な傾向で埋めることはしません。</p>}
+      {science === 'unconfirmed' && <p>科学データが確認できていないため、この対象固有の香味の特徴（実測としてのフレーバーホイールや味覚）は表示しません。一般的な傾向で対象固有の特徴らしく埋めることはしません。分類との組み合わせの推測としてホイールが出る場合も、それは分類由来の土台に基づく表示で、この対象固有の実測ではありません。</p>}
     </div>
   )
 }

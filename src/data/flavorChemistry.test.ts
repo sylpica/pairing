@@ -7,8 +7,8 @@ import { teaKinds } from './teas'
 const sourceIds = new Set(sources.map((s) => s.id))
 
 describe('フレーバーホイール×科学成分の自動検査', () => {
-  it('化合物は57件（既存23＋香気17＋呈味15＋単叢2）でIDが一意', () => {
-    expect(compounds).toHaveLength(57)
+  it('化合物は64件（従来57＋文献拡張の統合7）でIDが一意', () => {
+    expect(compounds).toHaveLength(64)
     expect(new Set(compounds.map((c) => c.id)).size).toBe(compounds.length)
   })
 
@@ -42,9 +42,12 @@ describe('フレーバーホイール×科学成分の自動検査', () => {
     expect(byNote.get('seaweed')).toEqual([])
     expect(byNote.get('cinnamon')).toEqual([])
     expect(byNote.get('ginger')).toEqual([])
-    expect(byNote.get('peppery')).toEqual([])
     expect(byNote.get('vanilla')).toEqual([])
     expect(byNote.get('coffee')).toEqual([])
+    // 胡椒様は、スルカトンの GC-O 記述（白毛茶紅茶で「胡椒様」）が原著で確認できたため充足側に移った
+    expect(byNote.get('peppery')).toContain('sulcatone')
+    // 燻しは、グアイアコールの寄与実証（通常製品の最高OAV群＋燻煙オフフレーバー）により充足側に移った
+    expect(byNote.get('smoky')).toContain('guaiacol')
     // カテゴリ単位でも充足表が作れる
     for (const cat of flavorCategories) {
       const inCat = coverage.filter((c) => c.categoryId === cat.id)
@@ -76,6 +79,29 @@ describe('フレーバーホイール×科学成分の自動検査', () => {
     expect(names).not.toMatch(/マルトール/)
     expect(names).not.toMatch(/homofuraneol/i)
     expect(names).not.toMatch(/ホモフラネオール/)
+  })
+
+  it('スルカトンとフィルバートンは別化合物として別IDで登録されている（ラインIの申し送り）', () => {
+    expect(compoundById('sulcatone')).toBeTruthy()
+    expect(compoundById('sulcatone')!.name).toContain('6-メチル-5-ヘプテン-2-オン')
+    expect(compoundById('methyl-heptenone')!.name).toContain('5-メチル-(E)-2-ヘプテン-4-オン')
+    // スルカトン（お茶の証拠）とフィルバートン（ミルクチョコレート根拠）の出典は混ざらない
+    expect(compoundById('sulcatone')!.sourceIds).not.toContain('schnermann-1997-milk-chocolate')
+    expect(compoundById('methyl-heptenone')!.sourceIds).not.toContain('zhu-2015-oolong-tea-odorants')
+  })
+
+  it('文献拡張の統合で追加した7化合物が、寄与の根拠と対象範囲を持つ', () => {
+    for (const id of ['dimethyl-sulfide', 'ez-2-6-nonadienal', 'sulcatone', 'isovaleric-acid', 'phenylacetic-acid', 'dimethyl-trisulfide', 'guaiacol']) {
+      const c = compoundById(id)
+      expect(c, id).toBeTruthy()
+      expect(c!.contributionEvidence.length, id).toBeGreaterThan(0)
+      expect(c!.scopes?.length, id).toBeGreaterThan(0)
+      for (const sid of c!.sourceIds) expect(sourceIds.has(sid), `${id}: ${sid}`).toBe(true)
+    }
+    // ジメチルスルフィドは「磯・海苔様」と同一視しない留保を保持する
+    expect(compoundById('dimethyl-sulfide')!.aromaKnowledge).toContain('同一視はしません')
+    // グアイアコールの燻煙はエクアドルと結びつけない（煙接触が確認されたのはインドネシア・パプアニューギニア産試料）
+    expect(compoundById('guaiacol')!.contributionEvidence).not.toContain('エクアドル')
   })
 
   it('ピラジン類・オクテン類は異性体・別化合物を混同せず別IDで登録されている', () => {

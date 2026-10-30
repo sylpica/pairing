@@ -25,15 +25,15 @@ import type { DataLevelUsed, EntityFinding } from '../types'
 //   teaOriginPairingNote(country, tea.kindId)         … お茶の産地×茶類に依存
 //   cacaoPairingNote(layer, entity)                   … カカオ系統エンティティに依存
 //   cacaoOriginPairingNote(origin)                    … カカオ産地に依存
-// したがって選択空間（お茶側 1,134 通り × チョコ側 1,071 通り = 1,214,514 通り）は、
-// 相異なる引数の組み合わせ（ペア98 + 品種39 + お茶産地30 + 系統16 + 産地8 = 191通り）
+// したがって選択空間（お茶側 1,134 通り × チョコ側 1,224 通り = 1,388,016 通り）は、
+// 相異なる引数の組み合わせ（ペア112 + 品種39 + お茶産地30 + 系統16 + 産地8 = 191通り）
 // への実呼び出しで過不足なく覆われる。本ファイルでは:
-//   (1) 相異なる引数の全191通り＋98ペアを実際に関数へ通し、不変条件を深掘り検査する
+//   (1) 相異なる引数の全191通り＋112ペアを実際に関数へ通し、不変条件を深掘り検査する
 //       （あわせて同じ引数で2回呼んでも結果が一致すること＝決定性も確認する）。
-//   (2) 選択空間 1,214,514 通りを全件列挙し、PairPage と同じ組み立てで、
+//   (2) 選択空間 1,388,016 通りを全件列挙し、PairPage と同じ組み立てで、
 //       階層バッジ（DataLevelUsed）が指定内容と矛盾しないことを、
 //       エンジン出力ではなくデータの原始情報から独立に再導出した期待値と突き合わせる。
-// 香味ノート名・味覚名への言及の裏付け検査は interactions.test.ts が同じ98ペアで
+// 香味ノート名・味覚名への言及の裏付け検査は interactions.test.ts が同じ112ペアで
 // 実施しているため、ここではペアリング結果（analyzePairing）と文脈ノート側を担う。
 // ============================================================
 
@@ -106,8 +106,8 @@ function checkContextNote(note: PairingContextNote, pool: EntityFinding[], ctx: 
 }
 
 describe('全組み合わせ検証：相異なる引数空間（実呼び出し）', () => {
-  it('お茶×チョコ全98ペアで analyzePairing / analyzeInteractions の不変条件と決定性が成り立つ', () => {
-    expect(teaItems.length * chocolateItems.length).toBe(98)
+  it('お茶×チョコ全112ペアで analyzePairing / analyzeInteractions の不変条件と決定性が成り立つ', () => {
+    expect(teaItems.length * chocolateItems.length).toBe(112)
     for (const tea of teaItems) {
       for (const choco of chocolateItems) {
         const ctx = `${tea.id}×${choco.id}`
@@ -226,10 +226,10 @@ describe('全組み合わせ検証：相異なる引数空間（実呼び出し�
 })
 
 describe('全組み合わせ検証：選択空間の全件組み立て', () => {
-  it('お茶側1,134通り × チョコ側1,071通り = 1,214,514通りで、階層バッジが指定内容と矛盾しない', () => {
+  it('お茶側1,134通り × チョコ側1,224通り = 1,388,016通りで、階層バッジが指定内容と矛盾しない', () => {
     // データ形状のアンカー（収録データが増えたら、この数字も更新すること）
     expect(teaItems.length).toBe(14)
-    expect(chocolateItems.length).toBe(7)
+    expect(chocolateItems.length).toBe(8)
     expect(teaCountries.length).toBe(5)
     expect(cacaoOrigins.length).toBe(8)
     expect(cacaoEntities.length).toBe(16)
@@ -333,9 +333,9 @@ describe('全組み合わせ検証：選択空間の全件組み立て', () => {
     const teaSide = teaItems.reduce((sum, t) => sum + (1 + new Set(cultivarsForKind(t.kindId)).size) * (1 + teaCountries.length), 0)
     const chocoSide = chocolateItems.length * (1 + cacaoEntities.length) * (1 + cacaoOrigins.length)
     expect(teaSide).toBe(1134)
-    expect(chocoSide).toBe(1071)
+    expect(chocoSide).toBe(1224)
     expect(count).toBe(teaSide * chocoSide)
-    expect(count).toBe(1214514)
+    expect(count).toBe(1388016)
     expect(violationCount, violations.join('\n')).toBe(0)
   }, 600000)
 })

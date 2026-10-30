@@ -18,6 +18,7 @@ import { PairNoteCompounds, PairCategoryCompounds } from './components/PairCompo
 import { compounds, compoundById } from './data/compounds'
 import { noteById } from './data/flavors'
 import { CultivarsPage, TeaCultivarDetail, CacaoDetail, OriginDetail, RANK_LABEL } from './components/CultivarPages'
+import { TeaComboPage, ChocoComboPage } from './components/ComboPages'
 import CultivarComparePage from './components/CultivarCompare'
 import { teaCultivarById, cultivarsForKind, teaCultivars, usesForCultivar } from './data/cultivars'
 import { cacaoTraditionalGroups, cacaoGeneticGroups, cacaoClones, traditionalGroupById, geneticGroupById, cacaoCloneById } from './data/cacao'
@@ -28,7 +29,7 @@ import { TeaLeafIcon, TeaCupIcon, MapPinIcon, SproutIcon, CacaoPodIcon, ChocoBar
 import type { ChocolateKind } from './types'
 
 type Route = { name: string; id?: string; sub?: string }
-const KNOWN_ROUTES = ['home', 'tea', 'choco', 'pair', 'compare', 'saved', 'sources', 'compounds', 'cultivars', 'cultivar', 'cacao', 'compare-cultivars', 'origin']
+const KNOWN_ROUTES = ['home', 'tea', 'choco', 'pair', 'compare', 'saved', 'sources', 'compounds', 'cultivars', 'cultivar', 'cacao', 'compare-cultivars', 'origin', 'combo']
 function parseRoute(): Route {
   const h = location.hash.replace(/^#\/?/, '')
   const [name, id, sub] = h.split('/')
@@ -85,8 +86,12 @@ export default function App() {
         {route.name === 'origin' && route.id && <OriginDetail id={route.id} />}
         {route.name === 'cacao' && route.id && route.sub && <CacaoDetail layer={route.id as CacaoLayer} id={route.sub} />}
         {route.name === 'compare-cultivars' && <CultivarComparePage />}
+        {route.name === 'combo' && route.id === 'choco' && <ChocoComboPage sub={route.sub} />}
+        {route.name === 'combo' && route.id !== 'choco' && <TeaComboPage sub={route.sub} />}
       </main>
       <footer className="app-footer">
+        <button className="linklike" onClick={() => go('combo/tea')}>組み合わせで調べる（お茶）</button>
+        <button className="linklike" onClick={() => go('combo/choco')}>組み合わせで調べる（チョコ）</button>
         <button className="linklike" onClick={() => go('compare')}>茶類・製法の比較</button>
         <button className="linklike" onClick={() => go('compare-cultivars')}>品種・系統の比較</button>
         <button className="linklike" onClick={() => go('compounds')}>成分一覧</button>
@@ -118,6 +123,11 @@ function Home() {
           <span className="big-card-title">組み合わせる</span><span>共通の香りと対比を探す</span>
         </button>
       </div>
+      <p className="note-small">産地×品種×分類の具体的な組み合わせごとの味わいは、
+        <button className="linklike" onClick={() => go('combo/tea')}>組み合わせで調べる（お茶）</button>／
+        <button className="linklike" onClick={() => go('combo/choco')}>組み合わせで調べる（チョコ）</button>
+        から（例：長崎の紅茶のやぶきた と 長崎の緑茶のやぶきた の違い）。
+      </p>
     </div>
   )
 }

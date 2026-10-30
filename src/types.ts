@@ -281,6 +281,68 @@ export interface PairingCharacterAnalysis {
   tasteMouthfeel: PairingCharacter[]
 }
 
+// ===== 組み合わせページ（第2層：産地×品種×分類の統合推測、2026-10-31 追加） =====
+// 設計: docs/design/combination-pages.md
+// 第1層（分類プロファイル／品種・系統の所見／産地の所見／製法の科学）を統合して、
+// 具体的な組み合わせ（例：長崎×やぶきた×紅茶）の味わいを推測する層。
+// ここでのノート・味覚は実測プロファイル（FlavorProfile）とは型レベルで分離し、
+// 各要素に根拠レベル（measured / general / inferred）を必須で持たせる。
+// スコア・順位の数値は持たない。
+export type ComboLevel = 'measured' | 'general' | 'inferred'
+
+/** 組み合わせノート・味覚の根拠の出所区分 */
+export type ComboBasisFrom = 'profile' | 'cultivar' | 'region' | 'origin' | 'lineage' | 'process'
+export interface ComboBasis {
+  from: ComboBasisFrom
+  /** 根拠の説明（どの所見・知見から来たか） */
+  text: string
+  sourceIds: string[]
+}
+
+export interface ComboNote {
+  noteId: string
+  intensity: Intensity
+  level: ComboLevel
+  basis: ComboBasis[]
+  sourceIds: string[]
+}
+
+export interface ComboTaste {
+  key: TasteKey
+  intensity: Intensity
+  level: ComboLevel
+  /** 味についての説明（分類プロファイルの根拠、または製法科学からの変換の説明） */
+  text: string
+  sourceIds: string[]
+}
+
+export interface ComboStatement {
+  text: string
+  level: ComboLevel
+  sourceIds: string[]
+}
+
+/** お茶の地域レベルの産地エンティティ（県・茶区など）。
+ * カカオの CacaoOrigin と同型の原則：香味プロファイルは持たず、出典つきの所見まで。
+ * 文献で所見のある地域だけを登録する（データが無い地域は作らない）。 */
+export interface TeaRegion {
+  id: string
+  /** 表示名（例：長崎） */
+  name: string
+  country: string
+  /** 上位の区分（例：九州） */
+  parentName?: string
+  note: string
+  /** その地域の試料で香味・成分まで実測があるか（CacaoOrigin と同じ区分） */
+  flavorEvidence: OriginFlavorEvidence
+  verification: EntityVerification
+  scienceNote: string
+  findings: EntityFinding[]
+  sourceIds: string[]
+  /** この地域の所見が直接関係する茶類（組み合わせの成立判定に使う） */
+  applicableKindIds: string[]
+}
+
 // ===== カカオの産地（2026-10-30 追加） =====
 // 産地は品種ではない。産地と遺伝（伝統的分類・遺伝集団・クローン）は多対多の関係にあり、
 // 産地名から香味を自動生成しない。香味の根拠レベルは flavorEvidence で明示する:
@@ -314,6 +376,10 @@ export interface CacaoOrigin {
   verification: EntityVerification
   scienceNote: string
   findings: EntityFinding[]
+  /** 参考情報（メーカー・事業者・団体の発信。査読された実測ではない）。
+   * findings（科学的な所見）とは分離して保持し、表示でも区別する。
+   * 推測・ペアリングの根拠には使わない。 */
+  referenceNotes?: { text: string; sourceIds: string[] }[]
   sourceIds: string[]
   note: string
 }

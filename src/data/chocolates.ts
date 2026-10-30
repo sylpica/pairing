@@ -55,6 +55,21 @@ export const chocolateItems: ChocolateItem[] = [
     sourceIds: [A],
   },
   {
+    id: 'dark-100', name: 'カカオ分100%チョコレート（無糖）', kind: 'dark', cacaoPercent: 100,
+    searchNames: ['カカオ分100%', '100%チョコレート', '無糖チョコレート', '100% chocolate', 'unsweetened chocolate', 'カカオ100'],
+    profile: prof([
+      { noteId: 'cacao', intensity: 'strong', basis: 'sensory', sourceIds: ['mcclure-2022-100-percent-chocolate'] },
+    ], {
+      ...emptyTastes(),
+      bitter: { intensity: 'strong', basis: 'sensory', sourceIds: ['mcclure-2022-100-percent-chocolate', 'mcclure-2021-bitter-compounds-chocolate'] },
+      astringent: { intensity: 'strong', basis: 'sensory', sourceIds: ['mcclure-2022-100-percent-chocolate'] },
+      sour: { intensity: 'normal', basis: 'sensory', sourceIds: ['mcclure-2022-100-percent-chocolate'] },
+    }, chocoTemporal),
+    evidenceLevel: 'general',
+    scopeNote: '砂糖を加えないカカオ分100%のチョコレート。3産地（マダガスカル、ガーナ、ペルー）の豆から27の焙煎条件で製造した試料を、消費者145名が評価した研究（McClure et al. 2022）に基づく整理です。苦味・渋味・酸味が中心で、焙煎の最適化によりそれらは下げられること、ココア感の強さが嗜好と強く結びつくことが示されています。苦味成分の定量研究（McClure et al. 2021）では、テオブロミン、カフェイン、エピカテキン等の6成分と焙煎の関係が示されています。含硫黄揮発成分の検出研究（Wiedemer et al. 2023）もありますが、香味知覚への影響は不明とされているため、香りの根拠には使っていません。単一研究グループの結果であり、個別商品の実測ではありません。',
+    sourceIds: ['mcclure-2022-100-percent-chocolate', 'mcclure-2021-bitter-compounds-chocolate', 'wiedemer-2023-sulfur-volatiles-100-chocolate'],
+  },
+  {
     id: 'fine-flavor-chocolate', name: 'ファインフレーバーカカオのチョコレート', kind: 'dark',
     searchNames: ['ファインフレーバー', 'fine flavor', 'FFC', 'スペシャルティカカオ'],
     profile: prof([
@@ -95,7 +110,7 @@ export const chocolateItems: ChocolateItem[] = [
     ], {
       ...emptyTastes(),
       sweet: { intensity: 'normal', basis: 'sensory', sourceIds: ['luchian-2023-chocolate-profiles'] },
-    }),
+    }, chocoTemporal),
     evidenceLevel: 'general',
     scopeNote: '注意：香りは市販品の実測ではなく、実験室で調製した「モデル」ホワイトチョコレートの研究（Stewart et al. 2017/2018）に基づく説明です。高加熱のスキムミルクパウダーを使った試料ではファッジ／キャラメル様の香りが強く、コンデンスミルク様の香味が増えました。乳原料の加熱履歴で香りが変わるため、個別商品の香味とは限りません。甘味は別途、市販品1種のパネル研究（Luchian et al. 2023）で「はっきりした甘味」とされた記録に基づきます（単一試料の根拠です）。',
     sourceIds: ['stewart-2017-model-white-chocolate', 'stewart-2018-smp-volatile-carryover'],
@@ -116,10 +131,15 @@ export const chocolateItems: ChocolateItem[] = [
   {
     id: 'blond-chocolate', name: 'ブロンドチョコレート（キャラメリゼホワイト）', kind: 'blond',
     searchNames: ['ブロンドチョコレート', 'ブロンド', 'blond chocolate', 'blonde chocolate', 'デュルセイ', 'Dulcey', 'キャラメリゼホワイト', 'キャラメルホワイト'],
-    profile: prof([]),
-    evidenceLevel: 'insufficient',
-    scopeNote: 'ホワイトチョコレートを長時間加熱してキャラメリゼさせた種類で、ヴァローナのデュルセイ（Dulcey、2012年）が始まりとされます。メーカーはビスケット（ショートブレッド）様の味やキャラメリゼしたミルクの香り、わずかな塩味を説明していますが、これはメーカーの説明（参考情報）です。ブロンドチョコレートを対象にした査読済みの香気・官能研究は本調査で確認できなかったため、香味プロファイルは登録していません（情報不足）。メーカーの説明文を科学データのように表示することはしません。',
-    sourceIds: ['valrhona-blond-dulcey'],
+    profile: prof([
+      { noteId: 'caramel', intensity: 'normal', basis: 'general', sourceIds: ['aydin-2021-caramelized-white-chocolate'] },
+    ], {
+      ...emptyTastes(),
+      bitter: { intensity: 'weak', basis: 'general', sourceIds: ['aydin-2021-caramelized-white-chocolate'] },
+    }, chocoTemporal),
+    evidenceLevel: 'general',
+    scopeNote: 'ホワイトチョコレートを長時間加熱してキャラメリゼさせた種類で、ヴァローナのデュルセイ（Dulcey、2012年）が始まりとされます。香味は、実験室で調製したキャラメリゼホワイトの香気成分と官能を測定した査読研究（Aydın et al. 2021）に基づく一般的知見レベルの整理です。加熱によりフルフラールやリナロールが生成してキャラメル様の風味が形づくられますが、市販品そのものの実測ではありません。加熱が過ぎた条件（120℃で90分超）では苦味・焦げ・不快な味が知覚されたため、苦味は「弱い」として、加熱条件に依存することを明記します。メーカーが説明するビスケット（ショートブレッド）様の味やキャラメリゼしたミルクの香りは参考情報であり、科学データとしては扱いません。',
+    sourceIds: ['aydin-2021-caramelized-white-chocolate', 'valrhona-blond-dulcey'],
   },
 ]
 export const chocolateById = (id: string) => chocolateItems.find((c) => c.id === id)

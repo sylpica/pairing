@@ -28,10 +28,21 @@ describe('品種・系統データベースの画面連携', () => {
     expect(screen.getByText(/研究で供試された組み合わせ/)).toBeTruthy()
   })
 
-  it('おくみどり詳細では科学データ未確認を明示し、ホイールを出さない', () => {
+  it('おくみどり詳細では組み合わせのホイールが出て、品種固有の実測ではないことが明示される', () => {
     location.hash = '#/cultivar/okumidori'; render(<App />)
-    expect(screen.getAllByText(/科学データ未確認/).length).toBeGreaterThan(0)
-    expect(screen.queryByLabelText('フレーバーホイール')).toBeNull()
+    // 組み合わせページと同じ凡例つきホイールが出る（品種固有のホイールではない）
+    expect(screen.getByLabelText(/組み合わせのフレーバーホイール/)).toBeTruthy()
+    expect(screen.getAllByText(/組み合わせの推測/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/固有の実測プロファイルではありません/).length).toBeGreaterThan(0)
+    // 2026-10-31 に追加された官能の所見（木下 2015）が出る
+    expect(screen.getByText(/上品な/)).toBeTruthy()
+  })
+
+  it('ごこう詳細では玉露（形態）のプロファイルを土台にしたホイールが出る', () => {
+    location.hash = '#/cultivar/gokou'; render(<App />)
+    expect(screen.getByLabelText(/組み合わせのフレーバーホイール/)).toBeTruthy()
+    // 形態は組み合わせページの対象外であることが明示され、アイテム側へ案内される
+    expect(screen.getAllByText(/組み合わせページの対象外の形態/).length).toBeGreaterThan(0)
   })
 
   it('伝統的分類のクリオロと遺伝集団の Criollo は別ページとして扱う', () => {
@@ -52,7 +63,30 @@ describe('品種・系統データベースの画面連携', () => {
     location.hash = '#/compare-cultivars'; render(<App />)
     expect(screen.getAllByText('やぶきた').length).toBeGreaterThan(0)
     expect(screen.getAllByText('おくみどり').length).toBeGreaterThan(0)
+    // 所見のない品種（ほくめい）に切り替えると「不明」が正直に表示される
+    fireEvent.change(screen.getByLabelText('品種 2'), { target: { value: 'hokumei' } })
     expect(screen.getByText(/所見：不明/)).toBeTruthy()
+  })
+
+  it('ICS-95 詳細では追加された官能の所見が出る', () => {
+    location.hash = '#/cacao/clone/ics-95'; render(<App />)
+    expect(screen.getByText(/最良の官能属性/)).toBeTruthy()
+    expect(screen.getByLabelText(/組み合わせのフレーバーホイール/)).toBeTruthy()
+  })
+
+  it('香味所見のない遺伝集団（Purús）では、その旨の注意つきで種類由来のホイールが出る', () => {
+    location.hash = '#/cacao/genetic/gen-purus'; render(<App />)
+    expect(screen.getByText(/香味の科学的な所見が確認できていません/)).toBeTruthy()
+    expect(screen.getByLabelText(/組み合わせのフレーバーホイール/)).toBeTruthy()
+    expect(screen.getAllByText(/種類一般のプロファイルの表示/).length).toBeGreaterThan(0)
+  })
+
+  it('タンザニアの産地ページでは参考情報が科学的な所見と区別して出る', () => {
+    location.hash = '#/origin/tanzania'; render(<App />)
+    expect(screen.getByText(/参考情報（査読された実測ではありません）/)).toBeTruthy()
+    expect(screen.getAllByText(/Kokoa Kamili/).length).toBeGreaterThan(0)
+    // 科学的な所見（findings）としては出ていないこと
+    expect(screen.getAllByText(/科学データ未確認/).length).toBeGreaterThan(0)
   })
 
   it('組み合わせ画面で品種を指定すると階層（実測）が表示される', () => {

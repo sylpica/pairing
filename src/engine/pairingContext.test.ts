@@ -11,11 +11,13 @@ describe('ペアリングの階層判定（品種・系統指定）', () => {
     expect(note.findings.length).toBeGreaterThan(0)
     expect(note.sourceIds.length).toBeGreaterThan(0)
   })
-  it('おくみどり×緑茶は組み合わせ確認済みだが香味データなし→茶類レベル', () => {
+  it('おくみどり×緑茶は documented＋官能記述等の所見あり→品種固有の一般的傾向', () => {
+    // 2026-10-31 の推測拡充で、おくみどり に官能記述（木下 2015）と被覆条件の
+    // 成分実測の所見が付いたため、茶類レベルから品種レベルに上がった
     const note = teaCultivarPairingNote(teaCultivarById('okumidori')!, 'green')
-    expect(note.level).toBe('kind-general')
-    expect(note.findings).toHaveLength(0)
-    expect(note.text).toContain('未確認')
+    expect(note.level).toBe('cultivar-general')
+    expect(note.findings.length).toBeGreaterThan(0)
+    expect(note.sourceIds.length).toBeGreaterThan(0)
   })
   it('べにふうき×紅茶は documented＋条件付き所見→品種固有の一般的傾向', () => {
     const note = teaCultivarPairingNote(teaCultivarById('benifuuki')!, 'black')
@@ -52,10 +54,12 @@ describe('ペアリングの階層判定（品種・系統指定）', () => {
     expect(note.level).toBe('cultivar-measured')
     expect(note.findings.length).toBeGreaterThan(0)
   })
-  it('個別クローン IMC-67 は香味データなし→不使用（分類の所見は香味に使わない）', () => {
+  it('個別クローン IMC-67 は検出・成分の実測が加わり使用される（分類の所見は香味に使わない）', () => {
     const note = cacaoPairingNote('clone', cacaoCloneById('imc-67')!)
-    expect(note.level).toBe('insufficient')
-    expect(note.findings).toHaveLength(0)
+    expect(note.level).toBe('cultivar-measured')
+    expect(note.findings.length).toBeGreaterThan(0)
+    expect(note.findings.every((f) => f.kind !== 'classification')).toBe(true)
+    expect(note.findings.some((f) => f.sourceIds.includes('collin-2023-cocoa-bean-genotypes-aroma'))).toBe(true)
   })
 })
 
@@ -87,10 +91,11 @@ describe('ペアリングの階層判定（産地指定）', () => {
     expect(note.findings).toHaveLength(0)
     expect(note.text).toContain('未確認')
   })
-  it('コートジボワールは香味データ未確認→insufficient', () => {
+  it('コートジボワールは産地の官能実測が加わり→origin-measured（地域差は小さいという結論側）', () => {
     const note = cacaoOriginPairingNote(cacaoOriginById('cote-divoire')!)
-    expect(note.level).toBe('insufficient')
-    expect(note.findings).toHaveLength(0)
+    expect(note.level).toBe('origin-measured')
+    expect(note.findings.some((f) => f.kind === 'sensory')).toBe(true)
+    expect(note.sourceIds).toContain('amien-2025-cote-divoire-cocoa-origins')
   })
 })
 
@@ -111,12 +116,16 @@ describe('ペアリングの階層判定（お茶の産地指定）', () => {
     expect(note.text).toContain('産地そのものの香味実測ではなく')
     expect(note.text).toContain('断定')
   })
-  it('スリランカ×紅茶は組み合わせ確認済みでも香味データなし→insufficient', () => {
+  it('スリランカ×紅茶は TRI クローンの組成実測により group-general（産地の実測とは言わない）', () => {
+    // 2026-10-31 の推測拡充で TRI 2023/2025/2043 に組成（含有）の実測所見が付いた。
+    // 産地そのものの香味実測ではないことは文言で担保する
     const note = teaOriginPairingNote('スリランカ', 'black')
-    expect(note.level).toBe('insufficient')
-    expect(note.findings).toHaveLength(0)
-    expect(note.text).toContain('未確認')
-    expect(note.text).toContain('使っていません')
+    expect(note.level).toBe('group-general')
+    expect(note.findings.length).toBeGreaterThan(0)
+    expect(note.text).toContain('産地そのものの香味実測ではなく')
+    expect(note.text).toContain('断定')
+    // 併記される所見は組成の実測であり、官能の所見は含まれない
+    expect(note.findings.every((f) => f.kind === 'composition')).toBe(true)
   })
   it('スリランカ×青茶は組み合わせ自体が未確認→insufficient', () => {
     const note = teaOriginPairingNote('スリランカ', 'oolong')

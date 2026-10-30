@@ -189,6 +189,40 @@ function fatCoatingAromaPersistence(tea: Side, choco: Side): InteractionStatemen
     'exploratory', ['buettner-2005-retronasal-persistence', 'carvalho-2013-milk-chocolate-coating'])]
 }
 
+/** M11: 乳タンパク質がお茶の渋味を和らげる（Piyasena 2025／Qie et al. 2021。ラインA候補 N10） */
+function milkProteinSoftensAstringency(tea: Side, chocoItem: ChocolateItem): InteractionStatement[] {
+  if (chocoItem.kind !== 'milk' && chocoItem.kind !== 'white') return []
+  if (tasteRank(tea.profile, 'astringent') < 2) return []
+  return [stmt('milk-protein-softens-astringency', 'taste',
+    `チョコレートに含まれる乳成分のタンパク質（カゼイン）は、お茶のカテキンと結合することが知られています。お茶の渋味（${intLabel(tea.profile.tastes.astringent.intensity)}）のもとになる成分が乳タンパク質に結びつくことで、渋味が和らいで感じられる可能性があります。牛乳入り紅茶の系で整理された機構であり、固形のチョコレートでの直接の実測ではありません。`,
+    'general', ['piyasena-2025-milk-in-tea', 'qie-2021-milk-tea-catechin-protein'])]
+}
+
+/** M12: お茶のポリフェノールがチョコレートの香りの口内放出を増減させる可能性（Esteban-Fernández et al. 2018、ワインからの類推。ラインA候補 N7） */
+function teaPolyphenolsModulateAromaRelease(tea: Side, choco: Side): InteractionStatement[] {
+  if (tasteRank(tea.profile, 'astringent') < 2 || known(choco.profile).length === 0) return []
+  return [stmt('tea-polyphenols-modulate-aroma-release', 'aroma',
+    `お茶のポリフェノール類は、口の中での香りの放出の仕方を変える可能性があります。ワインの研究では、フェノール化合物が共存する香りの口内放出を、成分の化学構造によって増やしたり減らしたりすることが示されています。お茶の渋味（${intLabel(tea.profile.tastes.astringent.intensity)}）のもとになるポリフェノールが、チョコレートの香りの広がり方を単独のときと変える可能性がありますが、方向は成分ごとに異なり、お茶での実測はありません。`,
+    'exploratory', ['esteban-fernandez-2018-wine-matrix-aroma-release'])]
+}
+
+/** M13: お茶が冷めると複合体が析出し、渋味成分が減る方向に働く（Jöbstl et al. 2005／Ishizu et al. 2016。ラインA候補 N8） */
+function teaCreamingOnCooling(tea: Side, choco: Side): InteractionStatement[] {
+  void choco
+  if (tasteRank(tea.profile, 'astringent') < 2) return []
+  return [stmt('tea-creaming-on-cooling', 'mouthfeel',
+    `お茶が冷めると、テアフラビンやガロイル型カテキンとカフェインの複合体が析出して白く濁る現象（クリーミングダウン）が起き、渋味（${intLabel(tea.profile.tastes.astringent.intensity)}）のもとになる成分そのものが液中から減る方向に働くことが示されています。冷まして味わう場合は、温かいときと渋味の感じ方が変わる可能性があります。`,
+    'general', ['jobstl-2005-black-tea-creaming', 'ishizu-2016-creaming-down'])]
+}
+
+/** M14: 直接研究が示す設計原則（Donadini, Fumi & Lambri 2012／Donadini & Fumi 2014。ラインA候補 N11） */
+function directStudyBalancePrinciple(teaItem: TeaItem, chocoItem: ChocolateItem): InteractionStatement[] {
+  if (known(teaItem.profile).length === 0 || known(chocoItem.profile).length === 0) return []
+  return [stmt('direct-study-balance-principle', 'aroma',
+    `お茶とチョコレートの組み合わせそのものを評価した研究では、風味の均衡したペアが好まれ、どちらか一方が支配すると受容が下がり、とくにチョコレートが支配した場合の下がり方が大きいことが示されています。どちらの印象も感じ取れる釣り合いで味わうことが、この組み合わせでは大切だと考えられます。ただし対象は市販品レベルのお茶とチョコレートであり、産地や品種別の結論ではありません。`,
+    'general', ['donadini-2012-chocolate-beverage-pairing', 'donadini-2014-tea-coffee-chocolate'])]
+}
+
 /** M9: 温かさと甘味の感じ方（Talavera et al. 2005、一般原理） */
 function warmthAndSweetness(tea: Side, choco: Side): InteractionStatement[] {
   void tea
@@ -210,6 +244,8 @@ export function analyzeInteractions(teaItem: TeaItem, chocoItem: ChocolateItem):
       ...sweetnessEnhancesRetronasalAroma(tea, choco),
       ...strongAromaCoversDelicate(tea, choco),
       ...sharedAromaCongruency(teaItem, chocoItem),
+      ...teaPolyphenolsModulateAromaRelease(tea, choco),
+      ...directStudyBalancePrinciple(teaItem, chocoItem),
     ],
     taste: [
       ...sweetnessSuppressesBitterness(tea, choco),
@@ -217,11 +253,13 @@ export function analyzeInteractions(teaItem: TeaItem, chocoItem: ChocolateItem):
       ...sournessEnhancesBitterness(tea, choco),
       ...sweetnessSoftensAstringency(tea, choco),
       ...umamiAromaInteraction(tea, choco),
+      ...milkProteinSoftensAstringency(tea, chocoItem),
     ],
     mouthfeel: [
       ...fatOpposesAstringency(tea, choco),
       ...fatCoatingAromaPersistence(tea, choco),
       ...warmthAndSweetness(tea, choco),
+      ...teaCreamingOnCooling(tea, choco),
     ],
   }
 }

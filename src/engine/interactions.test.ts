@@ -123,6 +123,36 @@ describe('組み合わせの相互作用エンジン', () => {
     expect(s!.text).toContain('直接の検証はありません')
   })
 
+  it('発火例：ミルクチョコ×紅茶では乳タンパク質による渋味の緩和（M11）が出る', () => {
+    const a = analyzeInteractions(teaById('black-tea')!, chocolateById('milk-chocolate')!)
+    const s = a.taste.find((x) => x.ruleId === 'milk-protein-softens-astringency')
+    expect(s).toBeTruthy()
+    expect(s!.level).toBe('general')
+    expect(s!.sourceIds).toContain('piyasena-2025-milk-in-tea')
+    // ダークチョコ（乳固形分を含まない種類）では発火しない
+    const b = analyzeInteractions(teaById('black-tea')!, chocolateById('dark-roasted')!)
+    expect(b.taste.some((x) => x.ruleId === 'milk-protein-softens-astringency')).toBe(false)
+  })
+
+  it('発火例：渋味のあるお茶×香りのあるチョコではポリフェノール×香気放出（M12）と茶クリーム（M13）が出る', () => {
+    const a = analyzeInteractions(teaById('black-tea')!, chocolateById('dark-roasted')!)
+    const m12 = a.aroma.find((x) => x.ruleId === 'tea-polyphenols-modulate-aroma-release')
+    expect(m12).toBeTruthy()
+    expect(m12!.level).toBe('exploratory')
+    const m13 = a.mouthfeel.find((x) => x.ruleId === 'tea-creaming-on-cooling')
+    expect(m13).toBeTruthy()
+    expect(m13!.sourceIds).toContain('jobstl-2005-black-tea-creaming')
+  })
+
+  it('発火例：直接研究の設計原則（M14）は両側に香りの記録がある組み合わせで出て、出典は直接研究2件', () => {
+    const a = analyzeInteractions(teaById('sencha')!, chocolateById('dark-roasted')!)
+    const s = a.aroma.find((x) => x.ruleId === 'direct-study-balance-principle')
+    expect(s).toBeTruthy()
+    expect(s!.level).toBe('general')
+    expect(s!.sourceIds).toEqual(expect.arrayContaining(['donadini-2012-chocolate-beverage-pairing', 'donadini-2014-tea-coffee-chocolate']))
+    expect(s!.text).not.toMatch(/\d+\s*点/)
+  })
+
   it('データが最小の組み合わせでは、どの観点でも文を作らない（特記なし）', () => {
     const emptyProfile = { aromas: [], tastes: emptyTastes(), temporal: emptyTemporal() }
     const tea = { ...teaById('dark-tea')!, profile: emptyProfile }

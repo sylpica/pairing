@@ -80,13 +80,19 @@ describe('カカオ産地エンティティ（2026-10-30 追加）', () => {
     expect(g.flavorEvidence).toBe('measured')
     expect(allText(g)).toContain('加工条件')
   })
-  it('香味データ未確認の産地（コートジボワール・タンザニア）は所見なし・evidence none', () => {
-    for (const id of ['cote-divoire', 'tanzania']) {
-      const o = cacaoOriginById(id)!
-      expect(o.flavorEvidence).toBe('none')
-      expect(o.findings).toHaveLength(0)
-      expect(o.verification.science).toBe('unconfirmed')
-    }
+  it('コートジボワールは実測ありへ更新された（ただし地域差は小さいという結論の明記つき）', () => {
+    const o = cacaoOriginById('cote-divoire')!
+    expect(o.flavorEvidence).toBe('measured')
+    expect(o.verification.science).toBe('peer-reviewed')
+    expect(o.findings.some((f) => f.kind === 'sensory' && f.sourceIds.includes('amien-2025-cote-divoire-cocoa-origins'))).toBe(true)
+    expect(o.findings.some((f) => f.sourceIds.includes('kouassi-2022-cote-divoire-fermentation-places'))).toBe(true)
+    expect(allText(o)).toContain('発酵場所')
+  })
+  it('香味データ未確認の産地（タンザニア）は所見なし・evidence none のまま', () => {
+    const o = cacaoOriginById('tanzania')!
+    expect(o.flavorEvidence).toBe('none')
+    expect(o.findings).toHaveLength(0)
+    expect(o.verification.science).toBe('unconfirmed')
   })
   it('系統から産地を逆引きできる（Nacional→エクアドル／ペルー、Trinitario→ドミニカ）', () => {
     expect(originsForLineage('genetic', 'gen-nacional').map((o) => o.id)).toEqual(expect.arrayContaining(['ecuador', 'peru']))

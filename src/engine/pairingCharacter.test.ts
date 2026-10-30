@@ -137,15 +137,20 @@ describe('組み合わせの味わいの性格の推測エンジン', () => {
     }
   })
 
-  it('片側のデータが無い組み合わせでは性格を出さない（ブロンドチョコレートは香味プロファイル未収録）', () => {
+  it('ブロンドチョコレートは一般的知見レベルのプロファイルを持ち、性格推測の対象になる', () => {
     const blond = chocolateById('blond-chocolate')!
-    expect(blond.profile.aromas).toHaveLength(0)
-    for (const tea of teaItems) {
-      const a = analyzePairingCharacter(tea, blond)
-      expect(a.aroma, `${tea.id}×blond`).toHaveLength(0)
-      expect(a.tasteMouthfeel, `${tea.id}×blond`).toHaveLength(0)
-    }
+    expect(blond.evidenceLevel).toBe('general')
+    expect(blond.profile.aromas.length).toBeGreaterThan(0)
+  })
+
+  it('片側のデータが無い組み合わせでは性格を出さない（空プロファイルで検査）', () => {
     const emptyProfile = { aromas: [], tastes: emptyTastes(), temporal: emptyTemporal() }
+    const emptyChoco = { ...chocolateById('blond-chocolate')!, profile: emptyProfile }
+    for (const tea of teaItems) {
+      const a = analyzePairingCharacter(tea, emptyChoco)
+      expect(a.aroma, `${tea.id}×empty`).toHaveLength(0)
+      expect(a.tasteMouthfeel, `${tea.id}×empty`).toHaveLength(0)
+    }
     const a = analyzePairingCharacter(
       { ...teaById('sencha')!, profile: emptyProfile },
       { ...chocolateById('dark-roasted')!, profile: emptyProfile },

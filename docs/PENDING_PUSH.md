@@ -97,3 +97,14 @@
 - 段階3 デプロイ: dist に空ファイル .nojekyll を含め、gh-pages へ push-files 1コールで4ファイル（index.html＋.nojekyll＋新JS＋CSS）を一括反映。新ヘッド f8521e008752a30316a4760cd238ddba0ba5f47b。読み戻しで .nojekyll の存在（空ファイル SHA e69de29…）と index.html の新JS参照・SHA一致を確認。
 - 段階4 公開確認: **配信は今回も切り替わっていない**。push 後約6分（19:49 JST）時点でも Actions 実行は合計4件のまま（新規実行なし）、deployments 最新も 51aaeb5 のまま、公開側の新JS index-Di_ddlxs.js は 404、旧JS index-DkkSoSa7.js は 200 で配信継続。したがって確認項目 (a) 鳳凰単叢ホイールの2ノート (b) お茶一覧の六大茶類順 (c) 成分一覧ページ (d) 抹茶の味覚 (e) 推測（未検証）バッジ (f) 出典ページで DOI 空表示なし (g) 品種・系統の図鑑ページ (h) 白茶「青草・若葉」から成分を辿れる、はいずれも新ビルドでは未確認。新バンドル側には (a)〜(h) の実装・データが含まれることを文字列照合で確認済み（品種・系統／成分一覧／推測（未検証）／青草・若葉／「出典ページを開く」フォールバック等）で、テスト 75/75 合格済み。
 - 次回への申し送り: ユーザー方針どおり GitHub Actions 方式（deploy-pages 等）へは切り替えない。push 方式のまま間隔を空けて再リトライする。あわせて、Pages 実行が起動しない原因として Settings → Pages のソース設定（build_type）が変わっていないかを、認証付きで確認できる手段があれば確認すること（今回の未認証 API では確認できず）。gh-pages 側は .nojekyll 付き最新ビルド反映済み（f8521e0）のため、次回は公開配信の切替有無と Pages 実行の新規発生を先行確認すること。
+
+
+---
+
+## 2026-10-31 未明 追加バッチ（組み合わせページ＝第2層）※この節は組み合わせページ担当サブタスクが追記
+
+テスト 195/195・tsc クリーン・build 成功（JS index-DrBpIq7M.js 693,266B）。設計記録は `docs/design/combination-pages.md`。**ローカルコミットはしていない**（worktree 全体が未コミットの単一バッチのため、配信時にまとめて扱うこと）。
+
+- 新規: `src/data/teaRegions.ts`（茶の地域エンティティ：長崎のみ、辻村ら2024の所見2件）、`src/data/processRules.ts`（製法ルール4件）、`src/engine/combo.ts`（推測エンジン）、`src/components/ComboWheel.tsx`（根拠レベル区別ホイール）、`src/components/ComboPages.tsx`、`src/engine/combo.test.ts`（23件）、`src/components/ComboPages.test.tsx`（6件）、`docs/design/combination-pages.md`
+- 変更: `src/types.ts`（Combo系＋TeaRegion 型）、`src/data/sources.ts`（出典11件追加）、`src/App.tsx`（ルート combo＋入口。big-card は不変）、`src/App.css`（凡例スタイル）
+- 選択空間: お茶 候補2,016→成立127通り、チョコ 候補810→成立190通り。全数検査で不整合ゼロ。

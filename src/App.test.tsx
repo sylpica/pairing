@@ -180,10 +180,10 @@ describe('UI改善：絞り込みのメイン化・チョコ種類追加・系�
     expect(screen.getAllByText(/Šeremet/).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/遺伝的な系統ではなく/).length).toBeGreaterThan(0)
   })
-  it('ブロンド詳細では香味プロファイル未登録（情報不足）が明示される', () => {
+  it('ブロンド詳細では一般的知見レベルのプロファイルと査読研究の出典が出る', () => {
     location.hash = '#/choco/blond-chocolate'; render(<App />)
-    expect(screen.getAllByText(/情報不足/).length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/香味プロファイルは登録していません/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Aydın/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/実験室で調製/).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/Valrhona/).length).toBeGreaterThan(0)
   })
   it('組み合わせ画面：系統は1つのプルダウンに統合され、カタカナ主表記で選べる', () => {
