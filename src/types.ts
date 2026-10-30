@@ -247,6 +247,40 @@ export interface InteractionAnalysis {
   mouthfeel: InteractionStatement[]
 }
 
+// ===== 組み合わせの味わいの性格の推測（2026-10-30 追加） =====
+// 相互作用（interactions.ts）の上に置く推測の層。両アイテムで確認されている
+// 化合物・香味ノート・味覚の顔ぶれと、発火した相互作用ルールから、組み合わせ全体の
+// 「味わいの性格」（アーシー、スパイシー、まろやか、コクがある等）を推測する。
+// 実測のプロファイルとも相互作用の文章とも型レベルで分離し、必ず estimation: 'inferred' を持つ。
+// 根拠（basis〜）のない性格は生成しない。スコア・順位の数値は持たない。
+// 方法と各ルールの根拠は docs/research/pairing-character-inference.md、エンジンは src/engine/pairingCharacter.ts。
+export type PairingCharacterKind = 'aroma' | 'taste-mouthfeel'
+export interface PairingCharacter {
+  /** 性格ID（例: 'earthy', 'mellow'） */
+  id: string
+  kind: PairingCharacterKind
+  /** 表示名（例: アーシー（土っぽい）、まろやか、コクがある） */
+  label: string
+  /** 推測の説明。「〜の可能性」レベルの表現に留め、断定しない */
+  rationale: string
+  /** 根拠となる化合物ID（両アイテムのどちらかで、記録された香味・味覚に結びつき確認済みのものだけ） */
+  basisCompoundIds: string[]
+  /** 根拠となる香味ノートID（どちらかのプロファイルに「普通」以上で記録されたものだけ） */
+  basisNoteIds: string[]
+  /** 根拠となる味覚キー（どちらかのプロファイルに「普通」以上で記録されたものだけ） */
+  basisTasteKeys: TasteKey[]
+  /** 根拠となる相互作用ルールID（interactions.ts で実際に発火したものだけ） */
+  basisRuleIds: string[]
+  /** 根拠の出典（根拠化合物・ノート・味覚・相互作用ルールの出典の和集合。すべて実在する） */
+  sourceIds: string[]
+  /** 推測であることを型で固定する区分（リテラル必須） */
+  estimation: 'inferred'
+}
+export interface PairingCharacterAnalysis {
+  aroma: PairingCharacter[]
+  tasteMouthfeel: PairingCharacter[]
+}
+
 // ===== カカオの産地（2026-10-30 追加） =====
 // 産地は品種ではない。産地と遺伝（伝統的分類・遺伝集団・クローン）は多対多の関係にあり、
 // 産地名から香味を自動生成しない。香味の根拠レベルは flavorEvidence で明示する:

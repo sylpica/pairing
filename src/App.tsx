@@ -4,9 +4,10 @@ import { chocolateItems, chocolateById } from './data/chocolates'
 import { sources } from './data/sources'
 import ProfileView, { LEVEL_LABEL, SourceLinks } from './components/ProfileView'
 import FlavorWheel from './components/FlavorWheel'
-import { analyzePairing, recommend } from './engine/pairing'
+import { analyzePairing, recommend, TASTE_LABELS } from './engine/pairing'
 import { analyzeInteractions, hasAnyInteraction } from './engine/interactions'
-import type { InteractionStatement } from './types'
+import { analyzePairingCharacter, CHARACTER_RULE_LABELS } from './engine/pairingCharacter'
+import type { InteractionStatement, PairingCharacter } from './types'
 import { categoryById } from './data/flavors'
 import { loadSaved, persistSaved, pushHistory, validateSaved, type SavedData } from './storage'
 import { go, scrollTop } from './nav'
@@ -14,7 +15,7 @@ import NoteDetail from './components/NoteDetail'
 import { CollapsibleSheet } from './components/Sheet'
 import CompoundCard from './components/CompoundCard'
 import { PairNoteCompounds, PairCategoryCompounds } from './components/PairCompounds'
-import { compounds } from './data/compounds'
+import { compounds, compoundById } from './data/compounds'
 import { noteById } from './data/flavors'
 import { CultivarsPage, TeaCultivarDetail, CacaoDetail, OriginDetail, RANK_LABEL } from './components/CultivarPages'
 import CultivarComparePage from './components/CultivarCompare'
@@ -427,6 +428,17 @@ function ChocoDetail({ id, saved, toggleFav, addHistory }: { id: string; saved: 
   )
 }
 
+function CharacterBasis({ c }: { c: PairingCharacter }) {
+  return (
+    <>
+      {c.basisCompoundIds.length > 0 && <p className="note-small">根拠の成分：{c.basisCompoundIds.map((id) => compoundById(id)?.name ?? id).join('、')}</p>}
+      {c.basisNoteIds.length > 0 && <p className="note-small">根拠の香り：{c.basisNoteIds.map((id) => noteById(id)?.name ?? id).join('、')}</p>}
+      {c.basisTasteKeys.length > 0 && <p className="note-small">根拠の味覚：{c.basisTasteKeys.map((k) => TASTE_LABELS[k]).join('、')}</p>}
+      {c.basisRuleIds.length > 0 && <p className="note-small">根拠の相互作用：{c.basisRuleIds.map((r) => CHARACTER_RULE_LABELS[r] ?? r).join('、')}</p>}
+    </>
+  )
+}
+
 function InteractionGroup({ title, items }: { title: string; items: InteractionStatement[] }) {
   if (items.length === 0) return null
   return (
@@ -459,6 +471,10 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
   const choco = chocoId ? chocolateById(chocoId) : undefined
   const result = tea && choco ? analyzePairing(tea.profile, choco.profile) : null
   const interactions = tea && choco ? analyzeInteractions(tea, choco) : null
+  const characters = tea && choco ? analyzePairingCharacter(tea, choco) : null
+  const allCharacters = characters ? [...characters.aroma, ...characters.tasteMouthfeel] : []
+  const [charSel, setCharSel] = useState<string | null>(null)
+  const selCharacter = allCharacters.find((c) => c.id === charSel) ?? null
   // 品種の追加指定: 選んだお茶の茶類で確認済みの組み合わせがある品種だけを選べる
   const teaKindId = tea?.kindId
   const cultivarOptions = useMemo(() => (teaKindId ? [...new Set(cultivarsForKind(teaKindId))] : []), [teaKindId])
@@ -489,6 +505,7 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
   }
   const pairId = tea && choco ? `${teaId}+${chocoId}` : ''
   useEffect(() => { if (pairId) addHistory('pairings', pairId) }, [pairId])
+  useEffect(() => { setCharSel(null) }, [teaId, chocoId])
   useEffect(() => { scrollTop() }, [tab])
   const fav = saved.favorites.pairings.includes(pairId)
   return (
@@ -548,6 +565,27 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
               <button className="fav-btn" aria-pressed={fav} onClick={() => toggleFav('pairings', pairId)}>{fav ? '★ 保存済み' : '☆ この組み合わせを保存'}</button>
             </div>
             <p className="pair-summary-line"><span className="badge">{LEVEL_LABEL[result.level]}</span></p>
+            {characters && (allCharacters.length > 0 ? (
+              <div className="pair-character">
+                <p className="pair-character-head"><strong>組み合わせの味わい（推測）</strong> <span className="badge badge-inferred">推測（未検証）</span></p>
+                <div className="filter-row">
+                  {allCharacters.map((c) => (
+                    <button key={c.id} className="chip" aria-expanded={charSel === c.id} onClick={() => setCharSel(charSel === c.id ? null : c.id)}>{c.label}</button>
+                  ))}
+                </div>
+                {selCharacter && (
+                  <div className="pair-character-detail">
+                    <p><strong>{selCharacter.label}</strong> <span className="badge badge-inferred">推測（未検証）</span></p>
+                    <p>{selCharacter.rationale}</p>
+                    <CharacterBasis c={selCharacter} />
+                    <SourceLinks ids={selCharacter.sourceIds} />
+                  </div>
+                )}
+                <p className="note-small">両アイテムで確認されている成分・味覚の顔ぶれと、文献に基づく相互作用から推測した「味わいの性格」です。組み合わせ自体を実測したものではありません。性格の名前を押すと根拠が見えます。</p>
+              </div>
+            ) : (
+              <p className="pair-summary-line note-small">組み合わせの味わいの推測は、根拠のある条件が揃わないため表示できません。</p>
+            ))}
             {result.sharedNotes.length > 0 && <p className="pair-summary-line">共通する香り：{result.sharedNotes.slice(0, 3).map((s) => s.name).join('、')}{result.sharedNotes.length > 3 ? ' ほか' : ''}</p>}
             {result.sharedCategories.length > 0 && <p className="pair-summary-line">同じ分類の香り：{result.sharedCategories.slice(0, 3).map((s) => categoryById(s.categoryId)?.name ?? s.categoryId).join('、')}{result.sharedCategories.length > 3 ? ' ほか' : ''}</p>}
             {result.contrasts.length > 0 && <p className="pair-summary-line">対比する特徴：{[...new Set(result.contrasts.map((c) => c.label))].slice(0, 2).join('／')}</p>}
@@ -595,6 +633,18 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
           </>}
           {pairNote && <PairNoteCompounds noteId={pairNote} teaKindId={tea.kindId} chocoKindId={choco.kind} />}
           {pairCat && <PairCategoryCompounds categoryId={pairCat} tea={tea.profile} choco={choco.profile} onPickNote={(id) => { setPairNote(id); setPairCat(null) }} />}
+          {characters && allCharacters.length > 0 && <>
+            <h3>組み合わせの味わいの性格（推測）</h3>
+            <p className="note-small">両アイテムで確認されている成分・香味・味覚の顔ぶれと、下記の相互作用の発火状況から、組み合わせ全体がどのような味わいになるかを推測したものです。根拠のある性格だけを示し、根拠のない性格は出しません。推測の方法と限界は調査記録（docs/research/pairing-character-inference.md）にあります。</p>
+            {allCharacters.map((c) => (
+              <div className="temporal-card" key={c.id}>
+                <p><strong>{c.label}</strong> <span className="badge badge-inferred">推測（未検証）</span></p>
+                <p>{c.rationale}</p>
+                <CharacterBasis c={c} />
+                <SourceLinks ids={c.sourceIds} />
+              </div>
+            ))}
+          </>}
           {interactions && <>
             <h3>相互作用の観点から</h3>
             <p className="note-small">香りと味は、口の中で出会うと互いの感じ方を変えることが知られています（香りが甘味を際立たせる、甘味が苦味や渋味を抑える、脂肪が渋味を和らげる等）。以下は、文献で裏付けられた相互作用の一般原理を、この組み合わせの収録データに当てはめたものです。この組み合わせ自体を官能評価した研究ではないため、各文に根拠の区分を付けています。根拠と限界の詳細は調査記録（docs/research/pairing-interactions.md）にあります。</p>
@@ -758,6 +808,10 @@ function SourcesPage() {
       <article className="temporal-card">
         <h3>花・果物の具体名の「推測」について</h3>
         <p>「花様」「トロピカル」「果実全般」のように具体名のない香りについては、そのアイテム（またはその茶類・種類の試料）で実際に確認されている香気成分の顔ぶれと、各成分について出典で確認済みの香りの記述から、具体的な花・果物への類似を「推測（未検証）」と明示して併記している場合があります。実測でその花・果物と確認されたものではなく、根拠に使った成分と推論の過程は各ノートの詳細に示しています。具体名の香り記述の一部に記事・データベース等の参考情報を含む場合は、その旨を明記しています。推測の方法と、推測を付けなかった項目の理由は調査記録（docs/research/floral-fruit-inference.md）にまとめています。</p>
+      </article>
+      <article className="temporal-card">
+        <h3>組み合わせの「味わいの性格」の推測について</h3>
+        <p>組み合わせ画面の「組み合わせの味わい（推測）」は、両アイテムで確認されている成分・香味・味覚の顔ぶれと、文献に基づく相互作用（甘味が渋味を和らげる、渋味と脂肪が互いを和らげる等）の発火状況から、組み合わせ全体がどのような味わい（アーシー、スパイシー、まろやか、コクがある等）になるかを推測したものです。根拠（成分・香り・味覚・相互作用）を必ず併記し、根拠のない性格は表示しません。成分の量を足し算して予測するものではなく、組み合わせ自体を官能評価した実測でもありません。「コク」の知覚については、コク味物質とカルシウム感知受容体の研究（Ohsu et al. 2010）を概念の根拠にしています。推測の方法と限界は調査記録（docs/research/pairing-character-inference.md）にまとめています。</p>
       </article>
       {sources.map((s) => (
         <article className="temporal-card" key={s.id}>

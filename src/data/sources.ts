@@ -943,6 +943,17 @@ export const sources: Source[] = [
     scope: 'モデルチーズ香気と5基本味の溶液での相互作用を調べた原著。チーズ香気はうま味（と苦味）の知覚を強めた。うま味と香りのクロスモーダルな相互作用の根拠として用いるが、香気はチーズ由来であり、お茶×チョコレートへの適用は類推である。',
     license: '未確認（Elsevier）', verified: true,
   },
+  {
+    id: 'ohsu-2010-kokumi-casr',
+    kind: 'original',
+    title: 'Involvement of the calcium-sensing receptor in human taste perception',
+    authors: 'Ohsu T, Amino Y, Nagasaki H, Yamanaka T, Takeshita S, Hatanaka T, Maruyama Y, Miyamura N, Eto Y',
+    year: 2010, journal: 'Journal of Biological Chemistry 285(2):1016–1022',
+    doi: '10.1074/jbc.M109.029165', pmid: '19892707',
+    url: 'https://doi.org/10.1074/jbc.M109.029165',
+    scope: '「コク」の知覚に関する原著（全文を PMC で確認）。グルタチオン等のγ-グルタミルペプチド（コク味物質）は、それ自体には味がないが、カルシウム感知受容体（CaSR）を介して甘味・塩味・うま味を増強し、味に厚みや持続を感じさせることが、ヒト官能試験と受容体応答の対応で示された。CaSR 拮抗薬でコクが抑えられることも確認されている。本アプリでは「うま味×甘味・脂肪」の組み合わせで「コクがある」という味わいの性格を推測する際の、知覚概念の根拠として用いる。個別のお茶×チョコレートの組み合わせでコクが実測されたものではない。',
+    license: '未確認（American Society for Biochemistry and Molecular Biology）', verified: true,
+  },
   // ===== チョコレート種類の追加（ルビー・ブロンド、2026-10-30）で追加した出典 =====
   // 調査記録: docs/research/chocolate-types.md
   {
