@@ -1,4 +1,4 @@
-import type { DataLevelUsed, EntityFinding, TeaCultivar } from '../types'
+import type { CacaoOrigin, DataLevelUsed, EntityFinding, TeaCultivar } from '../types'
 import { FLAVOR_FINDING_KINDS } from '../types'
 import { cultivarTeaUses } from '../data/cultivars'
 import { teaKinds } from '../data/teas'
@@ -10,6 +10,7 @@ import { teaKinds } from '../data/teas'
 export const DATA_LEVEL_LABEL: Record<DataLevelUsed, string> = {
   'cultivar-measured': '品種・系統の実測に基づく参考情報',
   'cultivar-general': '品種固有の一般的傾向に基づく参考情報',
+  'origin-measured': '産地の実測に基づく参考情報',
   'group-general': '分類・集団レベルの特徴に基づく参考情報',
   'kind-general': '茶類・種類レベルの特徴による参考情報',
   'insufficient': '使えるデータがないため不使用',
@@ -90,6 +91,36 @@ export function cacaoPairingNote(layer: CacaoLayer, entity: CacaoEntityLike): Pa
   return {
     level: 'insufficient',
     text: `${entity.name}（${CACAO_LAYER_LABEL[layer]}）については、香味の科学データが未確認です。そのため系統の情報は組み合わせの見方に使っていません（チョコレートの種類レベルの特徴のみで見ています）。遺伝的分類だけから味を断定することはしません。`,
+    findings: [],
+    sourceIds: [],
+  }
+}
+
+/** カカオ側: 産地が指定された場合の階層判定。産地は品種ではないため、
+ * 産地レベルの香味実測がある場合に限り origin-measured とし、組成の実測のみ・
+ * 集団レベルの知見しかない場合は group-general（一般的傾向）、所見がなければ
+ * insufficient として、産地の情報は組み合わせの見方に使わない。 */
+export function cacaoOriginPairingNote(origin: CacaoOrigin): PairingContextNote {
+  const findings = flavorFindings(origin.findings)
+  if (origin.flavorEvidence === 'measured' && findings.length > 0) {
+    return {
+      level: 'origin-measured',
+      text: `${origin.name}産の試料については、香味の実測（官能・揮発性成分）があります。ただし実測が示すのは産地で一通りの味ではなく、発酵などの条件による変動を含む範囲です。組み合わせの見方はチョコレートの種類レベルの特徴で作り、産地の所見は参考として併記します。`,
+      findings,
+      sourceIds: [...new Set(findings.flatMap((f) => f.sourceIds))],
+    }
+  }
+  if (origin.flavorEvidence === 'general' && findings.length > 0) {
+    return {
+      level: 'group-general',
+      text: `${origin.name}については、組成の実測や、関連する遺伝集団レベルの知見はありますが、産地としての香味の官能実測は確認できていません。そのため所見は一般的な傾向として参考に併記するだけで、組み合わせの見方はチョコレートの種類レベルの特徴で作っています。産地名から味を断定することはしません。`,
+      findings,
+      sourceIds: [...new Set(findings.flatMap((f) => f.sourceIds))],
+    }
+  }
+  return {
+    level: 'insufficient',
+    text: `${origin.name}については、香味の科学データが未確認です。そのため産地の情報は組み合わせの見方に使っていません（チョコレートの種類レベルの特徴のみで見ています）。産地名から味を推定する表示はしません。`,
     findings: [],
     sourceIds: [],
   }

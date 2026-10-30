@@ -200,7 +200,7 @@ export const compounds: Compound[] = [
     noteIds: ['floral-general'],
     plainDescription: 'ジャスミン等の花にも含まれる香り成分です。',
     detectedIn: '煎茶',
-    aromaKnowledge: 'Kumazawa & Masuda 1999 で、花様の香りをもつ強力な香気成分として同定されています。煎茶の「花全般」ノートに寄与します。',
+    aromaKnowledge: 'Kumazawa & Masuda 1999 で、花様の香りをもつ強力な香気成分として同定されています。煎茶の「花様」ノートに寄与します。',
     contributionEvidence: '煎茶の AEDA で最も高い FD値を示した成分群の一つです。',
     sourceIds: ['kumazawa-1999-sencha-odorants'],
     scopes: [{ side: 'tea', kindId: 'green' }],

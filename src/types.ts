@@ -192,4 +192,41 @@ export interface CacaoClone {
 }
 
 // ペアリング予測が「どの階層のデータを使ったか」の記録区分（将来の engine 拡張用）
-export type DataLevelUsed = 'cultivar-measured' | 'cultivar-general' | 'group-general' | 'kind-general' | 'insufficient'
+export type DataLevelUsed = 'cultivar-measured' | 'cultivar-general' | 'origin-measured' | 'group-general' | 'kind-general' | 'insufficient'
+
+// ===== カカオの産地（2026-10-30 追加） =====
+// 産地は品種ではない。産地と遺伝（伝統的分類・遺伝集団・クローン）は多対多の関係にあり、
+// 産地名から香味を自動生成しない。香味の根拠レベルは flavorEvidence で明示する:
+// 'measured' = その産地の試料で香味（官能・寄与）まで実測がある /
+// 'general' = 組成の実測のみ、または集団レベルの知見しかない（一般的傾向として表示） /
+// 'none' = 香味の実測所見が確認できていない（表示しない）。
+export type OriginFlavorEvidence = 'measured' | 'general' | 'none'
+
+export interface OriginTradeName {
+  name: string
+  // commercial: 商業・香味の呼称（例: アリバ）／ grade: 発酵等のグレード名（例: サンチェス）
+  kind: 'commercial' | 'grade'
+  note: string
+  /** 商業呼称が歴史的に結び付けられてきた遺伝集団（呼称そのものは遺伝集団名ではない） */
+  linkedGeneticGroupId?: string
+}
+
+export interface CacaoOrigin {
+  id: string
+  /** 表示名（国名） */
+  name: string
+  country: string
+  /** 下位地域（実測・資料で確認できるものだけ） */
+  regions: { name: string; note: string }[]
+  /** 産地に付随する呼称（品種名ではないことを明示して保持する） */
+  tradeNames: OriginTradeName[]
+  relatedTraditionalIds: string[]
+  relatedGeneticGroupIds: string[]
+  relatedCloneIds: string[]
+  flavorEvidence: OriginFlavorEvidence
+  verification: EntityVerification
+  scienceNote: string
+  findings: EntityFinding[]
+  sourceIds: string[]
+  note: string
+}

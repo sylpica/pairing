@@ -85,7 +85,7 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
   it('4. 成分一覧では成分→香味・味の逆引き検索が動く', () => {
     location.hash = '#/compounds'; render(<App />)
     fireEvent.change(screen.getByLabelText('成分を検索'), { target: { value: 'リナロール' } })
-    expectShown(/関係する香味：柑橘、花全般/)
+    expectShown(/関係する香味：柑橘、花様/)
     fireEvent.change(screen.getByLabelText('成分を検索'), { target: { value: '苦味' } })
     expectShown(/カフェイン/)
     expectShown(/テオブロミン/)

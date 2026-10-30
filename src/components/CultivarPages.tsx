@@ -6,6 +6,7 @@ import {
   traditionalGroupById, geneticGroupById, cacaoCloneById,
 } from '../data/cacao'
 import { teaKinds } from '../data/teas'
+import { cacaoOrigins, cacaoOriginById } from '../data/origins'
 import { go } from '../nav'
 import { FindingsList, ScienceNote, VerificationBadges, SCIENCE_LABEL } from './EntityViews'
 import { SourceLinks } from './SourceLinks'
@@ -40,7 +41,8 @@ export function CultivarsPage() {
   const trad = useMemo(() => cacaoTraditionalGroups.filter((g) => matchesAny(q, [g.name, g.nameJa, ...g.aliases])), [q])
   const gen = useMemo(() => cacaoGeneticGroups.filter((g) => matchesAny(q, [g.name, ...g.aliases])), [q])
   const clones = useMemo(() => cacaoClones.filter((c) => matchesAny(q, [c.name, ...c.aliases])), [q])
-  const empty = teas.length + trad.length + gen.length + clones.length === 0
+  const origins = useMemo(() => cacaoOrigins.filter((o) => matchesAny(q, [o.name, o.country, ...o.regions.map((r) => r.name), ...o.tradeNames.map((t) => t.name)])), [q])
+  const empty = teas.length + trad.length + gen.length + clones.length + origins.length === 0
   return (
     <div>
       <h2>品種・系統を調べる</h2>
@@ -98,6 +100,18 @@ export function CultivarsPage() {
             <li key={c.id}><button className="item-card" onClick={() => go('cacao/clone/' + c.id)}>
               <span className="item-name">{c.name}</span>
               <span className="badge">{SCIENCE_LABEL[c.verification.science]}</span>
+            </button></li>
+          ))}
+        </ul>
+      </>}
+      {origins.length > 0 && <>
+        <h3>カカオの産地</h3>
+        <p className="note-small">産地は品種ではありません。産地と遺伝（系統）は多対多の関係にあり、産地ごとに確認できている科学データの範囲が異なります。香味の実測がない産地には、香味の特徴を表示しません。</p>
+        <ul className="item-list">
+          {origins.map((o) => (
+            <li key={o.id}><button className="item-card" onClick={() => go('origin/' + o.id)}>
+              <span className="item-name">{o.name}</span>
+              <span><span className="badge">産地</span> <span className="badge">{SCIENCE_LABEL[o.verification.science]}</span></span>
             </button></li>
           ))}
         </ul>
@@ -198,6 +212,60 @@ export function CacaoDetail({ layer, id }: { layer: CacaoLayer; id: string }) {
       {entity.note && <><h3>注記</h3><p>{entity.note}</p></>}
       <SourceLinks ids={entity.sourceIds} />
       <p><button className="linklike" onClick={() => go('compare-cultivars')}>他の系統と比べる</button></p>
+    </div>
+  )
+}
+
+const EVIDENCE_LABEL: Record<string, string> = {
+  measured: '産地の香味実測あり',
+  general: '組成・集団レベルの知見のみ',
+  none: '香味データ未確認',
+}
+
+export function OriginDetail({ id }: { id: string }) {
+  const o = cacaoOriginById(id)
+  if (!o) return <p className="unknown-box">その産地は収録されていません。</p>
+  const trads = o.relatedTraditionalIds.map((x) => traditionalGroupById(x)).filter((g) => !!g)
+  const gens = o.relatedGeneticGroupIds.map((x) => geneticGroupById(x)).filter((g) => !!g)
+  const clones = o.relatedCloneIds.map((x) => cacaoCloneById(x)).filter((g) => !!g)
+  return (
+    <div>
+      <button className="btn ghost" onClick={() => go('cultivars')}>← 品種・系統の一覧へ</button>
+      <h2>{o.name}</h2>
+      <p>
+        <span className="badge">産地</span> <span className="badge">{EVIDENCE_LABEL[o.flavorEvidence]}</span>
+      </p>
+      <VerificationBadges v={o.verification} />
+      <p className="note-small">産地は品種ではありません。産地と遺伝（伝統的分類・遺伝集団・クローン）は多対多の関係にあり、この産地の名前から原料の系統や味を決めることはできません。</p>
+      {o.regions.length > 0 && <>
+        <h3>下位地域</h3>
+        <ul>{o.regions.map((r) => <li key={r.name}><strong>{r.name}</strong>：{r.note}</li>)}</ul>
+      </>}
+      {o.tradeNames.length > 0 && <>
+        <h3>産地に付随する呼称（品種名ではありません）</h3>
+        <ul>{o.tradeNames.map((t) => {
+          const linked = t.linkedGeneticGroupId ? geneticGroupById(t.linkedGeneticGroupId) : undefined
+          return (
+            <li key={t.name}><strong>{t.name}</strong>（{t.kind === 'grade' ? 'グレード名' : '商業・香味の呼称'}）：{t.note}
+              {linked && <> 関連する遺伝集団：<button className="linklike" onClick={() => go('cacao/genetic/' + linked.id)}>{linked.name}</button></>}
+            </li>
+          )
+        })}</ul>
+      </>}
+      {(trads.length > 0 || gens.length > 0 || clones.length > 0) && <>
+        <h3>関連する系統</h3>
+        <p className="note-small">この産地で確認されている関連です。産地全体が単一の系統からなるという意味ではありません。</p>
+        <div className="filter-row">
+          {trads.map((g) => <button key={g!.id} className="chip" onClick={() => go('cacao/traditional/' + g!.id)}>{g!.nameJa}（{g!.name}）</button>)}
+          {gens.map((g) => <button key={g!.id} className="chip" onClick={() => go('cacao/genetic/' + g!.id)}>{g!.name}</button>)}
+          {clones.map((c) => <button key={c!.id} className="chip" onClick={() => go('cacao/clone/' + c!.id)}>{c!.name}</button>)}
+        </div>
+      </>}
+      <h3>科学的な所見</h3>
+      <ScienceNote science={o.verification.science} note={o.scienceNote} />
+      <FindingsList findings={o.findings} />
+      {o.note && <><h3>注記</h3><p>{o.note}</p></>}
+      <SourceLinks ids={o.sourceIds} />
     </div>
   )
 }

@@ -28,7 +28,7 @@ export default function ProfileView({ profile, scopeNote, sourceIds, context }: 
   ]
   return (
     <div>
-      <FlavorWheel profile={profile} onSelectNote={(id) => { setSelected(id); setSelectedTaste(null) }} />
+      <FlavorWheel profile={profile} context={context} onSelectNote={(id) => { setSelected(id); setSelectedTaste(null) }} />
       {selected && (
         <CollapsibleSheet resetKey={selected} title={noteById(selected)?.name ?? selected} onDismiss={() => setSelected(null)}>
           <NoteDetail noteId={selected} profile={profile} context={context} />
