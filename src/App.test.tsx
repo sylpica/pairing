@@ -1017,3 +1017,65 @@ describe('実機フィードバック第15弾：お気に入り機能の一新',
     expect('history' in raw).toBe(false)
   })
 })
+
+describe('実機フィードバック第24弾：戻るボタンは来た元の画面に戻る', () => {
+  beforeEach(() => { cleanup(); localStorage.clear(); sessionStorage.clear(); location.hash = '#/' })
+
+  it('チョコを調べる→組み合わせページ→「戻る」でチョコを調べるに戻り、選択も保持される', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByText('チョコを調べる'))
+    expect(await screen.findByRole('heading', { name: 'チョコを調べる' })).toBeTruthy()
+    // 調べる画面で選択しておく（戻ったときに保持されていることの確認用）
+    fireEvent.change(screen.getByLabelText('分類（種類）で絞り込み'), { target: { value: 'dark' } })
+    // フッターの導線からお茶の組み合わせページへ（ユーザーの報告フロー）
+    fireEvent.click(screen.getByRole('button', { name: '組み合わせで調べる（お茶）' }))
+    expect(await screen.findByRole('button', { name: '← 戻る' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '← 戻る' }))
+    // ホームではなく、来た元のチョコを調べるに戻る
+    expect(await screen.findByRole('heading', { name: 'チョコを調べる' })).toBeTruthy()
+    expect((screen.getByLabelText('分類（種類）で絞り込み') as HTMLSelectElement).value).toBe('dark')
+  })
+
+  it('お茶を調べる→産地（地域）カード→組み合わせページ→「戻る」でお茶を調べるに戻る', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByText('お茶を調べる'))
+    expect(await screen.findByRole('heading', { name: 'お茶を調べる' })).toBeTruthy()
+    const card = [...document.querySelectorAll('.item-card')].find((el) => el.textContent?.includes('村上'))
+    expect(card).toBeTruthy()
+    fireEvent.click(card!)
+    expect(await screen.findByRole('button', { name: '← 戻る' })).toBeTruthy()
+    expect(location.hash).toContain('#/combo/tea/')
+    fireEvent.click(screen.getByRole('button', { name: '← 戻る' }))
+    expect(await screen.findByRole('heading', { name: 'お茶を調べる' })).toBeTruthy()
+    expect(location.hash).toBe('#/tea')
+  })
+})
+
+describe('実機フィードバック第25弾：ホイールの無いページに推測ホイールを足す', () => {
+  beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
+  it('ふうしゅん（確認済み組み合わせなし）は交配親からの推測ホイールが表示される', async () => {
+    render(<App />)
+    fireEvent.click(screen.getAllByRole('button', { name: '品種・系統' })[0])
+    expect(await screen.findByRole('heading', { name: '品種・系統を調べる' })).toBeTruthy()
+    fireEvent.click(screen.getByText('ふうしゅん'))
+    expect(await screen.findByRole('heading', { name: /ふうしゅん/ })).toBeTruthy()
+    // ホイールの見出しと、推測であることの明示が出る
+    expect(screen.getByRole('heading', { name: '分類との組み合わせで見る味わい（フレーバーホイール）' })).toBeTruthy()
+    expect(screen.getByText(/推測したホイール/)).toBeTruthy()
+    expect(screen.getByText(/交配親：かなやみどり/)).toBeTruthy()
+    // 確認済み側の表示（利用できる茶類）は従来どおり「未確認」のまま壊れていない
+    expect(screen.getByText('利用できる茶類（確認済みの組み合わせのみ）')).toBeTruthy()
+    expect(screen.getByText(/公的資料・研究で未確認です/)).toBeTruthy()
+  })
+
+  it('産地ページ（タンザニア）にもホイールが表示され、産地情報を使っていない旨が明示される', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByText('チョコを調べる'))
+    expect(await screen.findByRole('heading', { name: 'チョコを調べる' })).toBeTruthy()
+    const originName = screen.getAllByText('タンザニア').find((el) => el.closest('.item-card'))
+    fireEvent.click(originName!)
+    expect(await screen.findByRole('heading', { name: /タンザニア/ })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: '種類との組み合わせで見る味わい（フレーバーホイール）' })).toBeTruthy()
+    expect(screen.getByText(/産地の情報は味わいの推測に使っていません/)).toBeTruthy()
+  })
+})

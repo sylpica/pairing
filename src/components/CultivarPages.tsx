@@ -1,12 +1,12 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import type { ComboNote, ComboTaste, TeaCultivar, TeaCultivarRank } from '../types'
+import type { CacaoOrigin, ComboNote, ComboTaste, TeaCultivar, TeaCultivarRank } from '../types'
 import { FLAVOR_FINDING_KINDS } from '../types'
 import ComboWheelPanel from './ComboWheelPanel'
 import FavButton from './FavButton'
 import BackButton from './BackButton'
 import type { CompoundContext } from '../data/compounds'
 import { COMBO_LEVEL_LABEL } from '../engine/combo'
-import { cultivarWheels, lineageWheels } from '../engine/entityWheel'
+import { cultivarWheels, inferredCultivarWheels, lineageWheels, originWheels } from '../engine/entityWheel'
 import { teaCultivars, teaCultivarById, usesForCultivar } from '../data/cultivars'
 import {
   cacaoTraditionalGroups, cacaoGeneticGroups, cacaoClones,
@@ -167,25 +167,34 @@ export function CultivarsPage() {
 
 function CultivarWheelSection({ cultivarId, cultivarName, legendExtra }: { cultivarId: string; cultivarName: string; legendExtra?: ReactNode }) {
   const wheels = useMemo(() => cultivarWheels(cultivarId), [cultivarId])
+  // 第25弾：確認済み組み合わせが無い品種には、近縁品種（交配親・子品種）の
+  // 確認済み組み合わせからの推測ホイールを出す。足がかりが無い品種は従来どおり出さない。
+  const inferred = useMemo(() => (wheels.length === 0 ? inferredCultivarWheels(cultivarId) : []), [wheels, cultivarId])
+  const shown = wheels.length > 0 ? wheels : inferred
   // ホイールが無い品種では凡例ボックスが無いため、バッジはその場に出す（表示自体は失わない）
-  if (wheels.length === 0) return legendExtra ? <>{legendExtra}</> : null
-  const tabs: WheelTab[] = wheels.map((w) => ({
+  if (shown.length === 0) return legendExtra ? <>{legendExtra}</> : null
+  const isInferred = wheels.length === 0
+  const tabs: WheelTab[] = shown.map((w) => ({
     key: w.kindId,
-    label: w.kindName,
+    label: w.inferredFromText ? `${w.kindName}（推測）` : w.kindName,
     notes: w.notes,
     tastes: w.tastes,
     overallLevel: w.overallLevel,
     context: w.context,
-    footer: w.comboPath
-      ? <p><button className="linklike" onClick={() => go(w.comboPath!)}>「{cultivarName} × {w.kindName}」の組み合わせページで、産地違いや根拠の内訳を見る</button></p>
-      : <p className="note-small">{w.kindName}は組み合わせページの対象外の形態のため、土台にしたアイテムのページへ案内します。<button className="linklike" onClick={() => go(w.itemPath!)}>{w.kindName}のページを見る</button></p>,
+    footer: w.inferredFromText
+      ? <p className="note-small">この茶類との組み合わせ自体は未確認のため、専用の組み合わせページはありません。推測の土台は下の注記と、各ノートの根拠に示します。</p>
+      : w.comboPath
+        ? <p><button className="linklike" onClick={() => go(w.comboPath!)}>「{cultivarName} × {w.kindName}」の組み合わせページで、産地違いや根拠の内訳を見る</button></p>
+        : <p className="note-small">{w.kindName}は組み合わせページの対象外の形態のため、土台にしたアイテムのページへ案内します。<button className="linklike" onClick={() => go(w.itemPath!)}>{w.kindName}のページを見る</button></p>,
   }))
   return (
     <>
       <h3>分類との組み合わせで見る味わい（フレーバーホイール）</h3>
       {/* 第18弾：ホイールを見出し直下に置き、説明文はホイールの下に回す */}
       <EntityWheelTabs tabs={tabs} legendExtra={legendExtra} />
-      <p className="note-small">ホイールは、分類のプロファイルを土台に、品種の所見と製法の科学を重ねた<strong>組み合わせの推測</strong>です。{cultivarName}固有の実測プロファイルではありません。品種固有の実測がある部分は、下の「科学的な所見」に分けて示します。</p>
+      {isInferred
+        ? <p className="note-small">{cultivarName}には確認済みの組み合わせがないため、{shown[0].inferredFromText}の確認済み組み合わせから<strong>推測したホイール</strong>を表示しています。すべて推測（未検証）で、{cultivarName}自体の実測ではありません。茶類の選択肢は、足がかりから推測できる範囲に限っています。</p>
+        : <p className="note-small">ホイールは、分類のプロファイルを土台に、品種の所見と製法の科学を重ねた<strong>組み合わせの推測</strong>です。{cultivarName}固有の実測プロファイルではありません。品種固有の実測がある部分は、下の「科学的な所見」に分けて示します。</p>}
     </>
   )
 }
@@ -311,6 +320,29 @@ function LineageWheelSection({ layer, id, entityName, hasFlavorFindings, legendE
   )
 }
 
+/** 産地ページのホイール（第25弾で新設。系統ページと同型の構成） */
+function OriginWheelSection({ origin, legendExtra }: { origin: CacaoOrigin; legendExtra?: ReactNode }) {
+  const wheels = useMemo(() => originWheels(origin.id), [origin.id])
+  const hasFlavorFindings = origin.findings.some((f) => FLAVOR_FINDING_KINDS.includes(f.kind))
+  const tabs: WheelTab[] = wheels.map((w) => ({
+    key: w.kind,
+    label: w.kindLabel,
+    notes: w.notes,
+    tastes: w.tastes,
+    overallLevel: w.overallLevel,
+    context: w.context,
+    footer: <p><button className="linklike" onClick={() => go(w.comboPath)}>「{origin.name} × {w.kindLabel}」の組み合わせページで、系統違いや根拠の内訳を見る</button></p>,
+  }))
+  return (
+    <>
+      <h3>種類との組み合わせで見る味わい（フレーバーホイール）</h3>
+      <EntityWheelTabs tabs={tabs} legendExtra={legendExtra} />
+      <p className="note-small">ホイールは、種類のプロファイルを土台に、産地の所見を重ねた<strong>組み合わせの推測</strong>です。{origin.name}固有の実測プロファイルではありません。産地固有の実測がある部分は、下の「科学的な所見」に分けて示します。</p>
+      {!hasFlavorFindings && <p className="unknown-box">この産地については、香味の科学的な所見が確認できていません。そのためホイールは種類一般のプロファイルの表示であり、産地の情報は味わいの推測に使っていません。</p>}
+    </>
+  )
+}
+
 const EVIDENCE_LABEL: Record<string, string> = {
   measured: '産地の香味実測あり',
   general: '組成・集団レベルの知見のみ',
@@ -325,13 +357,15 @@ export function OriginDetail({ id, fav, onToggleFav }: { id: string; fav?: boole
   const clones = o.relatedCloneIds.map((x) => cacaoCloneById(x)).filter((g) => !!g)
   return (
     <div>
-      <BackButton fallback="cultivars" />
+      {/* 第24弾：産地詳細の自然な親はチョコを調べる（産地カード・産地チップの主導線） */}
+      <BackButton fallback="choco" />
       <h2>{o.name} {onToggleFav && <FavButton fav={!!fav} onToggle={onToggleFav} />}</h2>
       <p>
         <span className="badge">産地</span> <span className="badge">{EVIDENCE_LABEL[o.flavorEvidence]}</span>
       </p>
-      <VerificationBadges v={o.verification} />
       <p className="note-small">産地は品種ではありません。産地と遺伝（伝統的分類・遺伝集団・クローン）は多対多の関係にあり、この産地の名前から原料の系統や味を決めることはできません。</p>
+      {/* 第25弾：産地ページにもホイールを新設（系統ページと同型）。確認バッジは第19弾の原則どおり凡例ボックス内へ集約 */}
+      <OriginWheelSection origin={o} legendExtra={<VerificationBadges v={o.verification} />} />
       {o.regions.length > 0 && <>
         <h3>下位地域</h3>
         <ul>{o.regions.map((r) => <li key={r.name}><strong>{r.name}</strong>：{r.note}</li>)}</ul>

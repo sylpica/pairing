@@ -2,8 +2,9 @@ import { goBack } from '../nav'
 
 /**
  * 「前の画面へ戻る」ボタン。組み合わせページと各詳細ページの冒頭に置く。
- * 挙動は履歴を戻ること（nav.ts の goBack：アプリ内遷移スタック→ブラウザ履歴→
- * フォールバック先の順）。fallback は、このページから辿るのが自然な一覧ページ。
+ * 挙動はアプリ内遷移の記録を戻ること（nav.ts の goBack：アプリ内遷移
+ * スタック→フォールバック先の順。ブラウザ履歴には委ねない）。fallback は、
+ * アプリ内遷移の記録が無い場合に辿るのが自然な親画面。
  */
 export default function BackButton({ fallback }: { fallback: string }) {
   return (

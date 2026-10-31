@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { cultivarWheels, lineageWheels } from './entityWheel'
+import { cultivarWheels, inferredCultivarWheels, lineageWheels, originWheels } from './entityWheel'
 import { teaCultivars, usesForCultivar } from '../data/cultivars'
 import { cacaoTraditionalGroups, cacaoGeneticGroups, cacaoClones } from '../data/cacao'
+import { cacaoOrigins } from '../data/origins'
 import { sources } from '../data/sources'
 import { noteById } from '../data/flavors'
 import { parseTeaComboSub, parseChocoComboSub, teaComboViable, chocoComboViable } from './combo'
@@ -100,6 +101,78 @@ describe('品種・系統ホイールの根拠（全数検査）', () => {
           expect(n.sourceIds.length).toBeGreaterThan(0)
           for (const sid of n.sourceIds) expect(sourceIds.has(sid), `${e.id} note source ${sid}`).toBe(true)
           expect('score' in n).toBe(false)
+        }
+      }
+    }
+  })
+
+  it('【第25弾】ふうしゅんは交配親かなやみどりの緑茶から推測ホイールが組める（全て推測・一段弱い）', () => {
+    const wheels = inferredCultivarWheels('fushu')
+    expect(wheels).toHaveLength(1)
+    const w = wheels[0]
+    expect(w.kindId).toBe('green')
+    expect(w.inferredFromText).toContain('かなやみどり')
+    expect(w.overallLevel).toBe('inferred')
+    expect(w.comboPath).toBeNull()
+    expect(w.notes.length).toBeGreaterThan(0)
+    for (const n of w.notes) {
+      expect(n.level).toBe('inferred')
+      // 親より一段弱く：強い のままのノートは残らない
+      expect(n.intensity).not.toBe('strong')
+      // 推測の出所（交配親）を説明する根拠を必ず含む
+      expect(n.basis.some((b) => b.from === 'cultivar' && b.text.includes('推測'))).toBe(true)
+      expect(n.sourceIds.length).toBeGreaterThan(0)
+    }
+    for (const t of w.tastes) expect(t.level).toBe('inferred')
+  })
+
+  it('【第25弾】展茗は交配親さみどりから緑茶・玉露・抹茶の推測ホイールが組める', () => {
+    const kindIds = inferredCultivarWheels('tenmyou').map((w) => w.kindId)
+    expect(kindIds).toEqual(expect.arrayContaining(['green', 'gyokuro-form', 'matcha-form']))
+  })
+
+  it('【第25弾】交配親が使えない品種は子品種から推測する（さやまみどり・硬枝紅心）', () => {
+    const sayama = inferredCultivarWheels('sayamamidori')
+    expect(sayama.map((w) => w.kindId)).toEqual(['green'])
+    expect(sayama[0].inferredFromText).toContain('子品種')
+    const yingzhi = inferredCultivarWheels('yingzhi-hongxin')
+    expect(yingzhi.map((w) => w.kindId)).toEqual(expect.arrayContaining(['oolong', 'black']))
+    expect(yingzhi[0].inferredFromText).toContain('金萱')
+  })
+
+  it('【第25弾】藤かおりは検出成分アントラニル酸メチル由来のノートが最も弱く付く', () => {
+    const wheels = inferredCultivarWheels('fujikaori')
+    expect(wheels.map((w) => w.kindId)).toEqual(['green'])
+    const fruit = wheels[0].notes.find((n) => n.noteId === 'fruit-general')
+    expect(fruit).toBeTruthy()
+    expect(fruit!.level).toBe('inferred')
+    expect(fruit!.intensity).toBe('weak')
+    expect(fruit!.basis.some((b) => b.text.includes('アントラニル酸メチル'))).toBe(true)
+  })
+
+  it('【第25弾】足がかりの無い品種には推測ホイールを作らない', () => {
+    // ダージリン系統は地域試料の転用を品種データ自体が禁じている。B/5/63・RR 4/5 は存在確認のみ。
+    for (const id of ['darjeeling-china-jat', 'darjeeling-assam-hybrid', 'b563', 'rr45']) {
+      expect(inferredCultivarWheels(id), id).toHaveLength(0)
+    }
+  })
+
+  it('【第25弾】確認済みホイールがある品種には推測ホイールを重ねない', () => {
+    expect(inferredCultivarWheels('yabukita')).toHaveLength(0)
+    expect(inferredCultivarWheels('samidori')).toHaveLength(0)
+  })
+
+  it('【第25弾】産地ホイールは全産地で4種類そろい、全ノートに出典がありリンク先が実在する', () => {
+    for (const o of cacaoOrigins) {
+      const wheels = originWheels(o.id)
+      expect(wheels, o.id).toHaveLength(4)
+      for (const w of wheels) {
+        expect(w.notes.length, `${o.id}/${w.kind}`).toBeGreaterThan(0)
+        const sub = w.comboPath.replace('combo/choco/', '')
+        expect(chocoComboViable(parseChocoComboSub(sub)), `${o.id} のリンク先 ${w.comboPath}`).toBe(true)
+        for (const n of w.notes) {
+          expect(n.sourceIds.length).toBeGreaterThan(0)
+          for (const sid of n.sourceIds) expect(sourceIds.has(sid), `${o.id} note source ${sid}`).toBe(true)
         }
       }
     }
