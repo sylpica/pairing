@@ -22,7 +22,7 @@ export const teaRegions: TeaRegion[] = [
     findings: [
       {
         kind: 'sensory',
-        statement: '2023年の日本茶品評会に出品された長崎県産緑茶17試料（うち「やぶきた」は4点）は、官能審査で「甘み、旨味、苦みのバランスの良い」茶とされた',
+        statement: '2023年の日本茶品評会に出品された長崎県産緑茶17試料（うち「やぶきた」は4試料）は、官能審査で「甘み、旨味、苦みのバランスの良い」茶とされた',
         conditions: '品評会出品茶という高品質側に偏った試料であり、長崎県産緑茶全体の平均像ではない',
         sourceIds: ['tsujimura-2024-nagasaki-tea-foodomics'],
       },
@@ -48,8 +48,8 @@ export const teaRegions: TeaRegion[] = [
     findings: [
       {
         kind: 'sensory',
-        statement: '静岡市産煎茶2点は村上市産煎茶6点と、抽出水の違いによらず専門家5名の官能評価で産地別に分かれ、判別には香気と水色が最も寄与した',
-        conditions: '試料数が小さい（静岡2点・村上6点）比較である',
+        statement: '静岡市産煎茶2試料は村上市産煎茶6試料と、抽出水の違いによらず専門家5名の官能評価で産地別に分かれ、判別には香気と水色が最も寄与した',
+        conditions: '試料数が小さい（静岡2試料・村上6試料）比較である',
         sourceIds: ['murakami-2003-sencha-origin-sensory'],
       },
       {
@@ -74,8 +74,8 @@ export const teaRegions: TeaRegion[] = [
     findings: [
       {
         kind: 'sensory',
-        statement: '村上市産煎茶6点は静岡市産煎茶2点と、抽出水の違いによらず官能評価で産地別に分かれ、化学成分による分類も概ね一致した。産地の差には遊離アミノ酸・遊離還元糖・タンニン含量の構成差が関与すると考察された',
-        conditions: '試料数が小さい（村上6点・静岡2点）比較である',
+        statement: '村上市産煎茶6試料は静岡市産煎茶2試料と、抽出水の違いによらず官能評価で産地別に分かれ、化学成分による分類も概ね一致した。産地の差には遊離アミノ酸・遊離還元糖・タンニン含量の構成差が関与すると考察された',
+        conditions: '試料数が小さい（村上6試料・静岡2試料）比較である',
         sourceIds: ['murakami-2003-sencha-origin-sensory'],
       },
     ],
