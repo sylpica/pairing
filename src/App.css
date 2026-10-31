@@ -125,6 +125,10 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 .wheel-entry-head { margin: 6px 0; }
 .app-footer { margin-top: 36px; border-top: 2px solid var(--line); padding-top: 12px; font-size: 0.85rem; display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
 .linklike { background: none; border: none; font: inherit; color: var(--accent2); cursor: pointer; text-decoration: underline; }
+/* お気に入り・履歴のエントリ（第14弾）: 文字自体がタップで遷移するリンク。
+   箇条書きの見た目は変えず、リンク色・下線は .linklike の既存様式に合わせ、
+   タップ領域として高さ44px目安と最小限の余白を確保する。 */
+.saved-entry-link { display: inline-flex; align-items: center; min-height: 44px; padding: 4px 2px; text-align: left; }
 .file-btn { display: inline-block; margin-left: 8px; }
 .kinds-note { margin-top: 18px; }
 .big-card.cultivars { border-color: #c9d6a3; }

@@ -995,8 +995,48 @@ function SavedPage({ saved, setSaved }: { saved: SavedData; setSaved: (d: SavedD
       ? `${nm(ref.a)}（${PAIR_TYPE_NAME[ref.a.type]}） × ${nm(ref.b)}（${PAIR_TYPE_NAME[ref.b.type]}）`
       : `${nm(ref.a)} × ${nm(ref.b)}`
   }
+  // 第14弾（2026-10-31 実機FB）: お気に入り・履歴のエントリは、文字をタップしても
+  // 対応する画面へ飛べるようにする（従来はテキストのみで、単体組み合わせだけが
+  // 「開く」ボタンを持っていた）。
+  // ペアの復元: ペアIDにはアイテムの組み合わせだけが入っている（産地・品種・系統の
+  // 軸の指定は含まれない）ため、組み合わせる画面のプルダウン保存値へ種別とアイテムを
+  // 書き戻し、軸は未指定に戻す（＝保存されている範囲で正確に復元する。
+  // 第13弾の単体組み合わせの復元と同じ、保存値への書き戻し方式）。
+  const openPair = (id: string) => {
+    const ref = parsePairId(id)
+    if (!ref) return
+    const writeSide = (pos: 'left' | 'right', s: { type: 'tea' | 'chocolate'; id: string }) => {
+      savePersisted(`pairing.pair.${pos}Type`, s.type)
+      if (s.type === 'tea') {
+        savePersisted(`pairing.pair.${pos}.teaKind`, s.id)
+        savePersisted(`pairing.pair.${pos}.teaOrigin`, '')
+        savePersisted(`pairing.pair.${pos}.cultivarId`, '')
+      } else {
+        savePersisted(`pairing.pair.${pos}.chocoKind`, s.id)
+        savePersisted(`pairing.pair.${pos}.originId`, '')
+        savePersisted(`pairing.pair.${pos}.cacaoSel`, null)
+      }
+    }
+    writeSide('left', ref.a)
+    writeSide('right', ref.b)
+    go('pair')
+  }
+  // エントリから遷移できる場合だけその遷移処理を返す（解決できないIDはテキストのままにする）
+  const openerOf = (kind: string, id: string): (() => void) | null => {
+    if (kind === 'teas') return teaById(id) ? () => go(`tea/${id}`) : null
+    if (kind === 'chocolates') return chocolateById(id) ? () => go(`choco/${id}`) : null
+    const ref = parsePairId(id)
+    if (!ref) return null
+    const exists = (s: { type: 'tea' | 'chocolate'; id: string }) => (s.type === 'tea' ? teaById(s.id) : chocolateById(s.id)) != null
+    return exists(ref.a) && exists(ref.b) ? () => openPair(id) : null
+  }
   const Section = ({ title, kind, ids }: { title: string; kind: string; ids: string[] }) => (
-    <section><h3>{title}</h3>{ids.length === 0 ? <p className="note-small">まだありません。</p> : <ul>{ids.map((id) => <li key={id}>{nameOf(kind, id)}</li>)}</ul>}</section>
+    <section><h3>{title}</h3>{ids.length === 0 ? <p className="note-small">まだありません。</p> : <ul>{ids.map((id) => {
+      const open = openerOf(kind, id)
+      return <li key={id}>{open
+        ? <button type="button" className="linklike saved-entry-link" onClick={open}>{nameOf(kind, id)}</button>
+        : nameOf(kind, id)}</li>
+    })}</ul>}</section>
   )
   // 単体組み合わせ（第13弾）の表示名は、調べる画面と同じ補完・分析を通して組み合わせ名を引く
   const comboNameOf = (id: string): string => {
@@ -1034,7 +1074,9 @@ function SavedPage({ saved, setSaved }: { saved: SavedData; setSaved: (d: SavedD
       <Section title="お気に入りのお茶" kind="teas" ids={saved.favorites.teas} />
       <Section title="お気に入りのチョコ" kind="chocolates" ids={saved.favorites.chocolates} />
       <Section title="お気に入りの組み合わせ" kind="pairings" ids={saved.favorites.pairings} />
-      <section><h3>お気に入りの単体組み合わせ</h3>{saved.favorites.combos.length === 0 ? <p className="note-small">まだありません。</p> : <ul>{saved.favorites.combos.map((id) => { const ref = parseComboFavId(id); return <li key={id}>{comboNameOf(id)} <button className="btn" onClick={() => openCombo(id)}>{ref?.side === 'chocolate' ? 'チョコを調べるで開く' : 'お茶を調べるで開く'}</button></li> })}</ul>}</section>
+      <section><h3>お気に入りの単体組み合わせ</h3>{saved.favorites.combos.length === 0 ? <p className="note-small">まだありません。</p> : <ul>{saved.favorites.combos.map((id) => { const ref = parseComboFavId(id); return <li key={id}>{ref
+        ? <button type="button" className="linklike saved-entry-link" onClick={() => openCombo(id)}>{comboNameOf(id)}</button>
+        : comboNameOf(id)} <button className="btn" onClick={() => openCombo(id)}>{ref?.side === 'chocolate' ? 'チョコを調べるで開く' : 'お茶を調べるで開く'}</button></li> })}</ul>}</section>
       <Section title="最近調べたお茶" kind="teas" ids={saved.history.teas} />
       <Section title="最近調べたチョコ" kind="chocolates" ids={saved.history.chocolates} />
       <Section title="最近試した組み合わせ" kind="pairings" ids={saved.history.pairings} />

@@ -649,3 +649,118 @@ describe('実機フィードバック第13弾（追加）：調べる画面の�
     expect(screen.getByText('お気に入りの単体組み合わせ')).toBeTruthy()
   })
 })
+
+// 実機フィードバック第14弾（2026-10-31）: お気に入り・履歴のエントリは、文字を
+// タップしても対応する画面へ飛べるようにする。ペアは組み合わせる画面で復元され、
+// 単体アイテムは詳細ページ、単体組み合わせは調べる画面で復元される。
+describe('実機フィードバック第14弾：お気に入り・履歴エントリのタップ遷移', () => {
+  beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
+  const emptyFav = { teas: [] as string[], chocolates: [] as string[], pairings: [] as string[], combos: [] as string[] }
+  const emptyHist = { teas: [] as string[], chocolates: [] as string[], pairings: [] as string[] }
+  const seed = (favorites: typeof emptyFav, history: typeof emptyHist) =>
+    localStorage.setItem('pairing-app:v1', JSON.stringify({ version: 1, favorites, history }))
+  const persisted = (key: string) => JSON.parse(localStorage.getItem(key)!)
+
+  it('最近試した組み合わせ（異種）: 文字タップで組み合わせる画面に復元される', () => {
+    seed(emptyFav, { ...emptyHist, pairings: ['tea:oolong-tea+chocolate:dark-roasted'] })
+    location.hash = '#/saved'; render(<App />)
+    const entry = screen.getByRole('button', { name: '烏龍茶（青茶） × ダークチョコレート（焙煎）' })
+    // タップできることが分かるリンク様式になっている
+    expect(entry.classList.contains('linklike')).toBe(true)
+    expect(entry.classList.contains('saved-entry-link')).toBe(true)
+    fireEvent.click(entry)
+    expect(location.hash).toBe('#/pair')
+    // 組み合わせる画面のプルダウン保存値へ種別とアイテムが書き戻される。
+    // ペアIDに軸の指定は含まれないため、軸は未指定に戻る（保存されている範囲で正確に復元）。
+    expect(persisted('pairing.pair.leftType')).toBe('tea')
+    expect(persisted('pairing.pair.rightType')).toBe('chocolate')
+    expect(persisted('pairing.pair.left.teaKind')).toBe('oolong-tea')
+    expect(persisted('pairing.pair.right.chocoKind')).toBe('dark-roasted')
+    expect(persisted('pairing.pair.left.teaOrigin')).toBe('')
+    expect(persisted('pairing.pair.left.cultivarId')).toBe('')
+    expect(persisted('pairing.pair.right.originId')).toBe('')
+    expect(persisted('pairing.pair.right.cacaoSel')).toBe(null)
+    // 実際に組み合わせる画面を開くと、両アイテムが選ばれた状態で結果が出る
+    cleanup(); location.hash = '#/pair'; render(<App />)
+    expect((screen.getByLabelText('お茶') as HTMLSelectElement).value).toBe('oolong-tea')
+    expect((screen.getByLabelText('チョコレート') as HTMLSelectElement).value).toBe('dark-roasted')
+    expect(screen.getByRole('button', { name: /この組み合わせを保存/ })).toBeTruthy()
+    expect(screen.getByText('組み合わせの味わい（推測）')).toBeTruthy()
+  })
+
+  it('最近試した組み合わせ（同種・お茶同士）: 種別つきIDから両側ともお茶で復元される', () => {
+    seed(emptyFav, { ...emptyHist, pairings: ['tea:oolong-tea+tea:sencha'] })
+    location.hash = '#/saved'; render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '烏龍茶（青茶）（お茶） × 煎茶（お茶）' }))
+    expect(location.hash).toBe('#/pair')
+    expect(persisted('pairing.pair.leftType')).toBe('tea')
+    expect(persisted('pairing.pair.rightType')).toBe('tea')
+    expect(persisted('pairing.pair.left.teaKind')).toBe('oolong-tea')
+    expect(persisted('pairing.pair.right.teaKind')).toBe('sencha')
+    cleanup(); location.hash = '#/pair'; render(<App />)
+    // 同種ペアとして結果が組み立ち、同種ペアの注記が要約に出る
+    expect(screen.getByRole('button', { name: /この組み合わせを保存/ })).toBeTruthy()
+    expect(screen.getByText(/お茶同士のブレンドを直接調べた官能研究は確認できていない/)).toBeTruthy()
+  })
+
+  it('お気に入りの組み合わせ: 文字タップでも組み合わせる画面に復元される', () => {
+    seed({ ...emptyFav, pairings: ['tea:sencha+chocolate:milk-chocolate'] }, emptyHist)
+    location.hash = '#/saved'; render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '煎茶 × ミルクチョコレート' }))
+    expect(location.hash).toBe('#/pair')
+    expect(persisted('pairing.pair.left.teaKind')).toBe('sencha')
+    expect(persisted('pairing.pair.right.chocoKind')).toBe('milk-chocolate')
+    cleanup(); location.hash = '#/pair'; render(<App />)
+    expect((screen.getByLabelText('お茶') as HTMLSelectElement).value).toBe('sencha')
+    expect((screen.getByLabelText('チョコレート') as HTMLSelectElement).value).toBe('milk-chocolate')
+    // お気に入り登録済みのペアなので、保存ボタンは「保存済み」表示になる
+    expect(screen.getByRole('button', { name: /保存済み/ })).toBeTruthy()
+  })
+
+  it('最近調べたお茶・チョコ: 文字タップで各アイテムの詳細ページへ飛ぶ', () => {
+    seed(emptyFav, { ...emptyHist, teas: ['sencha'], chocolates: ['milk-chocolate'] })
+    location.hash = '#/saved'; render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '煎茶' }))
+    expect(location.hash).toBe('#/tea/sencha')
+    cleanup(); location.hash = '#/tea/sencha'; render(<App />)
+    expect(screen.getByRole('heading', { name: /煎茶/ })).toBeTruthy()
+    cleanup(); location.hash = '#/saved'; render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'ミルクチョコレート' }))
+    expect(location.hash).toBe('#/choco/milk-chocolate')
+    cleanup(); location.hash = '#/choco/milk-chocolate'; render(<App />)
+    expect(screen.getByRole('heading', { name: /ミルクチョコレート/ })).toBeTruthy()
+  })
+
+  it('お気に入りのお茶・チョコ: 文字タップで各アイテムの詳細ページへ飛ぶ', () => {
+    seed({ ...emptyFav, teas: ['sencha'], chocolates: ['ruby-chocolate'] }, emptyHist)
+    location.hash = '#/saved'; render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '煎茶' }))
+    expect(location.hash).toBe('#/tea/sencha')
+    cleanup(); location.hash = '#/saved'; render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'ルビーチョコレート' }))
+    expect(location.hash).toBe('#/choco/ruby-chocolate')
+  })
+
+  it('お気に入りの単体組み合わせ: 名称のタップでも開け、「開く」ボタンも維持される', () => {
+    seed({ ...emptyFav, combos: ['tea-combo:black-tea|-|-'] }, emptyHist)
+    location.hash = '#/saved'; render(<App />)
+    // 既存の導線（ボタン）は残っている
+    expect(screen.getByRole('button', { name: 'お茶を調べるで開く' })).toBeTruthy()
+    // 名称そのものもタップで開ける
+    fireEvent.click(screen.getByRole('button', { name: '紅茶' }))
+    expect(location.hash).toBe('#/tea')
+    expect(persisted('pairing.teaList.kind')).toBe('black-tea')
+    cleanup(); location.hash = '#/tea'; render(<App />)
+    expect((screen.getByLabelText('分類（茶類）で絞り込み') as HTMLSelectElement).value).toBe('black-tea')
+    expect(screen.getByLabelText('選択中の組み合わせのフレーバー')).toBeTruthy()
+  })
+
+  it('解決できないエントリはテキストのままでボタンにならない', () => {
+    seed({ ...emptyFav, pairings: ['tea:no-such-item+chocolate:dark-roasted'] }, { ...emptyHist, teas: ['no-such-tea'] })
+    location.hash = '#/saved'; render(<App />)
+    expect(screen.getByText(/no-such-item × ダークチョコレート（焙煎）/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /no-such-item/ })).toBeNull()
+    expect(screen.getByText('no-such-tea')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'no-such-tea' })).toBeNull()
+  })
+})
