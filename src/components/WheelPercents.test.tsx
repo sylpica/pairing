@@ -66,7 +66,7 @@ describe('ホイールの％表示（第27弾・表示検証）', () => {
     const root = container as HTMLElement
     // 第33弾: 既定は味
     expectTierPercents(root, 'アイテム味第1階層')
-    fireEvent.click(screen.getByLabelText(/苦味を開く/))
+    fireEvent.click(screen.getByLabelText(/うま味を開く/))
     expectTierPercents(root, 'アイテム味第2階層')
     fireEvent.click(screen.getByRole('tab', { name: '香り' }))
     expectTierPercents(root, 'アイテム香り第1階層')

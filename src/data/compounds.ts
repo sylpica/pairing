@@ -106,6 +106,19 @@ export const compounds: Compound[] = [
     ],
   },
   {
+    id: 'lactic-acid', name: '乳酸', aliases: ['Lactic acid'],
+    noteIds: [],
+    plainDescription: 'ヨーグルトのような穏やかな酸味の成分です。カカオの発酵の過程で乳酸菌が生じさせます。',
+    detectedIn: '発酵カカオ豆・チョコレート（発酵由来の有機酸として総説で整理）',
+    aromaKnowledge: '香りへの寄与ではなく、味（酸味）との関連だけを記録します。',
+    contributionEvidence: 'カカオ発酵では乳酸菌が乳酸を生成し、発酵由来の有機酸がチョコレートの酸味に関与することが総説で整理されています（Afoakwa et al. 2008）。個別の製品の酸味への寄与が再構成実験等で実証された例は未確認です（一般的な知見）。',
+    sourceIds: ['afoakwa-2008-cocoa-flavour-review'],
+    scopes: [{ side: 'chocolate', kindId: 'dark' }, { side: 'cacao' }],
+    tasteLinks: [
+      { taste: 'sour', evidence: '単体では穏やかな酸味を呈します。カカオ発酵で乳酸菌が生成する有機酸であり、チョコレートの酸味への関与は総説で整理されていますが、個別製品での寄与の実証は未確認です（一般的な知見）。' },
+    ],
+  },
+  {
     id: 'indole', name: 'インドール', aliases: ['indole'],
     noteIds: [],
     plainDescription: '茶に含まれる含窒素化合物です。',

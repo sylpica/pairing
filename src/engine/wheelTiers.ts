@@ -4,7 +4,7 @@ import {
   compoundById, compoundsForNote, compoundsForTaste, compoundTier, type CompoundContext,
 } from '../data/compounds'
 import { inferencesFor, noteInferences } from '../data/inferences'
-import { NOTE_TASTE } from '../data/noteTastes'
+import { NOTE_TASTE, TASTE_SPECIFICS, type TasteSpecific } from '../data/noteTastes'
 import { teaItems } from '../data/teas'
 import { chocolateItems } from '../data/chocolates'
 
@@ -352,20 +352,34 @@ export function buildTasteCompounds(taste: TasteKey, context?: WheelContexts): T
   return tierCompounds(filtered, context)
 }
 
-// ===== 味の3階層（第34弾で全面改修） =====
-// 第1階層＝味そのもの（甘味・酸味・苦味・うま味・渋味。存在する味だけ）、
-// 第2階層＝具体名（その味に対応づく香味ノート。対応づけは data/noteTastes.ts）、
+// ===== 味の3階層（第34弾で全面改修。第36弾で再構成） =====
+// 第1階層＝基本味そのもの（甘味・酸味・苦味・うま味。存在する味だけ。
+// 塩味はデータ型・データに存在しないため出ない）、
+// 第2階層＝具体名（その味に対応づく香味ノート＝data/noteTastes.ts の
+// NOTE_TASTE、および確認済み呈味成分から示す代表例＝TASTE_SPECIFICS）、
 // 第3階層＝その具体名に寄与する化学物質。
 // 旧構造（基本味／口当たり・収れん感の2グループ）は廃止した。
 // buildTasteTiers / TASTE_GROUP_OF は旧構造の分類ユーティリティとして残すが、
 // 画面表示には使わない。
-// 対応づく具体名が無い味（例：渋味）は、第2階層に寄与物質を直接出す
-// （fallbackCompounds）。具体名も物質も無い味は、根拠説明にフォールバックする。
+// 第36弾の変更点（ユーザー指示）:
+// - 渋味（収れん感）は基本味ではないため第1階層から外し、buildAstringency で
+//   別に返してホイール下のゲージで示す。
+// - 具体名が無い味に第2階層へ寄与物質を直接出す経路（旧 fallbackCompounds）は
+//   廃止した。大分類→化合物の直行はしない。具体名が1つも無い味は、表示側で
+//   ドリルダウン不可として根拠説明をその場に出す。
+// - 具体名の材料に TASTE_SPECIFICS（呈味成分から示す代表例。推測（未検証））
+//   を加えた。根拠成分の全てが文脈で tier 2 以内の場合だけ出す。
 
 export interface TasteNoteEntry {
+  key: string
+  kind: 'note' | 'specific'
+  /** ノート由来の場合のノートID。specific の場合は '' */
   noteId: string
   label: string
-  note: ComboNote
+  /** ノート由来の場合のみ（specific は null） */
+  note: ComboNote | null
+  /** 呈味成分から示す代表例の場合のみ */
+  specific?: TasteSpecific
   level: ComboNote['level']
   /** 小分類（その具体名に寄与する化学物質）。香りホイールと同じ材料 */
   compounds: TierCompound[]
@@ -381,20 +395,21 @@ export interface TasteNoteTier {
   weight: number
   /** 第1階層の割合（％、合計100） */
   percent: number
-  /** 第2階層の具体名（この味に対応づき、対象に存在するノートだけ） */
+  /** 第2階層の具体名（この味に対応づくノート＋呈味成分からの代表例） */
   entries: TasteNoteEntry[]
-  /** 具体名が無い味で第2階層に直接出す寄与物質 */
-  fallbackCompounds: TierCompound[]
 }
 
 export function buildTasteNoteTiers(notes: ComboNote[], tastes: ComboTaste[], context?: WheelContexts): TasteNoteTier[] {
-  const known = tastes.filter((t) => rank(t.intensity) > 0)
+  // 第36弾: 渋味（収れん感）は基本味ではないので第1階層に入れない（ゲージ側で扱う）
+  const known = tastes.filter((t) => rank(t.intensity) > 0 && t.key !== 'astringent')
   const out: TasteNoteTier[] = []
   for (const taste of known) {
-    const mapped = notes.filter((n) => NOTE_TASTE[n.noteId] === taste.key && rank(n.intensity) > 0 && noteById(n.noteId))
+    const mapped = notes.filter((n) => (NOTE_TASTE[n.noteId] ?? []).includes(taste.key) && rank(n.intensity) > 0 && noteById(n.noteId))
     const entries: TasteNoteEntry[] = mapped.map((n) => {
       const compounds = tierCompounds(noteCompounds(n.noteId, context), context)
       return {
+        key: `note:${n.noteId}`,
+        kind: 'note' as const,
         noteId: n.noteId,
         label: noteById(n.noteId)!.name,
         note: n,
@@ -404,6 +419,32 @@ export function buildTasteNoteTiers(notes: ComboNote[], tastes: ComboTaste[], co
         percent: 0,
       }
     })
+    // 呈味成分から示す代表例（具体名）。根拠成分の全てが、この文脈の
+    // その味の成分（tier 2 以内）に含まれる場合だけ出す。ノート由来の
+    // 具体名と名前が重なる場合はノート側を優先する（香りホイールと同じ作法）。
+    const tasteCompounds = buildTasteCompounds(taste.key, context)
+    const tasteCompoundIds = new Set(tasteCompounds.map((tc) => tc.compound.id))
+    for (const spec of TASTE_SPECIFICS) {
+      if (spec.taste !== taste.key) continue
+      if (entries.some((e) => e.label === spec.label)) continue
+      if (!spec.basisCompoundIds.every((id) => tasteCompoundIds.has(id))) continue
+      const compounds = tierCompounds(
+        spec.basisCompoundIds.map((id) => compoundById(id)).filter((c): c is Compound => c !== undefined),
+        context)
+      if (compounds.length === 0) continue
+      entries.push({
+        key: `specific:${spec.label}`,
+        kind: 'specific',
+        noteId: '',
+        label: spec.label,
+        note: null,
+        specific: spec,
+        level: 'inferred',
+        compounds,
+        weight: compounds.reduce((a, c) => a + c.weight, 0),
+        percent: 0,
+      })
+    }
     const percents = allocatePercents(entries.map((e) => e.weight))
     entries.forEach((e, i) => { e.percent = percents[i] })
     out.push({
@@ -412,10 +453,26 @@ export function buildTasteNoteTiers(notes: ComboNote[], tastes: ComboTaste[], co
       weight: rank(taste.intensity),
       percent: 0,
       entries,
-      fallbackCompounds: entries.length === 0 ? buildTasteCompounds(taste.key, context) : [],
     })
   }
   const percents = allocatePercents(out.map((g) => g.weight))
   out.forEach((g, i) => { g.percent = percents[i] })
   return out
+}
+
+export interface AstringencyData {
+  taste: ComboTaste
+  /** 渋味に寄与する化学物質（文脈がある場合は tier 2 以内）。ゲージのタップ先で出す */
+  compounds: TierCompound[]
+}
+
+/**
+ * 渋味（収れん感）のゲージ用データ（第36弾）。
+ * 渋味は基本味ではないため味ホイールの第1階層には入れず、ホイールのすぐ下に
+ * ゲージとして示す。渋味の記録そのものが無い対象では null（ゲージ自体を出さない）。
+ */
+export function buildAstringency(tastes: ComboTaste[], context?: WheelContexts): AstringencyData | null {
+  const taste = tastes.find((t) => t.key === 'astringent')
+  if (!taste) return null
+  return { taste, compounds: buildTasteCompounds('astringent', context) }
 }

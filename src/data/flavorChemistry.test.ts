@@ -7,8 +7,8 @@ import { teaKinds } from './teas'
 const sourceIds = new Set(sources.map((s) => s.id))
 
 describe('フレーバーホイール×科学成分の自動検査', () => {
-  it('化合物は65件（従来57＋文献拡張の統合7＋第7弾でクマリン追加1）でIDが一意', () => {
-    expect(compounds).toHaveLength(65)
+  it('化合物は66件（従来57＋文献拡張の統合7＋第7弾でクマリン追加1＋第36弾で乳酸追加1）でIDが一意', () => {
+    expect(compounds).toHaveLength(66)
     expect(new Set(compounds.map((c) => c.id)).size).toBe(compounds.length)
   })
 

@@ -255,6 +255,17 @@ export const sources: Source[] = [
     license: '未確認（ACS）', verified: true,
   },
   {
+    id: 'klinmalai-2025-edamame-umami',
+    kind: 'original',
+    title: 'Co-Formulation of Edamame-Based Beverage with Coconut Derivatives Enhances Nutritional Quality, Antioxidant Capacity, Flavor Profile, and Physical Stability',
+    authors: 'Klinmalai P, Promhuad K, Srisa A, Sathawarintu A, Harnkarnsujarit N',
+    year: 2025, journal: 'Foods 14(19):3321',
+    doi: '10.3390/foods14193321', pmid: '41097491',
+    url: 'https://doi.org/10.3390/foods14193321',
+    scope: '枝豆飲料のアミノ酸分析で、グルタミン酸とアスパラギン酸が主要なアミノ酸であり、うま味に寄与する成分として知られると整理した原著（PubMed 抄録で一次確認）。試料は枝豆飲料であり、お茶・チョコレートそのものの実測ではない。枝豆（香味ノート「枝豆・青い野菜」）とうま味の対応づけの根拠としてのみ使用する。',
+    license: 'CC BY（オープンアクセス）', verified: true,
+  },
+  {
     id: 'stark-2006-cocoa-nibs-taste',
     kind: 'original',
     title: 'Molecular definition of the taste of roasted cocoa nibs (Theobroma cacao) by means of quantitative studies and sensory experiments',

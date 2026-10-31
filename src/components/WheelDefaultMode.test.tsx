@@ -17,9 +17,10 @@ describe('ホイールの既定モードとボタン順（第33弾）', () => {
     expect(aromaTab.getAttribute('aria-selected')).toBe('false')
     // 味が左（DOM順で先）
     expect(tasteTab.compareDocumentPosition(aromaTab) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    // 初期表示は味の第1階層（味そのもの）
+    // 初期表示は味の第1階層（基本味そのもの。第36弾で渋味はゲージ側）
     expect(container.querySelector('svg.wheel')).toBeTruthy()
-    expect(screen.getAllByLabelText(/甘味を開く|苦味を開く|渋味（収れん感）を開く/).length).toBeGreaterThan(0)
+    expect(screen.getAllByLabelText(/甘味を開く|苦味を開く/).length).toBeGreaterThan(0)
+    expect(container.querySelector('.astringency-gauge')).toBeTruthy()
     // 香りに切り替えると香りの第1階層が出る
     fireEvent.click(aromaTab)
     expect(aromaTab.getAttribute('aria-selected')).toBe('true')

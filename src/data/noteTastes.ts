@@ -1,9 +1,10 @@
 import type { TasteKey } from '../types'
 
 /**
- * 香味ノート → 味の対応づけ（第34弾、味ホイールの第2階層「具体名」の材料）。
+ * 香味ノート → 味の対応づけ（第34弾、味ホイールの第2階層「具体名」の材料。
+ * 第36弾で複数味への対応づけを許す形に変更した）。
  *
- * 味ホイールの新しい3階層（第1階層＝味そのもの、第2階層＝具体名、
+ * 味ホイールの3階層（第1階層＝基本味そのもの、第2階層＝具体名、
  * 第3階層＝化学物質）では、第2階層の具体名として、その対象に実際に
  * 存在する香味ノートのうち「その味の印象と結びつくもの」だけを出す。
  * この対応づけは、ノートの性質と化合物の知見に基づく**解釈**であり、
@@ -14,44 +15,101 @@ import type { TasteKey } from '../types'
  * - 甘味: 蜂蜜・キャラメル等の糖の甘さを持つもの、甘い香りが甘味の
  *   知覚と結びつくもの（バニラ、シナモンの甘い香り、麦芽、栗、
  *   とうもろこし、干し果物、甘い果実）。
- * - 酸味: 柑橘、および酸の印象が前面に出るベリー。
+ * - 酸味: 柑橘、酸の印象が前面に出るベリー、およびカカオ（発酵で生じる
+ *   酢酸・乳酸がカカオ／チョコレートの酸味を担うことが総説で整理され、
+ *   官能評価でも酸味は酢酸の感覚として記述される。第36弾で追加）。
  * - 苦味: カカオ・コーヒー、および焙煎の苦味を伴うもの（トースト、燻し）。
- * - うま味: きのこ（グアニル酸に代表されるうま味の顔ぶれ）。
- * - 収れん味（渋味）: 対応づけるノートは置かない。渋味はタンニン類の
- *   収れん感そのもので、香りのノートとは別軸のため、第2階層は寄与物質
- *   （フラバン-3-オール類等）を直接示す。
+ * - うま味: きのこ（グアニル酸に代表されるうま味の顔ぶれ）、枝豆
+ *   （グルタミン酸・アスパラギン酸が豊富でうま味に寄与することが
+ *   査読論文で示されている。第36弾で追加）。
+ * - 1つのノートが複数の味に顔を出す場合は、無理に単一化せず複数を
+ *   対応づける（例：カカオ＝苦味＋酸味）。
+ * - 渋味（収れん感）は基本味ではないため、第36弾で味ホイールの第1階層
+ *   から外し、ホイール下の「渋味ゲージ」で別に示す。対応づけの対象外。
  * - 対応づけないもの: 花の香り（白い花・バラ・蘭・花様）、青葉・ハーブ・
  *   干し草、木・土、ナッツ類（栗を除く）、乳製品（ミルク・バター・
  *   クリーム）、生姜・胡椒様・温かいスパイス。これらは香り（嗅覚）や
  *   口当たりの印象が主体で、基本味への対応づけが解釈としても弱いため。
  */
-export const NOTE_TASTE: Partial<Record<string, TasteKey>> = {
+export const NOTE_TASTE: Partial<Record<string, TasteKey[]>> = {
   // 甘味
-  honey: 'sweet',
-  caramel: 'sweet',
-  'brown-sugar': 'sweet',
-  vanilla: 'sweet',
-  caramelized: 'sweet',
-  malt: 'sweet',
-  corn: 'sweet',
-  chestnut: 'sweet',
-  'dried-fruit': 'sweet',
-  tropical: 'sweet',
-  'stone-fruit': 'sweet',
-  'fruit-general': 'sweet',
-  cinnamon: 'sweet',
+  honey: ['sweet'],
+  caramel: ['sweet'],
+  'brown-sugar': ['sweet'],
+  vanilla: ['sweet'],
+  caramelized: ['sweet'],
+  malt: ['sweet'],
+  corn: ['sweet'],
+  chestnut: ['sweet'],
+  'dried-fruit': ['sweet'],
+  tropical: ['sweet'],
+  'stone-fruit': ['sweet'],
+  'fruit-general': ['sweet'],
+  cinnamon: ['sweet'],
   // 酸味
-  citrus: 'sour',
-  berry: 'sour',
+  citrus: ['sour'],
+  berry: ['sour'],
+  cacao: ['sour', 'bitter'], // 苦味が本筋。酸味は発酵由来の有機酸による（第36弾）
   // 苦味
-  cacao: 'bitter',
-  coffee: 'bitter',
-  toast: 'bitter',
-  smoky: 'bitter',
+  coffee: ['bitter'],
+  toast: ['bitter'],
+  smoky: ['bitter'],
   // うま味
-  mushroom: 'umami',
-  // 収れん味（渋味）: あえて対応づけない（上記コメント参照）
+  mushroom: ['umami'],
+  'green-vegetable': ['umami'], // 枝豆：グルタミン酸等のうま味成分（第36弾）
 }
 
 /** 対応づけの根拠（短文。味ホイールの説明・報告用） */
-export const NOTE_TASTE_BASIS = '具体名と味の対応づけは、その香りの性質と化合物の知見に基づく解釈です（実測の分類ではありません）。対応づけのない香りは味ホイールには出さず、香りホイールにだけ示します。'
+export const NOTE_TASTE_BASIS = '具体名と味の対応づけは、その香りの性質と化合物の知見に基づく解釈です（実測の分類ではありません）。1つの香りが複数の味に結びつく場合は、複数の味に示します（例：カカオは苦味と酸味）。対応づけのない香りは味ホイールには出さず、香りホイールにだけ示します。'
+
+/**
+ * 味の具体名の推測（第36弾で追加）。
+ *
+ * ノート由来の具体名が無い味でも、その対象の文脈で確認済みの呈味成分
+ * （根拠の近さ tier 2 以内）から、その味を代表する食品名を具体名として
+ * 示すための材料。香りホイールの推測具体名（inferences.ts）と同じ作法で、
+ * - 根拠成分の全てが、その文脈で確認済み（tier 2 以内）の場合だけ出す。
+ * - 必ず「推測（未検証）」として示し、根拠（rationale）を併記する。
+ * - ノート由来の具体名と名前が重なる場合は、ノート側を優先して落とす。
+ * 化学物質そのものを具体名として出すことはしない（具体名はあくまで
+ * 食品・フレーバーの名前であり、化合物は第3階層でのみ示す）。
+ */
+export interface TasteSpecific {
+  taste: TasteKey
+  /** 具体名（食品・フレーバーの名前。例：お酢、だし） */
+  label: string
+  /** 根拠となる呈味成分ID（すべて実在し、その文脈で tier 2 以内のものだけを使う） */
+  basisCompoundIds: string[]
+  /** 推論の説明。「〜として示します」レベルの表現に留め、断定しない */
+  rationale: string
+  /** 推測の裏付けに使う出典ID */
+  sourceIds: string[]
+}
+
+export const TASTE_SPECIFICS: TasteSpecific[] = [
+  {
+    taste: 'sour', label: 'お酢', basisCompoundIds: ['acetic-acid'],
+    rationale: '酢酸はお酢の酸味の本体です。カカオの発酵では酢酸菌が酢酸を生成し、チョコレートの酸味の一因として総説で整理されています。そのため、この対象の酸味の具体名として「お酢」を推測（未検証）として示します。',
+    sourceIds: ['afoakwa-2008-cocoa-flavour-review'],
+  },
+  {
+    taste: 'sour', label: 'ヨーグルト', basisCompoundIds: ['lactic-acid'],
+    rationale: '乳酸はヨーグルトの酸味の本体です。カカオの発酵では乳酸菌が乳酸を生成し、チョコレートの穏やかな酸味に関わると総説で整理されています。そのため、この対象の酸味の具体名として「ヨーグルト」を推測（未検証）として示します。',
+    sourceIds: ['afoakwa-2008-cocoa-flavour-review'],
+  },
+  {
+    taste: 'sour', label: '青リンゴ', basisCompoundIds: ['tea-organic-acids'],
+    rationale: 'リンゴ酸は青リンゴの酸味の本体として知られる有機酸で、お茶の有機酸（クエン酸・リンゴ酸等）に含まれます。そのため、この対象の酸味の具体名として「青リンゴ」を推測（未検証）として示します。',
+    sourceIds: ['zhang-2020-tea-chemistry-taste'],
+  },
+  {
+    taste: 'umami', label: 'だし', basisCompoundIds: ['glutamic-acid'],
+    rationale: 'グルタミン酸は、昆布だしのうま味の本体として知られるアミノ酸です。お茶にも遊離のグルタミン酸が含まれ、うま味への寄与が総説で整理されています。そのため、この対象のうま味の具体名として「だし」を推測（未検証）として示します。',
+    sourceIds: ['zhang-2020-tea-chemistry-taste'],
+  },
+  {
+    taste: 'bitter', label: 'コーヒー', basisCompoundIds: ['caffeine'],
+    rationale: 'カフェインはコーヒーの苦味の代表的な成分で、お茶・カカオにも含まれ、苦味への寄与が再構成・除去実験等で確認されています。そのため、この対象の苦味の具体名として「コーヒー」を推測（未検証）として示します。',
+    sourceIds: ['scharbert-2005-black-tea-taste', 'stark-2006-cocoa-nibs-taste'],
+  },
+]

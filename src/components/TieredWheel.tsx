@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import type { ComboLevel } from '../types'
-import { fitLabelLines, fitOneLine, packScaledLines, type FittedLine } from './wheelText'
+import { fitLabelLines, fitOneLine, packScaledLines, textWidthAt, WHEEL_SUB_FONT, type FittedLine } from './wheelText'
 
 // 3階層ホイール共通の描画（第8弾）。大分類・中分類・小分類のどの階層でも、
 // 同じ作法で描く:
@@ -32,6 +32,10 @@ export interface TierSeg {
 }
 
 const LABEL_R = 104
+/** ホイールの円盤の半径（arcPath の外半径と一致させる） */
+const DISC_R = 138
+/** フィッティング時の安全マージン（実フォントの幅の近似誤差を吸収する） */
+const DISC_FIT_R = DISC_R - 1
 
 function arcPath(cx: number, cy: number, r0: number, r1: number, a0: number, a1: number) {
   const p = (r: number, a: number) => [cx + r * Math.cos(a), cy + r * Math.sin(a)]
@@ -40,11 +44,13 @@ function arcPath(cx: number, cy: number, r0: number, r1: number, a0: number, a1:
   return `M ${x0} ${y0} A ${r1} ${r1} 0 ${large} 1 ${x1} ${y1} L ${x2} ${y2} A ${r0} ${r0} 0 ${large} 0 ${x3} ${y3} Z`
 }
 
-export default function TieredWheel({ segments, centerLabel, ariaLabel, onSelect }: {
+export default function TieredWheel({ segments, centerLabel, ariaLabel, onSelect, footer }: {
   segments: TierSeg[]
   centerLabel: string
   ariaLabel: string
   onSelect: (key: string) => void
+  /** 円形ホイールのすぐ下（チップ一覧より前）に差し込む要素（第36弾：渋味ゲージ用） */
+  footer?: ReactNode
 }) {
   const size = 300, cx = size / 2, cy = size / 2
   const total = segments.reduce((s, x) => s + x.weight, 0) || 1
@@ -58,18 +64,54 @@ export default function TieredWheel({ segments, centerLabel, ariaLabel, onSelect
     // 第29弾: ホイールの左右端に近いセグメントでは、ラベル中心から SVG の端
     // までの距離も制約になる。これが無いと端のセグメントで長い成分名
     // （2,5-ジメチルピラジン等）の両端が viewBox の外に切れていた。
-    const avail = Math.min(chordAvail, 2 * Math.min(lx, size - lx) - 4)
-    const lines: (FittedLine & { cls: string })[] = [
-      ...fitLabelLines(s.label, avail).map((l) => ({ ...l, cls: 'wheel-label' })),
+    const baseAvail = Math.min(chordAvail, 2 * Math.min(lx, size - lx) - 4)
+    const subMax = span >= 0.65 ? 2 : 1
+    const headLines: (FittedLine & { cls: string })[] = [
+      ...fitLabelLines(s.label, baseAvail).map((l) => ({ ...l, cls: 'wheel-label' })),
     ]
     if (s.percent !== undefined) {
-      lines.push({ ...fitOneLine(`${s.percent}%`, avail, 11), cls: 'wheel-label' })
+      headLines.push({ ...fitOneLine(`${s.percent}%`, baseAvail, 11), cls: 'wheel-label' })
     }
-    const subMax = span >= 0.65 ? 2 : 1
-    lines.push(...packScaledLines(s.subLabels ?? [], avail, subMax).map((l) => ({ ...l, cls: 'wheel-sub' })))
-    const totalH = lines.reduce((a, l) => a + l.fs * 1.35, 0)
-    let y = ly - totalH / 2
-    const placed = lines.map((l) => { const yy = y + (l.fs * 1.35) / 2; y += l.fs * 1.35; return { ...l, y: yy } })
+    const place = (lines: (FittedLine & { cls: string })[]) => {
+      const totalH = lines.reduce((a, l) => a + l.fs * 1.35, 0)
+      let y = ly - totalH / 2
+      return lines.map((l) => {
+        const yy = y + (l.fs * 1.35) / 2; y += l.fs * 1.35
+        return { ...l, y: yy, w: textWidthAt(l.text, l.fs), h: l.fs * 1.35 }
+      })
+    }
+    let placed = place([
+      ...headLines,
+      ...packScaledLines(s.subLabels ?? [], baseAvail, subMax).map((l) => ({ ...l, cls: 'wheel-sub' as const })),
+    ])
+    // 第36弾: ラベル行が、その行の高さにおけるホイールの円盤の横幅からはみ出す
+    // 場合は、その行だけを個別に収め直す。第29弾の制約（viewBox の端まで）
+    // だけでは、斜め方向のセグメントで長い併記が円盤の輪郭を大きく横切って
+    // いた（烘青緑茶のうま味の併記：行の左端が円盤の輪郭より16px外側まで
+    // 達し、末尾が途切れて見えた。ユーザー指摘）。
+    // 収め直しは、行の中心の高さでの円盤の横幅から許容幅を解いて
+    // (1) フォントを段階的に下げる（下限7px）、(2) それでも入らなければ
+    // 折り返す、の順で行い、省略（…）で隠すことはしない。ブロック全体の幅は
+    // 潰さない（行数が増えてブロックが高くなり、かえって収まらなくなる
+    // 悪循環を避けるため、対象ははみ出した行に限る）。
+    const lineAllowed = (l: (typeof placed)[number]) => {
+      const dyC = Math.abs(l.y - cy)
+      const cross = Math.sqrt(Math.max(DISC_FIT_R * DISC_FIT_R - dyC * dyC, 0))
+      return 2 * Math.max(cross - Math.abs(lx - cx), 0)
+    }
+    const lineViolates = (l: (typeof placed)[number]) => l.w > lineAllowed(l)
+    for (let pass = 0; pass < 3 && placed.some(lineViolates); pass++) {
+      const adjusted: (FittedLine & { cls: string })[] = []
+      for (const l of placed) {
+        if (!lineViolates(l)) { adjusted.push(l); continue }
+        const allowed = lineAllowed(l)
+        if (allowed < 14) { adjusted.push(l); continue }
+        const shrunk = fitOneLine(l.text, allowed, l.fs)
+        if (!shrunk.text.includes('…')) { adjusted.push({ ...shrunk, cls: l.cls }); continue }
+        adjusted.push(...fitLabelLines(l.text, allowed, l.cls === 'wheel-sub' ? WHEEL_SUB_FONT : 12).map((x) => ({ ...x, cls: l.cls })))
+      }
+      placed = place(adjusted)
+    }
     const opacity = s.drillable === false ? 0.42
       : s.level ? TIER_LEVEL_OPACITY[s.level]
       : s.opacity ?? 0.85
@@ -96,6 +138,7 @@ export default function TieredWheel({ segments, centerLabel, ariaLabel, onSelect
         <circle cx={cx} cy={cy} r={50} fill="#fffaf2" />
         <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" className="wheel-center">{centerLabel}</text>
       </svg>
+      {footer}
       <ul className="wheel-list">
         {segments.map((s) => (
           <li key={s.key}>
