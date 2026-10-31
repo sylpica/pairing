@@ -1,11 +1,8 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import type { ComboNote, TeaCultivar, TeaCultivarRank } from '../types'
+import type { ComboNote, ComboTaste, TeaCultivar, TeaCultivarRank } from '../types'
 import { FLAVOR_FINDING_KINDS } from '../types'
-import ComboWheel from './ComboWheel'
-import ComboNoteDetail from './ComboNoteDetail'
+import ComboWheelPanel from './ComboWheelPanel'
 import BackButton from './BackButton'
-import { CollapsibleSheet } from './Sheet'
-import { noteById } from '../data/flavors'
 import type { CompoundContext } from '../data/compounds'
 import { COMBO_LEVEL_LABEL } from '../engine/combo'
 import { cultivarWheels, lineageWheels } from '../engine/entityWheel'
@@ -30,35 +27,28 @@ interface WheelTab {
   key: string
   label: string
   notes: ComboNote[]
+  tastes: ComboTaste[]
   overallLevel: ComboNote['level']
   context: CompoundContext
   footer: ReactNode
 }
 function EntityWheelTabs({ tabs }: { tabs: WheelTab[] }) {
   const [idx, setIdx] = useState(0)
-  const [selNote, setSelNote] = useState<string | null>(null)
   const tab = tabs[Math.min(idx, tabs.length - 1)]
   if (!tab) return null
-  const note = tab.notes.find((n) => n.noteId === selNote) ?? null
   return (
     <div>
       {tabs.length > 1 && (
         <label className="filter-field">
           <span className="filter-label">分類を選ぶ</span>
           <select className="big-select" value={tab.key} aria-label="ホイールを表示する分類"
-            onChange={(e) => { const i = tabs.findIndex((t) => t.key === e.target.value); setIdx(i < 0 ? 0 : i); setSelNote(null) }}>
+            onChange={(e) => { const i = tabs.findIndex((t) => t.key === e.target.value); setIdx(i < 0 ? 0 : i) }}>
             {tabs.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
           </select>
         </label>
       )}
       <p><span className="badge">この組み合わせ全体の根拠：{COMBO_LEVEL_LABEL[tab.overallLevel]}</span></p>
-      <ComboWheel notes={tab.notes} context={tab.context} onSelectNote={(id) => setSelNote(selNote === id ? null : id)} selectedNoteId={selNote} />
-      {note && (
-        <CollapsibleSheet resetKey={`${tab.key}:${note.noteId}`} title={noteById(note.noteId)?.name ?? note.noteId} noun="根拠情報"
-          onDismiss={() => setSelNote(null)}>
-          <ComboNoteDetail note={note} context={tab.context} />
-        </CollapsibleSheet>
-      )}
+      <ComboWheelPanel notes={tab.notes} tastes={tab.tastes} context={tab.context} resetKey={tab.key} />
       {tab.footer}
     </div>
   )
@@ -177,6 +167,7 @@ function CultivarWheelSection({ cultivarId, cultivarName }: { cultivarId: string
     key: w.kindId,
     label: w.kindName,
     notes: w.notes,
+    tastes: w.tastes,
     overallLevel: w.overallLevel,
     context: w.context,
     footer: w.comboPath
@@ -297,6 +288,7 @@ function LineageWheelSection({ layer, id, entityName, hasFlavorFindings }: {
     key: w.kind,
     label: w.kindLabel,
     notes: w.notes,
+    tastes: w.tastes,
     overallLevel: w.overallLevel,
     context: w.context,
     footer: <p><button className="linklike" onClick={() => go(w.comboPath)}>「{entityName} × {w.kindLabel}」の組み合わせページで、産地違いや根拠の内訳を見る</button></p>,

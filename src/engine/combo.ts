@@ -642,6 +642,71 @@ export function analyzeTeaCombo(sel: TeaComboSel): ComboAnalysis {
       effectMeta.set(trackId, { axis: r.axis, kind: 'taste', label: COMBO_TASTE_LABEL[e.key] })
     }
   }
+  // 第7弾・課題A5: 国レベルの集約推測。地域が未指定で国だけが指定された場合、
+  // その国の地域の軸ルール（この分類に当たるもの）を束ね、全て inferred に
+  // 落として重ねる。同じノート・味に逆方向の効果が地域間で競合する場合は
+  // そのノート・味ごと落とす（競合するノートは合成しない、という原則どおり）。
+  // 地域ルールは品種条件を持たないものだけが対象（品種条件つきの変換は
+  // 国レベルへは広げない）。
+  const aggRegionNames: string[] = []
+  const aggSourceIds: string[] = []
+  let aggCandidateCount = 0
+  if (!region && regionCountry) {
+    const regionIds = new Set(teaRegions.filter((r) => r.country === regionCountry).map((r) => r.id))
+    const candidates = teaAxisRules.filter((r) => r.axis === 'region' && regionIds.has(r.entityId)
+      && (r.kindCategory === undefined || r.kindCategory === category))
+    aggCandidateCount = candidates.length
+    const noteShifts = new Map<string, Set<string>>()
+    const tasteDirs = new Map<string, Set<string>>()
+    for (const r of candidates) {
+      for (const e of r.noteEffects) if (e.shift) {
+        if (!noteShifts.has(e.noteId)) noteShifts.set(e.noteId, new Set())
+        noteShifts.get(e.noteId)!.add(e.shift)
+      }
+      for (const e of r.tasteEffects) {
+        if (!tasteDirs.has(e.key)) tasteDirs.set(e.key, new Set())
+        tasteDirs.get(e.key)!.add(e.direction)
+      }
+    }
+    const seenNote = new Set<string>()
+    const seenTaste = new Set<string>()
+    for (const r of candidates) {
+      const regionName = teaRegionById(r.entityId)?.name ?? r.entityId
+      for (const e of r.noteEffects) {
+        const shifts = noteShifts.get(e.noteId)
+        if (shifts && shifts.size > 1) continue // 地域間で方向が競合 → 落とす
+        const dedupeKey = `${e.noteId}|${e.mode}|${e.shift ?? ''}`
+        if (seenNote.has(dedupeKey)) continue
+        seenNote.add(dedupeKey)
+        const trackId = `agg:${r.id}:${e.noteId}`
+        noteEffectsU.push({
+          trackId, noteId: e.noteId, mode: e.mode, intensity: e.intensity, shift: e.shift,
+          level: 'inferred', from: 'region',
+          text: `${e.text}（国レベルの集約推測：${regionCountry}の地域「${regionName}」の所見を束ねたもの。地域単独の指定ではなく国指定のため、推測として一段落として表示する）`,
+          sourceIds: e.sourceIds,
+        })
+        effectMeta.set(trackId, { axis: 'region', kind: 'note', label: noteById(e.noteId)?.name ?? e.noteId })
+        if (!aggRegionNames.includes(regionName)) aggRegionNames.push(regionName)
+        aggSourceIds.push(...e.sourceIds)
+      }
+      for (const e of r.tasteEffects) {
+        const dirs = tasteDirs.get(e.key)
+        if (dirs && dirs.size > 1) continue // 地域間で方向が競合 → 落とす
+        const dedupeKey = `${e.key}|${e.direction}`
+        if (seenTaste.has(dedupeKey)) continue
+        seenTaste.add(dedupeKey)
+        const trackId = `agg:${r.id}:taste:${e.key}`
+        tasteEffectsU.push({
+          trackId, key: e.key, direction: e.direction, level: 'inferred',
+          text: `${e.text}（国レベルの集約推測：${regionCountry}の地域「${regionName}」の所見を束ねたもの）`,
+          sourceIds: e.sourceIds,
+        })
+        effectMeta.set(trackId, { axis: 'region', kind: 'taste', label: COMBO_TASTE_LABEL[e.key] })
+        if (!aggRegionNames.includes(regionName)) aggRegionNames.push(regionName)
+        aggSourceIds.push(...e.sourceIds)
+      }
+    }
+  }
   for (const r of rules) {
     for (const e of r.noteEffects) {
       const trackId = `process:${r.id}:${e.noteId}`
@@ -673,6 +738,13 @@ export function analyzeTeaCombo(sel: TeaComboSel): ComboAnalysis {
       level: 'measured', sourceIds: region.sourceIds,
     })
   }
+  const aggApplied = [...applied].some((id) => id.startsWith('agg:'))
+  if (!region && regionCountry && aggApplied) {
+    statements.push({
+      text: `産地は国レベル（${regionCountry}）の指定のため、${regionCountry}の地域（${aggRegionNames.join('・')}）の所見を束ねた集約推測をホイールに重ねています。地域同士で方向が競合するノート・味は落とし、全て推測（未検証）として表示します。個別の地域の実測ではありません。`,
+      level: 'inferred', sourceIds: uniq(aggSourceIds),
+    })
+  }
 
   const groups: ComboBasisGroup[] = [
     { label: '分類のプロファイル', text: rep.scopeNote, findings: [], sourceIds: rep.sourceIds },
@@ -691,8 +763,10 @@ export function analyzeTeaCombo(sel: TeaComboSel): ComboAnalysis {
   } else if (regionCountry) {
     groups.push({
       label: '産地の所見',
-      text: `${regionCountry}については国レベルの指定です。この分類・品種との組み合わせで使える産地固有の香味データは収録していないため、産地の情報は味わいの推測には使っていません。`,
-      findings: [], sourceIds: [],
+      text: aggApplied
+        ? `国レベル（${regionCountry}）の指定です。地域単独の実測ではなく、${regionCountry}の地域（${aggRegionNames.join('・')}）の所見を束ねた集約推測を適用しています（全て推測・未検証。地域同士で方向が競合するノート・味は落としています）。`
+        : `${regionCountry}については国レベルの指定です。この分類・品種との組み合わせで使える産地固有の香味データは収録していないため、産地の情報は味わいの推測には使っていません。`,
+      findings: [], sourceIds: aggApplied ? uniq(aggSourceIds) : [],
     })
   }
   if (rules.length > 0) {
@@ -718,10 +792,16 @@ export function analyzeTeaCombo(sel: TeaComboSel): ComboAnalysis {
     axisSummaries.push(summarizeAxis('region', region.name, flavorFindings(region.findings).length, applied, effectMeta, false,
       axisNoEffectFor('region', region.id, { kindCategory: category })?.text))
   } else if (regionCountry) {
-    axisSummaries.push({
-      axis: 'region', entityName: regionCountry, reflected: false,
-      text: `産地は国レベル（${regionCountry}）の指定です。国レベルの香味データは収録していないため、産地の情報はホイールに反映していません。`,
-    })
+    if (aggApplied) {
+      axisSummaries.push(summarizeAxis('region', regionCountry, 0, applied, effectMeta, false))
+    } else {
+      axisSummaries.push({
+        axis: 'region', entityName: regionCountry, reflected: false,
+        text: aggCandidateCount > 0
+          ? `産地は国レベル（${regionCountry}）の指定です。${regionCountry}の地域の所見は、この分類では地域間で方向が競合する等の理由で集約推測が成立しなかったため、ホイールに反映していません。`
+          : `産地は国レベル（${regionCountry}）の指定です。${regionCountry}の地域の所見で、この分類に使える変換が収録されていないため、産地の情報はホイールに反映していません。`,
+      })
+    }
   }
   if (cultivar) {
     const cultivarOutcome = [...applied].some((id) => effectMeta.get(id)?.axis === 'cultivar')

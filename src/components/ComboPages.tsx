@@ -1,14 +1,12 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, type ReactNode } from 'react'
 import { readPersisted, savePersisted } from '../hooks/usePersistedState'
 import type { ComboNote } from '../types'
-import ComboWheel, { COMBO_INT_LABEL } from './ComboWheel'
-import ComboNoteDetail from './ComboNoteDetail'
+import { COMBO_INT_LABEL } from './ComboWheel'
+import ComboWheelPanel from './ComboWheelPanel'
 import BackButton from './BackButton'
-import { CollapsibleSheet } from './Sheet'
 import { FindingsList } from './EntityViews'
 import { SourceLinks } from './SourceLinks'
 import { go } from '../nav'
-import { noteById } from '../data/flavors'
 import {
   COMBO_LEVEL_LABEL, COMBO_TASTE_LABEL,
   analyzeChocoCombo, analyzeTeaCombo,
@@ -33,20 +31,10 @@ function LevelBadge({ level }: { level: ComboNote['level'] }) {
 const AXIS_SUMMARY_LABEL: Record<string, string> = { region: '産地の反映', cultivar: '品種の反映', origin: '産地の反映', lineage: '系統の反映' }
 
 function AnalysisView({ analysis, children }: { analysis: ComboAnalysis; children?: ReactNode }) {
-  const [selNote, setSelNote] = useState<string | null>(null)
-  useEffect(() => { setSelNote(null) }, [analysis.title])
-  const note = analysis.notes.find((n) => n.noteId === selNote) ?? null
   return (
     <div>
       <p><span className="badge">組み合わせ全体の根拠：{COMBO_LEVEL_LABEL[analysis.overallLevel]}</span></p>
-      <ComboWheel notes={analysis.notes} context={analysis.context}
-        onSelectNote={(id) => setSelNote(selNote === id ? null : id)} selectedNoteId={selNote} />
-      {note && (
-        <CollapsibleSheet resetKey={note.noteId} title={noteById(note.noteId)?.name ?? note.noteId} noun="根拠情報"
-          onDismiss={() => setSelNote(null)}>
-          <ComboNoteDetail note={note} context={analysis.context} />
-        </CollapsibleSheet>
-      )}
+      <ComboWheelPanel notes={analysis.notes} tastes={analysis.tastes} context={analysis.context} resetKey={analysis.title} />
       {analysis.axisSummaries.length > 0 && <>
         <h3>ホイールへの反映</h3>
         <p className="note-small">選んだ産地・品種（系統）の所見が、上のホイールにどう反映されたか／されなかったかを示します。</p>

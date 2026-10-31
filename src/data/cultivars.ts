@@ -285,8 +285,10 @@ export const teaCultivars: TeaCultivar[] = [
     regions: ['京都府（宇治）'],
     verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
     scienceNote: '品評会出品碾茶の品種間比較（茶業研究報告 126, 2018）で、さみどり は やぶきた より全窒素・遊離アミノ酸含量が高くカテキン類含量が低い傾向が報告されたが、論文自身が「施肥、栽培条件が共通ではないため断定できない」と明記しており、本実装では出典リンクを検証できなかったため所見の登録は見送った。京都府茶業研究所の機械摘みてん茶適性試験では供試品種の中で適性が最も高いと判断された（適性の評価であり香味データではない）。',
-    findings: [],
-    sourceIds: [NARO],
+    findings: [
+      { kind: 'sensory', statement: '宇治の茶生産者・古川製茶の品種解説では、さみどりは「上品で穏やかなうまみが特徴」とされる（参考情報。生産者の記述であり、査読済みの官能データではない）。', sourceIds: ['furukawa-seicha-variety-guide'] },
+    ],
+    sourceIds: [NARO, 'furukawa-seicha-variety-guide'],
   },
   {
     id: 'ujimidori', name: 'うじみどり', aliases: ['Ujimidori', '京研307号'],
@@ -411,10 +413,12 @@ export const teaCultivars: TeaCultivar[] = [
     country: '台湾', rank: 'landrace', originType: 'landrace',
     breeding: '地方品種（在来品種）。台茶番号は持たない。台湾・農業部茶及飲料作物改良場（TBRS）の品種解説で「地方品種」と明記されている。導入・選抜の詳細な記録は未確認。',
     regions: ['桃園・新竹・苗栗（北埔・竹東・竹南・文山・峨嵋）'],
-    verification: { existence: 'confirmed', classification: 'confirmed', science: 'unconfirmed' },
-    scienceNote: '品種単独を対象とした査読済みの香気・呈味・官能論文は未確認。TBRS の公式解説では適製性が広く、椪風茶（東方美人茶）と烏龍茶の品質が最良、緑茶が次ぐとされる。東方美人茶に使える品種は本品種に限らず、「青心大冇＝東方美人茶専用品種」という固定結び付けは誤り。出典は調査記録（docs/research/cultivars-world.md）で TBRS 公式品種解説により確認した。',
-    findings: [],
-    sourceIds: [],
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '品種単独を対象とした査読済みの香気・呈味・官能論文は未確認。TBRS の公式解説では適製性が広く、椪風茶（東方美人茶）と烏龍茶の品質が最良、緑茶が次ぐとされる。東方美人茶に使える品種は本品種に限らず、「青心大冇＝東方美人茶専用品種」という固定結び付けは誤り。出典は調査記録（docs/research/cultivars-world.md）で TBRS 公式品種解説により確認した。東方美人茶（製品）の加工中メタボロミクス（査読論文）はあるが本品種単独の実測ではないため、科学データの充足は partial とする。',
+    findings: [
+      { kind: 'contribution', statement: '東方美人茶の加工中メタボロミクスでは、酵素反応段階でゲラニオールが約103倍に増加し、製品は果実様の香りと甘い味で知られるとされた。TBRS の公式品種解説では、本品種は椪風茶（東方美人茶）の品質が最良とされる品種の一つである。', conditions: '加工中実測の試料は金萱・鉄観音の葉であり、本品種単独の実測ではない。品種への適用は、公的機関の品種解説による対応づけを介した一般的な知見として扱う', sourceIds: ['fu-2022-oriental-beauty-processing'] },
+    ],
+    sourceIds: ['fu-2022-oriental-beauty-processing'],
   },
   {
     id: 'jinxuan', name: '金萱（台茶12号）', originalName: '臺茶12號', aliases: ['金萱', 'Jin Xuan', 'Golden Daylily', '台茶12号', '二七仔', '2027'],
@@ -438,20 +442,24 @@ export const teaCultivars: TeaCultivar[] = [
     breeding: '茶及飲料作物改良場育成。硬枝紅心 × 台農80号 を1938年に交配した後裔から選抜。金萱（台茶12号）と同年・同交配シリーズの姉妹品種。小葉種・中生種。',
     parentCultivarIds: ['yingzhi-hongxin'],
     regions: ['南投県名間郷・竹山鎮', '宜蘭県冬山郷'],
-    verification: { existence: 'confirmed', classification: 'confirmed', science: 'unconfirmed' },
-    scienceNote: '品種単独の査読済み香気・呈味・官能論文は未確認。野薑花（ジンジャーリリー）や檳榔花に似た濃郁な花香は、TBRS／国家文化記憶庫の品種解説による官能表現であり、論文データとして扱わない。出典は調査記録で TBRS 公式品種解説により確認した。',
-    findings: [],
-    sourceIds: [],
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '品種単独の査読済み香気・呈味・官能論文は未確認。野薑花（ジンジャーリリー）や檳榔花に似た濃郁な花香は、TBRS／国家文化記憶庫の品種解説による官能表現であり、論文データとして扱わない。出典は調査記録で TBRS 公式品種解説により確認した。香味については参考情報（小売事業者の品種解説）の記述もあるため、科学データの充足は partial とする。',
+    findings: [
+      { kind: 'sensory', statement: '小売事業者の品種解説では、翠玉の茶は「独特で強い花様・蘭様の香り」を持つとされる（参考情報。査読済みの官能データではない）。', sourceIds: ['english-tea-store-taiwan-cultivars'] },
+    ],
+    sourceIds: ['english-tea-store-taiwan-cultivars'],
   },
   {
     id: 'sijichun', name: '四季春', originalName: '四季春', aliases: ['スージーチュン', 'Si Ji Chun', 'Four Seasons Spring', '四季仔', '輝仔茶'],
     country: '台湾', rank: 'landrace', originType: 'private-selection',
     breeding: '地方品種。台北市木柵茶区の農家・張文輝が1985年に自ら選抜。武夷種と青心烏龍または青心大冇の自然交雑の可能性が公的解説に記されるが、親の確定はされていない（推測の域）。その後、南投県名間郷の農家・李彩云が導入し大量栽培して「四季春」と命名した。',
     regions: ['南投県名間郷を中心に台湾の中低海拔茶区全域'],
-    verification: { existence: 'confirmed', classification: 'confirmed', science: 'unconfirmed' },
-    scienceNote: '品種単独の査読済み香気・呈味・官能論文は未確認。公的育成品種（金萱・翠玉等）と同列の「育成品種」として登録しない。出典は調査記録で TBRS 公式品種解説・国家文化記憶庫により確認した。',
-    findings: [],
-    sourceIds: [],
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '品種単独の査読済み香気・呈味・官能論文は未確認。公的育成品種（金萱・翠玉等）と同列の「育成品種」として登録しない。出典は調査記録で TBRS 公式品種解説・国家文化記憶庫により確認した。香味については参考情報（小売事業者の品種解説）の記述のみがあるため、科学データの充足は partial とする。',
+    findings: [
+      { kind: 'sensory', statement: '小売事業者の品種解説では、四季春の茶は「強い花様・果実様の香り」を持つとされる（参考情報。査読済みの官能データではない）。', sourceIds: ['english-tea-store-taiwan-cultivars'] },
+    ],
+    sourceIds: ['english-tea-store-taiwan-cultivars'],
   },
   {
     id: 'hongyu', name: '紅玉（台茶18号）', originalName: '臺茶18號', aliases: ['紅玉', 'Hong Yu', 'Ruby', 'Red Jade', '台茶18号', 'B-40-58'],
@@ -548,8 +556,9 @@ export const teaCultivars: TeaCultivar[] = [
     verification: { existence: 'confirmed', classification: 'partial', science: 'partial' },
     findings: [
       { kind: 'composition', statement: '茶樹22遺伝子型の生態生理・二次代謝の比較研究に供試され、季節によるフェノール類・カテキン類の変動が遺伝子型ごとに異なることが示された。', conditions: '代謝成分の比較研究であり官能データではない。「マスカテル香が最も強い」等の官能的順位は、茶園・販売側資料の商業的テイスティングノートであり査読済み官能データではないため支持されない。', sourceIds: [SCIREP] },
+      { kind: 'sensory', statement: '生産者（Gopaldhara 茶園）の品種解説では、AV2 は花様・果実様・蜂蜜様のノートで知られ、セカンドフラッシュではムスカテルの特徴を示すとされる（参考情報。茶園の記述であり、査読済みの官能データではない）。', sourceIds: ['gopaldhara-cultivar-guide'] },
     ],
-    sourceIds: [SCIREP],
+    sourceIds: [SCIREP, 'gopaldhara-cultivar-guide'],
   },
   {
     id: 'p312', name: 'P312', aliases: ['Phoobsering 312'],

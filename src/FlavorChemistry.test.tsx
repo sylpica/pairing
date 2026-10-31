@@ -49,12 +49,15 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
 
   it('5. 紅茶の苦味からカフェイン、渋味から渋味の科学的区別と成分を確認できる', () => {
     location.hash = '#/tea/black-tea'; render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: '苦味に関係する成分を見る' }))
+    // 第7弾・課題B: 味覚は「味」タブでホイール表示になり、味のセグメントから成分シートを開く
+    fireEvent.click(screen.getByRole('tab', { name: '味' }))
+    fireEvent.click(screen.getByRole('button', { name: /^苦味（.+）の根拠を見る$/ }))
     expectShown(/カフェイン/)
     expectShown(/再構成・除去（オミッション）実験で、苦味の主要呈味化合物/)
     cleanup()
     location.hash = '#/tea/black-tea'; render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: '渋味に関係する成分を見る' }))
+    fireEvent.click(screen.getByRole('tab', { name: '味' }))
+    fireEvent.click(screen.getByRole('button', { name: /^渋味（収れん感）（.+）の根拠を見る$/ }))
     // 渋味は基本味ではなく収れん感であることが出典つきで示される
     expectShown(/渋味は基本味ではありません/)
     expectShown(/Bajec/)
@@ -64,7 +67,8 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
 
   it('5. 抹茶のうま味ではテアニン等の実証成分と、グルタミン酸の未確認の限定が併記される', () => {
     location.hash = '#/tea/matcha'; render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'うま味に関係する成分を見る' }))
+    fireEvent.click(screen.getByRole('tab', { name: '味' }))
+    fireEvent.click(screen.getByRole('button', { name: /^うま味（.+）の根拠を見る$/ }))
     expectShown(/L-テアニン/)
     expectShown(/コハク酸・没食子酸・テオガリン/)
     expectShown(/グルタミン酸/)
@@ -73,12 +77,14 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
 
   it('7. チョコレート側でも味覚から成分を確認でき、甘味は配合糖由来と区別される', () => {
     location.hash = '#/choco/dark-roasted'; render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: '苦味に関係する成分を見る' }))
+    fireEvent.click(screen.getByRole('tab', { name: '味' }))
+    fireEvent.click(screen.getByRole('button', { name: /^苦味（.+）の根拠を見る$/ }))
     expectShown(/テオブロミン/)
     expectShown(/ジケトピペラジン類/)
     cleanup()
     location.hash = '#/choco/milk-chocolate'; render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: '甘味に関係する成分を見る' }))
+    fireEvent.click(screen.getByRole('tab', { name: '味' }))
+    fireEvent.click(screen.getByRole('button', { name: /^甘味（.+）の根拠を見る$/ }))
     expectShown(/配合された糖によるもの/)
   })
 

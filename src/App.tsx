@@ -34,11 +34,12 @@ import {
   completeTeaComboSel, completeChocoComboSel, teaKindName, CHOCO_KIND_LABEL, TEA_COMBO_KINDS, CHOCO_COMBO_KINDS,
   COMBO_LEVEL_LABEL, COMBO_TASTE_LABEL, type ComboAnalysis, type ChocoComboSel, type TeaComboSel,
 } from './engine/combo'
-import ComboWheel, { COMBO_INT_LABEL } from './components/ComboWheel'
+import { COMBO_INT_LABEL } from './components/ComboWheel'
+import ComboWheelPanel from './components/ComboWheelPanel'
+import ProfileWheelPanel from './components/ProfileWheelPanel'
 import { FindingsList, SCIENCE_LABEL } from './components/EntityViews'
 import { TeaLeafIcon, TeaCupIcon, MapPinIcon, SproutIcon, CacaoPodIcon, ChocoBarIcon, LineageIcon, PercentIcon, StarIcon, HistoryIcon } from './components/icons'
 import BackButton from './components/BackButton'
-import ComboNoteDetail from './components/ComboNoteDetail'
 import { TeaComboSelects, ChocoComboSelects, type TeaSelectsState, type ChocoSelectsState } from './components/ComboSelectors'
 import type { ChocolateKind } from './types'
 
@@ -176,20 +177,12 @@ const AXIS_SUMMARY_LABEL: Record<string, string> = { region: '産地の反映', 
 /** 調べる画面のプルダウン直下に出す、その場の組み合わせ表示（ホイール＋要約）。
  * 分類・産地・品種（チョコは種類・産地・系統）が揃ったときにだけ表示する。 */
 function ComboPreview({ analysis, path, note: assumedNote }: { analysis: ComboAnalysis; path: string; note?: string }) {
-  const [selNote, setSelNote] = useState<string | null>(null)
-  const note = analysis.notes.find((n) => n.noteId === selNote) ?? null
   return (
     <section className="combo-preview" aria-label="選択中の組み合わせのフレーバー">
       <h3>{analysis.title}</h3>
       {assumedNote && <p className="note-small">{assumedNote}</p>}
       <p><span className="badge">組み合わせ全体の根拠：{COMBO_LEVEL_LABEL[analysis.overallLevel]}</span></p>
-      <ComboWheel notes={analysis.notes} context={analysis.context} onSelectNote={(id) => setSelNote(selNote === id ? null : id)} selectedNoteId={selNote} />
-      {note && (
-        <CollapsibleSheet resetKey={note.noteId} title={noteById(note.noteId)?.name ?? note.noteId} noun="根拠情報"
-          onDismiss={() => setSelNote(null)}>
-          <ComboNoteDetail note={note} context={analysis.context} />
-        </CollapsibleSheet>
-      )}
+      <ComboWheelPanel notes={analysis.notes} tastes={analysis.tastes} context={analysis.context} resetKey={analysis.title} />
       {analysis.tastes.length > 0 && <p>味わい：{analysis.tastes.map((t) => `${COMBO_TASTE_LABEL[t.key]}（${COMBO_INT_LABEL[t.intensity]}）`).join('、')}</p>}
       {analysis.axisSummaries.map((s) => (
         <p key={s.axis} className="note-small"><strong>{AXIS_SUMMARY_LABEL[s.axis]}</strong>：{s.text}</p>
@@ -555,7 +548,6 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
   const [cacaoSel, setCacaoSel] = usePersistedState<{ layer: CacaoLayer; id: string } | null>('pairing.pair.cacaoSel', null)
   const [originId, setOriginId] = usePersistedState('pairing.pair.originId', '')
   const [tab, setTab] = useState<'tea' | 'choco' | 'pair'>('pair')
-  const [selNote, setSelNote] = useState<string | null>(null)
   const [pairNote, setPairNote] = useState<string | null>(null)
   const [pairCat, setPairCat] = useState<string | null>(null)
   const teaSelects: TeaSelectsState = { kind: teaKindValue, origin: teaOrigin, cultivar: cultivarId }
@@ -605,8 +597,6 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
   const chocoForPair = assembly?.chocoItem ?? choco
   const teaSideTitle = teaAnalysis ? teaAnalysis.title : (tea?.name ?? '')
   const chocoSideTitle = chocoAnalysis ? chocoAnalysis.title : (choco?.name ?? '')
-  const activeAnalysis = tab === 'tea' ? teaAnalysis : tab === 'choco' ? chocoAnalysis : null
-  const comboNoteSel = activeAnalysis && selNote ? activeAnalysis.notes.find((n) => n.noteId === selNote) : undefined
   const allCharacters = characters ? [...characters.aroma, ...characters.tasteMouthfeel] : []
   const [charSel, setCharSel] = useState<string | null>(null)
   const selCharacter = allCharacters.find((c) => c.id === charSel) ?? null
@@ -696,23 +686,11 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
         <button role="tab" aria-selected={tab === 'pair'} onClick={() => setTab('pair')}>組み合わせの見方</button>
       </div>
       {tab === 'tea' && (teaAnalysis
-        ? <ComboWheel notes={teaAnalysis.notes} context={teaAnalysis.context} onSelectNote={setSelNote} selectedNoteId={selNote} />
-        : <FlavorWheel profile={tea.profile} onSelectNote={setSelNote} context={{ side: 'tea', kindId: tea.kindId, itemName: tea.name, itemId: tea.id }} />)}
+        ? <ComboWheelPanel notes={teaAnalysis.notes} tastes={teaAnalysis.tastes} context={teaAnalysis.context} resetKey={`tea:${teaAnalysis.title}`} />
+        : <ProfileWheelPanel profile={tea.profile} context={{ side: 'tea', kindId: tea.kindId, itemName: tea.name, itemId: tea.id }} />)}
       {tab === 'choco' && (chocoAnalysis
-        ? <ComboWheel notes={chocoAnalysis.notes} context={chocoAnalysis.context} onSelectNote={setSelNote} selectedNoteId={selNote} />
-        : <FlavorWheel profile={choco.profile} onSelectNote={setSelNote} context={{ side: 'chocolate', kindId: choco.kind, itemName: choco.name, itemId: choco.id }} />)}
-      {tab !== 'pair' && selNote && (
-        <CollapsibleSheet resetKey={`${tab}:${selNote}`} title={noteById(selNote)?.name ?? selNote} onDismiss={() => setSelNote(null)}>
-          {comboNoteSel && activeAnalysis ? (
-            <ComboNoteDetail note={comboNoteSel} context={activeAnalysis.context} />
-          ) : (
-            <NoteDetail noteId={selNote} profile={tab === 'tea' ? (teaForPair ?? tea).profile : (chocoForPair ?? choco).profile}
-              context={tab === 'tea'
-                ? { side: 'tea', kindId: tea.kindId, itemName: tea.name, itemId: tea.id }
-                : { side: 'chocolate', kindId: choco.kind, itemName: choco.name, itemId: choco.id }} />
-          )}
-        </CollapsibleSheet>
-      )}
+        ? <ComboWheelPanel notes={chocoAnalysis.notes} tastes={chocoAnalysis.tastes} context={chocoAnalysis.context} resetKey={`choco:${chocoAnalysis.title}`} />
+        : <ProfileWheelPanel profile={choco.profile} context={{ side: 'chocolate', kindId: choco.kind, itemName: choco.name, itemId: choco.id }} />)}
       {tab === 'pair' && (
         <section>
           <p><span className="badge">{LEVEL_LABEL[result.level]}</span></p>

@@ -181,7 +181,10 @@ describe('ホイールの配置（系統・品種ページは上部、アイテ�
     location.hash = '#/tea/sencha'
     render(<App />)
     const wheel = screen.getByLabelText('フレーバーホイール')
-    const taste = screen.getByText('味覚と渋味')
-    expect(isBefore(wheel, taste)).toBe(true)
+    const temporal = screen.getByText('香味の移り変わり')
+    expect(isBefore(wheel, temporal)).toBe(true)
+    // 第7弾・課題B: アイテム詳細にも「香り／味」切り替えがホイールの近くにある
+    expect(screen.getByRole('tab', { name: '味' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: '香り' })).toBeTruthy()
   })
 })

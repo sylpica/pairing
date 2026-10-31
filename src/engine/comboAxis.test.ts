@@ -72,21 +72,28 @@ describe('地域の所見が寄与を示す場合は、実測としてノート�
 })
 
 describe('反映されないのが正しいケースは、変わらない代わりに理由が出る', () => {
-  it('浙江 × 緑茶：所見は非揮発成分の産地判別までなので、ノートは緑茶のみと同一で、理由が出る', () => {
+  it('浙江 × 緑茶：龍井茶のキー成分の実測（第7弾で追加）により、蘭が実測で加わりノートが変わる', () => {
+    // 第7弾の追加文献調査で、龍井茶のキー成分（再構成まで含む特定）と西湖龍井試料の
+    // OAV 評価が所見として登録されたため、旧仕様（判別のみ・同一・理由が出る）は変更された。
     const base = analyzeTeaCombo({ kindId: 'green', regionId: '', cultivarId: '' })
     const a = analyzeTeaCombo({ kindId: 'green', regionId: 'zhejiang', cultivarId: '' })
-    expect(noteSig(a)).toEqual(noteSig(base))
+    expect(noteSig(a)).not.toEqual(noteSig(base))
     const region = a.axisSummaries.find((s) => s.axis === 'region')
-    expect(region?.reflected).toBe(false)
-    expect(region?.text).toContain('反映していません')
-    // 地域の実測の足場そのものは、従来どおり measured の文として出る
+    expect(region?.reflected).toBe(true)
+    const orchid = a.notes.find((n) => n.noteId === 'orchid')
+    expect(orchid?.level).toBe('measured')
+    expect(orchid?.basis.some((b) => b.sourceIds.includes('hu-2022-tea-aroma-oav-splitting'))).toBe(true)
     expect(a.statements.some((s) => s.level === 'measured')).toBe(true)
   })
-  it('国レベルの指定（中国 × 緑茶）では、国レベルの香味データが無いことが理由として出る', () => {
+  it('国レベルの指定（中国 × 緑茶）では、地域の所見を束ねた集約推測が反映される（第7弾・課題A5）', () => {
+    // 第7弾で仕様変更: 旧仕様は「国レベルの香味データが無いため反映しない」だったが、
+    // 国の地域の軸ルールを束ね、全て推測（inferred）に落とした集約推測を適用する。
     const a = analyzeTeaCombo({ kindId: 'green', regionId: 'country:中国', cultivarId: '' })
     const region = a.axisSummaries.find((s) => s.axis === 'region')
-    expect(region?.reflected).toBe(false)
-    expect(region?.text).toContain('国レベル')
+    expect(region?.reflected).toBe(true)
+    expect(a.statements.some((s) => s.text.includes('集約推測'))).toBe(true)
+    const aggNotes = a.notes.filter((n) => n.basis.some((b) => b.text.includes('集約推測')))
+    expect(aggNotes.length).toBeGreaterThan(0)
   })
   it('青心烏龍 × 烏龍茶：GC-O・再構成で検証された花様成分の方向が、推測として反映される（第5弾で方針変更）', () => {
     // 第3弾では「組成のみ」として反映しない扱いだったが、原所見（Lan 2022）は
@@ -207,10 +214,12 @@ describe('既存の代表例の回帰（長崎 × やぶきた × 紅茶の弱�
     const region = a.axisSummaries.find((s) => s.axis === 'region')
     expect(region?.reflected).toBe(false) // 長崎の所見は緑茶のもので、紅茶のノートには反映しない
   })
-  it('チョコの選択空間アンカーは不変（この修正は成立条件に触れない）', () => {
+  it('チョコの選択空間アンカーは不変（成立条件に触れない）。エクアドル産地は第7弾で読み替え推測が反映される', () => {
     const sel: ChocoComboSel = { kind: 'dark', originId: 'ecuador', lineage: { layer: 'genetic', id: 'gen-nacional' } }
     const a = analyzeChocoCombo(sel)
     expect(a.axisSummaries.find((s) => s.axis === 'lineage')?.reflected).toBe(true)
-    expect(a.axisSummaries.find((s) => s.axis === 'origin')?.reflected).toBe(false)
+    // 第7弾: 現代 Nacional 集団の花ノート経路の知見を産地へ読み替えた推測ルールを追加したため、
+    // 旧仕様（産地は反映されない）から変更された。
+    expect(a.axisSummaries.find((s) => s.axis === 'origin')?.reflected).toBe(true)
   })
 })

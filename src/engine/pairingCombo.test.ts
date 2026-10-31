@@ -70,17 +70,18 @@ describe('課題C: 軸指定がペアリング結果に効く', () => {
     const teaRegion = a.teaAnalysis?.axisSummaries.find((s) => s.axis === 'region')
     expect(teaRegion?.reflected).toBe(false)
     expect(teaRegion?.text).toContain('寄与を示すものではない')
-    // チョコ側: 産地・系統とも効果がないのが正しいケースで、理由が返る
+    // チョコ側: 産地（エクアドル）は第7弾で、現代 Nacional 集団の花ノート経路の知見を
+    // 産地へ読み替えた推測が反映されるようになった。系統（アメロナド）は集団自体の
+    // 香味実測がないため、理由つきで反映されないまま（アプリの証拠方針として維持）。
     const chocoOrigin = a.chocoAnalysis?.axisSummaries.find((s) => s.axis === 'origin')
-    expect(chocoOrigin?.reflected).toBe(false)
-    expect(chocoOrigin?.text.length).toBeGreaterThan(20)
+    expect(chocoOrigin?.reflected).toBe(true)
     const chocoLineage = a.chocoAnalysis?.axisSummaries.find((s) => s.axis === 'lineage')
     expect(chocoLineage?.reflected).toBe(false)
     expect(chocoLineage?.text.length).toBeGreaterThan(20)
-    // チョコ側の第2層プロファイルは素と一致する（効果がないことと結果が矛盾しない。
-    // basis の表記は level からの再導出で変わりうるため、ノートと強度で比べる）
+    // 産地の推測により、白い花（弱い）が素のプロファイルに加わる
     const face = (p: typeof choco.profile) => p.aromas.map((n) => `${n.noteId}:${n.intensity}`)
-    expect(face(a.chocoItem.profile)).toEqual(face(choco.profile))
+    expect(face(a.chocoItem.profile)).not.toEqual(face(choco.profile))
+    expect(face(a.chocoItem.profile)).toContain('white-flower:weak')
     // 結果自体は例外なく生成される
     expect(a.result.level).toBeDefined()
     expect(a.characters).toBeDefined()

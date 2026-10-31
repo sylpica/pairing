@@ -229,8 +229,14 @@ export const teaRegions: TeaRegion[] = [
         statement: '龍井の3産地（西湖・銭塘・越州）では一次代謝物が異なり、シキミ酸とキナ酸は西湖産で有意に高かった',
         sourceIds: ['lin-2026-longjing-origin-metabolites'],
       },
+      {
+        kind: 'contribution',
+        statement: '龍井茶では、SBSE＋GC-MS/GC-O＋OAV＋香気再構成によって14種のキー成分が特定された（ゲラニオール、2-エチル-3,5-ジメチルピラジン等を含む）。西湖龍井の単一試料の OAV 評価でも β-イオノンが高い OAV（27.14）を示した',
+        conditions: '龍井茶という製品・産地レベルの実測であり、小産地単位の結論ではない',
+        sourceIds: ['wang-2020-longjing-key-odorants', 'hu-2022-tea-aroma-oav-splitting'],
+      },
     ],
-    sourceIds: ['wang-2025-xihu-longjing-core-origins', 'lin-2026-longjing-origin-metabolites'],
+    sourceIds: ['wang-2025-xihu-longjing-core-origins', 'lin-2026-longjing-origin-metabolites', 'wang-2020-longjing-key-odorants', 'hu-2022-tea-aroma-oav-splitting'],
     applicableKindIds: ['green'],
   },
   {
@@ -470,8 +476,13 @@ export const teaRegions: TeaRegion[] = [
         conditions: 'セレン含量と香味の因果を示す研究ではない',
         sourceIds: ['feng-2026-ankang-selenium-green-tea'],
       },
+      {
+        kind: 'composition',
+        statement: '紫陽毛尖（陝西・紫陽県）では、官能評価と非標的メタボロミクスの解析で、カテキンとフラボノイドが呈味と色の鍵物質とされた。香りの方向を示す所見ではない',
+        sourceIds: ['you-2025-ziyang-maojian-quality'],
+      },
     ],
-    sourceIds: ['feng-2026-ankang-selenium-green-tea'],
+    sourceIds: ['feng-2026-ankang-selenium-green-tea', 'you-2025-ziyang-maojian-quality'],
     applicableKindIds: ['green'],
   },
   {
@@ -607,8 +618,18 @@ export const teaRegions: TeaRegion[] = [
         statement: '上部アッサムとノースバンクの紅茶32試料では、テアフラビン等の主要成分に産地内でも大きなばらつきがあった一方、水抽出物とテアニンはオーソドックス製法とCTC製法で同等で、CTCでも主要品質成分は保持されていた',
         sourceIds: ['sarmah-2026-assam-orthodox-ctc-biochemical'],
       },
+      {
+        kind: 'contribution',
+        statement: '世界4大紅茶（祁門・アッサム・ダージリン・セイロン）の GC×GC-TOFMS＋GC-O 比較では、フェニルアセトアルデヒドが全試料で強い香気強度を示す成分の一つであり、アッサムでは (E)-2-オクテナールが最も決定的な成分とされた。アッサム茶は麦芽様・バラ様の香りで知られると先行研究（Kumazawa & Masuda 2006）が特徴づけている',
+        sourceIds: ['kang-2019-four-black-teas'],
+      },
+      {
+        kind: 'composition',
+        statement: 'アッサム茶のヘッドスペースでは、リナロール・ヘキサナール・2-メチルブタナール・(E)-2-ヘキセノールが高水準で検出された（ICOS 2007 の比較発表）',
+        sourceIds: ['ebisawa-2007-black-tea-origins-headspace'],
+      },
     ],
-    sourceIds: ['sarmah-2026-assam-orthodox-ctc-biochemical'],
+    sourceIds: ['sarmah-2026-assam-orthodox-ctc-biochemical', 'kang-2019-four-black-teas', 'ebisawa-2007-black-tea-origins-headspace'],
     applicableKindIds: ['black'],
   },
 
@@ -628,8 +649,14 @@ export const teaRegions: TeaRegion[] = [
         statement: 'スリランカ紅茶13産地の判別分析では、ウバの揮発成分はフレーバーシーズン（7–9月）の時期に限って産地判別に重要になった。通常時の個性は主に不揮発性の指標側にある',
         sourceIds: ['sri-lanka-2017-black-tea-origin-classification'],
       },
+      {
+        kind: 'contribution',
+        statement: '世界4大紅茶の比較では、セイロン茶でサリチル酸メチルが最も決定的な香気成分とされた。ウバのヘッドスペースでもサリチル酸メチルとリナロールが高水準で検出されている',
+        conditions: '「最も決定的」はセイロンというカテゴリー単位の結論であり、ウバ単独の寄与実測ではない',
+        sourceIds: ['kang-2019-four-black-teas', 'ebisawa-2007-black-tea-origins-headspace'],
+      },
     ],
-    sourceIds: ['sri-lanka-2017-black-tea-origin-classification'],
+    sourceIds: ['sri-lanka-2017-black-tea-origin-classification', 'kang-2019-four-black-teas', 'ebisawa-2007-black-tea-origins-headspace'],
     applicableKindIds: ['black'],
   },
   {
@@ -666,8 +693,13 @@ export const teaRegions: TeaRegion[] = [
         statement: '13産地の中で正分類率が最も高く、「全色（total colour）」という指標だけで判別可能だった。テアルビジンは高地・中地・低地の判別に最も重要な指標だった',
         sourceIds: ['sri-lanka-2017-black-tea-origin-classification'],
       },
+      {
+        kind: 'composition',
+        statement: 'ヌワラエリヤの主要なヘッドスペース成分は、リナロール・リナロールオキシドII・(Z)-3-ヘキセノール・ヘキサナールだった（ICOS 2007 の比較発表）',
+        sourceIds: ['ebisawa-2007-black-tea-origins-headspace'],
+      },
     ],
-    sourceIds: ['sri-lanka-2017-black-tea-origin-classification'],
+    sourceIds: ['sri-lanka-2017-black-tea-origin-classification', 'ebisawa-2007-black-tea-origins-headspace'],
     applicableKindIds: ['black'],
   },
 ]

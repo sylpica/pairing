@@ -1,4 +1,5 @@
-import type { Basis, ComboLevel, ComboNote } from '../types'
+import type { Basis, ComboLevel, ComboNote, ComboTaste } from '../types'
+import { comboTastesFromProfile } from '../components/TasteWheel'
 import type { CompoundContext } from '../data/compounds'
 import { usesForCultivar } from '../data/cultivars'
 import { teaById, teaKinds } from '../data/teas'
@@ -26,6 +27,9 @@ export interface CultivarWheelEntry {
   kindId: string
   kindName: string
   notes: ComboNote[]
+  /** 味モード用（第7弾・課題B）：組み合わせ分析の味プロファイル。
+   *  form 由来の場合は対応アイテムの味覚プロファイルを変換したもの */
+  tastes: ComboTaste[]
   overallLevel: ComboLevel
   /** 組み合わせページへのパス。form 由来の場合は null */
   comboPath: string | null
@@ -69,7 +73,7 @@ export function cultivarWheels(cultivarId: string): CultivarWheelEntry[] {
       const a = analyzeTeaCombo(sel)
       out.push({
         kindId: u.kindId, kindName: teaKindName(u.kindId),
-        notes: a.notes, overallLevel: a.overallLevel,
+        notes: a.notes, tastes: a.tastes, overallLevel: a.overallLevel,
         comboPath: teaComboPath(sel), itemPath: null, viaForm: false,
         context: a.context,
       })
@@ -87,9 +91,11 @@ export function cultivarWheels(cultivarId: string): CultivarWheelEntry[] {
       basis: [{ from: 'profile', text: baseDesc, sourceIds: a.sourceIds }],
       sourceIds: [...a.sourceIds],
     }))
+    const tastes: ComboTaste[] = comboTastesFromProfile(item.profile).map((t) => ({ ...t, text: baseDesc.replace('香りです', '味です') }))
     out.push({
       kindId: u.kindId, kindName,
       notes,
+      tastes,
       overallLevel: notes.some((n) => n.level === 'measured') ? 'measured' : 'general',
       comboPath: null, itemPath: `tea/${item.id}`, viaForm: true,
       context: { side: 'tea', kindId: item.kindId, itemName: item.name, itemId: item.id },
@@ -102,6 +108,8 @@ export interface LineageWheelEntry {
   kind: string
   kindLabel: string
   notes: ComboNote[]
+  /** 味モード用（第7弾・課題B）：組み合わせ分析の味プロファイル */
+  tastes: ComboTaste[]
   overallLevel: ComboLevel
   comboPath: string
   /** ホイールの化合物併記とノート詳細の階層判定に使う文脈＝土台アイテム */
@@ -116,7 +124,7 @@ export function lineageWheels(layer: CacaoLayer, id: string): LineageWheelEntry[
     const a = analyzeChocoCombo(sel)
     return {
       kind, kindLabel: `${CHOCO_KIND_LABEL[kind] ?? kind}チョコレート`,
-      notes: a.notes, overallLevel: a.overallLevel,
+      notes: a.notes, tastes: a.tastes, overallLevel: a.overallLevel,
       comboPath: chocoComboPath(sel),
       context: a.context,
     }

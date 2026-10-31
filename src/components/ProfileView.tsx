@@ -1,13 +1,6 @@
-import { useState } from 'react'
-import type { FlavorProfile, TasteKey } from '../types'
-import FlavorWheel from './FlavorWheel'
-import TasteChart from './TasteChart'
-import NoteDetail from './NoteDetail'
-import TasteDetail from './TasteDetail'
-import { CollapsibleSheet } from './Sheet'
+import type { FlavorProfile } from '../types'
+import ProfileWheelPanel from './ProfileWheelPanel'
 import { SourceLinks } from './SourceLinks'
-import { noteById } from '../data/flavors'
-import { TASTE_LABELS } from '../engine/pairing'
 import type { CompoundContext } from '../data/compounds'
 
 export { LEVEL_LABEL, BASIS_LABEL, SourceLinks } from './SourceLinks'
@@ -19,8 +12,6 @@ export default function ProfileView({ profile, scopeNote, sourceIds, context }: 
   /** 成分の階層表示（この茶類・種類での研究例／全般の研究例の区別）に使う表示中アイテムの情報 */
   context?: CompoundContext
 }) {
-  const [selected, setSelected] = useState<string | null>(null)
-  const [selectedTaste, setSelectedTaste] = useState<TasteKey | null>(null)
   const temporal = [
     { label: '最初の印象', stage: profile.temporal.first },
     { label: '口の中で広がる', stage: profile.temporal.middle },
@@ -28,19 +19,10 @@ export default function ProfileView({ profile, scopeNote, sourceIds, context }: 
   ]
   return (
     <div>
-      <FlavorWheel profile={profile} context={context} onSelectNote={(id) => { setSelected(id); setSelectedTaste(null) }} />
-      {selected && (
-        <CollapsibleSheet resetKey={selected} title={noteById(selected)?.name ?? selected} onDismiss={() => setSelected(null)}>
-          <NoteDetail noteId={selected} profile={profile} context={context} />
-        </CollapsibleSheet>
-      )}
-      <h3>味覚と渋味</h3>
-      <TasteChart profile={profile} onSelectTaste={(k) => { setSelectedTaste(k); setSelected(null) }} />
-      {selectedTaste && (
-        <CollapsibleSheet resetKey={selectedTaste} title={TASTE_LABELS[selectedTaste]} onDismiss={() => setSelectedTaste(null)}>
-          <TasteDetail taste={selectedTaste} profile={profile} context={context} />
-        </CollapsibleSheet>
-      )}
+      {/* 第7弾・課題B-4: アイテム詳細にも「香り／味」切り替えを付ける。
+          味モードは味覚プロファイルをホイール表示し、従来の味覚チャート
+          （棒グラフ）はホイール下のチップ一覧＋詳細シート（関係成分つき）で代替する。 */}
+      <ProfileWheelPanel profile={profile} context={context} />
       <h3>香味の移り変わり</h3>
       <div className="temporal">
         {temporal.map((t) => (

@@ -106,20 +106,24 @@ describe('課題A: 新規変換の回帰', () => {
   it('広東 × 鳳凰単叢 × 青茶 は、中国全体 × 鳳凰単叢 × 青茶 と分析が変わる（再現例）', () => {
     const guangdong = analyzeTeaCombo({ kindId: 'oolong', regionId: 'guangdong', cultivarId: 'fenghuang-dancong-group' })
     const country = analyzeTeaCombo({ kindId: 'oolong', regionId: 'country:中国', cultivarId: 'fenghuang-dancong-group' })
-    // 鳳凰単叢の証拠は広東・潮州の実試料そのものなので、ホイールの面
-    // （ノート・強度・根拠レベル）は同一で正しい。変わるのは根拠の内訳と軸要約:
-    // 広東を指定すると、蘭のノートの根拠に「産地の所見」が積まれ、
-    // 地域の軸要約が「反映されています」になる（国レベルでは産地は不使用）。
+    // 鳳凰単叢の証拠は広東・潮州の実試料そのものなので、広東指定では
+    // 蘭のノートの根拠に「産地の所見」が実測側として積まれる。
+    // 第7弾・課題A5 で仕様変更: 国レベル指定では産地を使わないのではなく、
+    // その国の地域の所見を束ねた「集約推測」（全て inferred）として重ねる。
+    // したがって国指定でも蘭の根拠に産地由来は積まれるが、文面に
+    // 「集約推測」と明示され、軸要約は「反映あり」になる（旧仕様の
+    // 「国レベルでは産地は不使用・反映なし」から変更）。
     const orchidG = guangdong.notes.find((n) => n.noteId === 'orchid')
     const orchidC = country.notes.find((n) => n.noteId === 'orchid')
     expect(orchidG?.level).toBe('general')
     expect(guangdong.notes.some((n) => n.noteId === 'honey')).toBe(true)
     expect(orchidG?.basis.some((b) => b.from === 'region')).toBe(true)
-    expect(orchidC?.basis.some((b) => b.from === 'region')).toBe(false)
+    expect(orchidC?.basis.some((b) => b.from === 'region' && b.text.includes('集約推測'))).toBe(true)
     const regionSummary = guangdong.axisSummaries.find((s) => s.axis === 'region')
     expect(regionSummary?.reflected).toBe(true)
     const countrySummary = country.axisSummaries.find((s) => s.axis === 'region')
-    expect(countrySummary?.reflected).toBe(false)
+    expect(countrySummary?.reflected).toBe(true)
+    expect(country.statements.some((s) => s.text.includes('集約推測'))).toBe(true)
     // 分析全体（ノートの根拠構成を含む）は異なる
     const fullSig = (a: typeof guangdong) => JSON.stringify(a.notes.map((n) => `${n.noteId}:${n.basis.map((b) => b.from).join('+')}`))
     expect(fullSig(guangdong)).not.toBe(fullSig(country))

@@ -90,6 +90,10 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 .tabs { display: flex; gap: 6px; margin: 10px 0; }
 .tabs button { flex: 1; padding: 10px; border-radius: 12px 12px 0 0; border: 1.5px solid var(--line); background: #f3ede2; font: inherit; cursor: pointer; min-height: 44px; }
 .tabs button[aria-selected="true"] { background: var(--card); font-weight: 700; }
+/* 香り／味ホイール切り替え（第7弾・課題B）: ホイールの少し上に置く小さいタブ */
+.wheel-mode-toggle { display: flex; gap: 6px; margin: 10px 0 4px; }
+.wheel-mode-toggle button { flex: 0 0 auto; padding: 8px 22px; border-radius: 999px; border: 1.5px solid var(--line); background: #f3ede2; font: inherit; cursor: pointer; min-height: 40px; }
+.wheel-mode-toggle button[aria-selected="true"] { background: var(--card); font-weight: 700; border-color: var(--accent2); }
 .app-footer { margin-top: 36px; border-top: 2px solid var(--line); padding-top: 12px; font-size: 0.85rem; display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
 .linklike { background: none; border: none; font: inherit; color: var(--accent2); cursor: pointer; text-decoration: underline; }
 .file-btn { display: inline-block; margin-left: 8px; }

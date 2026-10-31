@@ -234,8 +234,8 @@ describe('自己監査7: プロファイル署名のバリエーション実測�
     }
     const colliding = [...sigs.values()].filter((v) => v > 1).length
     console.log(`tea combo space: sels=${sels.length} distinctSignatures=${sigs.size} collidingSignatures=${colliding}`)
-    // Before（第4弾時点）= 79 種。第5弾の実測 377 種から後退しない
-    expect(sigs.size).toBeGreaterThanOrEqual(300)
+    // Before（第4弾時点）= 79 種。第5弾の実測 377 種、第7弾の実測 471 種から後退しない
+    expect(sigs.size).toBeGreaterThanOrEqual(450)
   }, 600000)
 
   it('チョコ単体の組み合わせ空間: 相異なる署名の数を実測する', () => {
@@ -247,8 +247,8 @@ describe('自己監査7: プロファイル署名のバリエーション実測�
     }
     const colliding = [...sigs.values()].filter((v) => v > 1).length
     console.log(`choco combo space: sels=${sels.length} distinctSignatures=${sigs.size} collidingSignatures=${colliding}`)
-    // Before（第4弾時点）= 14 種。第5弾の実測 34 種から後退しない
-    expect(sigs.size).toBeGreaterThanOrEqual(30)
+    // Before（第4弾時点）= 14 種。第5弾の実測 34 種、第7弾の実測 98 種から後退しない
+    expect(sigs.size).toBeGreaterThanOrEqual(90)
   }, 600000)
 
   it('ペアリング空間: 相異なる入力プロファイルの全ペアで、相異なる出力署名の数を実測する', () => {
@@ -276,8 +276,8 @@ describe('自己監査7: プロファイル署名のバリエーション実測�
       }
     }
     console.log(`pairing space: distinctTeaInputs=${teaInputs.size} distinctChocoInputs=${chocoInputs.size} distinctPairs=${pairs} distinctOutputs=${outs.size}`)
-    // Before（第4弾時点）= 811 種。第5弾の実測 6,645 種から後退しない
-    expect(outs.size).toBeGreaterThanOrEqual(5000)
+    // Before（第4弾時点）= 811 種。第5弾の実測 6,645 種、第7弾の実測 15,382 種から後退しない
+    expect(outs.size).toBeGreaterThanOrEqual(14000)
   }, 600000)
 
   it('源泉の観点で区別できる選択同士は、署名が異なる（同署名収束の点検）', () => {

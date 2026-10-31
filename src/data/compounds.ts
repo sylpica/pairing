@@ -710,6 +710,16 @@ export const compounds: Compound[] = [
     sourceIds: ['seyfried-2019-dark-chocolate-sensomics', 'fricke-2020-milk-chocolate-sensomics', 'fullemann-2020-smoky-cocoa-odorants', 'krause-2025-wood-smoke-cocoa'],
     scopes: [{ side: 'chocolate', kindId: 'dark' }, { side: 'chocolate', kindId: 'milk' }, { side: 'cacao' }],
   },
+  {
+    id: 'coumarin', name: 'クマリン', aliases: ['Coumarin'],
+    noteIds: ['hay'],
+    plainDescription: '干し草を思わせる甘い香りの成分です。',
+    detectedIn: 'お茶（洞庭碧螺春で含量差が実測）',
+    aromaKnowledge: '香料・食品の分野で、干し草様の甘い香りを持つ成分として一般に知られます。',
+    contributionEvidence: 'お茶では、中国緑茶3銘茶の AEDA 比較で、碧螺春で偏って多い成分として含量差が示されたまでであり、碧螺春の香りへの寄与の確定（再構成・欠落試験等）はされていません。検出・含量差の知見として扱います。',
+    sourceIds: ['baba-2014-chinese-green-tea-aeda'],
+    scopes: [{ side: 'tea' }],
+  },
 ]
 export const compoundById = (id: string) => compounds.find((c) => c.id === id)
 

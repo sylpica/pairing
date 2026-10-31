@@ -131,7 +131,7 @@ describe('成立条件（2026-10-31 修正：分類×産地は常時成立）', 
     expect(a.title).toBe('浙江 × 緑茶')
     expect(a.statements.some((s) => s.level === 'measured')).toBe(true)
     const regionGroup = a.groups.find((g) => g.label === '産地の所見')
-    expect(regionGroup?.findings.length).toBe(2)
+    expect(regionGroup?.findings.length).toBe(3)
   })
   it('地域の全所見に出典があり、出典は全て実在する', async () => {
     const { teaRegions } = await import('../data/teaRegions')
