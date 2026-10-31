@@ -2,12 +2,13 @@ import { useMemo, useState } from 'react'
 import type { FlavorProfile } from '../types'
 import { flavorCategories, flavorNotes, noteById, categoryById } from '../data/flavors'
 import { compoundsForNote, compoundTier, type CompoundContext } from '../data/compounds'
+import { fitLabelLines, fitOneLine, packScaledLines, textWidthAt, WHEEL_LABEL_FONT, WHEEL_SUB_FONT, type FittedLine } from './wheelText'
 
 const rank = (i: string) => (i === 'strong' ? 3 : i === 'normal' ? 2 : i === 'weak' ? 1 : 0)
 const INT_LABEL: Record<string, string> = { strong: '強い', normal: '普通', weak: '弱い', unknown: '不明' }
 
-const LABEL_FONT = 12
-const SUB_FONT = 10
+const LABEL_FONT = WHEEL_LABEL_FONT
+const SUB_FONT = WHEEL_SUB_FONT
 const LABEL_R = 108
 
 function arcPath(cx: number, cy: number, r0: number, r1: number, a0: number, a1: number) {
@@ -17,27 +18,9 @@ function arcPath(cx: number, cy: number, r0: number, r1: number, a0: number, a1:
   return `M ${x0} ${y0} A ${r1} ${r1} 0 ${large} 1 ${x1} ${y1} L ${x2} ${y2} A ${r0} ${r0} 0 ${large} 0 ${x3} ${y3} Z`
 }
 
-/** SVGテキストの概算幅（全角=1em、半角=0.55em、空白=0.3em） */
-function textWidth(s: string, fontSize: number): number {
-  let em = 0
-  for (const ch of s) em += ch === ' ' ? 0.3 : (ch.codePointAt(0) ?? 0) < 128 ? 0.55 : 1
-  return em * fontSize
-}
-
-/** 幅に収まらない場合は末尾を「…」で省略する。短くなりすぎる場合は null（表示しない） */
-function fitLine(text: string, avail: number, fontSize: number): string | null {
-  if (textWidth(text, fontSize) <= avail) return text
-  let out = ''
-  for (const ch of text) {
-    if (textWidth(`${out}${ch}…`, fontSize) > avail) break
-    out += ch
-  }
-  return out.length >= 3 ? `${out}…` : null
-}
-
 /** 大分類ラベルが長い場合は「・」の位置で2行に割る（例:「ナッツ・」／「カカオ系」） */
 function splitLabel(label: string, avail: number): string[] {
-  if (label.includes('・') && (label.length >= 5 || textWidth(`${label} ›`, LABEL_FONT) > avail)) {
+  if (label.includes('・') && (label.length >= 5 || textWidthAt(`${label} ›`, LABEL_FONT) > avail)) {
     const i = label.indexOf('・')
     return [label.slice(0, i + 1), label.slice(i + 1)]
   }
@@ -57,25 +40,7 @@ function compoundNames(noteId: string, context?: CompoundContext): string[] {
     .map((x) => x.c.name)
 }
 
-/** 細分類名を「・」区切りで最大 maxLines 行に詰める。入りきらない分がある場合は末尾に「ほか」を付け、
- *  「ほか」が入りきらない場合は名前を落として「ほか」を優先的に残す */
-function packNameLines(names: string[], avail: number, maxLines: number): string[] {
-  const groups: string[][] = []
-  let i = 0
-  while (i < names.length && groups.length < maxLines) {
-    const g = [names[i]]; i++
-    while (i < names.length && textWidth([...g, names[i]].join('・'), SUB_FONT) <= avail) { g.push(names[i]); i++ }
-    groups.push(g)
-  }
-  const hasMore = i < names.length
-  return groups.map((g, gi) => {
-    const isLast = gi === groups.length - 1
-    let gg = g
-    let s = gg.join('・') + (isLast && hasMore ? ' ほか' : '')
-    while (gg.length > 1 && textWidth(s, SUB_FONT) > avail) { gg = gg.slice(0, -1); s = gg.join('・') + (isLast && hasMore ? ' ほか' : '') }
-    return fitLine(s, avail, SUB_FONT)
-  }).filter((l): l is string => l !== null)
-}
+
 
 export default function FlavorWheel({ profile, onSelectNote, context }: { profile: FlavorProfile; onSelectNote: (noteId: string) => void; context?: CompoundContext }) {
   const known = profile.aromas.filter((a) => rank(a.intensity) > 0 && noteById(a.noteId))
@@ -110,19 +75,23 @@ export default function FlavorWheel({ profile, onSelectNote, context }: { profil
     const span = a1 - a0
     // セグメント内テキストに使える概算幅（ラベル半径位置での弦長。半円以上は上限で頭打ち）
     const avail = span >= Math.PI ? 150 : Math.min(2 * LABEL_R * Math.sin(span / 2) * 0.96, 150)
-    const labelLines = s.kind === 'cat' ? splitLabel(s.label, avail) : [s.label]
-    // 併記行数: 小さいセグメントには出さない。ラベルが2行に割れた場合は併記を1行に縮小する（改行を優先）
-    let subLines: string[] = []
-    if (span >= 0.5) {
-      const maxSub = labelLines.length >= 2 ? 1 : span >= 0.65 ? 2 : 1
-      subLines = s.kind === 'cat'
-        ? packNameLines(s.noteNames ?? [], avail, maxSub)
-        : compoundNames(s.id, context).slice(0, maxSub)
-          .map((n) => fitLine(n, avail, SUB_FONT)).filter((l): l is string => l !== null)
+    // 全セグメントに必ずラベルを出す（第6弾）。細いセグメントではフォントを縮小し、
+    // 必要なら2行に割る。併記（細分類名・化合物名）も縮小して少なくとも先頭1件は乗せる。
+    // ラベルが2行に割れた場合は併記を1行に縮小する（改行を優先）。
+    let labelLines: FittedLine[]
+    if (s.kind === 'cat') {
+      const raw = splitLabel(s.label, avail)
+      labelLines = raw.map((t, idx) => fitOneLine(idx === raw.length - 1 ? `${t} ›` : t, avail, LABEL_FONT))
+    } else {
+      labelLines = fitLabelLines(s.label, avail, LABEL_FONT)
     }
+    const maxSub = labelLines.length >= 2 ? 1 : span >= 0.65 ? 2 : 1
+    const subLines: FittedLine[] = s.kind === 'cat'
+      ? packScaledLines(s.noteNames ?? [], avail, maxSub, SUB_FONT)
+      : compoundNames(s.id, context).slice(0, maxSub).map((n) => fitOneLine(n, avail, SUB_FONT))
     const lines = [
-      ...labelLines.map((t, idx) => ({ text: s.kind === 'cat' && idx === labelLines.length - 1 ? `${t} ›` : t, cls: 'wheel-label', h: 12.5 })),
-      ...subLines.map((t) => ({ text: t, cls: 'wheel-sub', h: 12.5 })),
+      ...labelLines.map((l) => ({ ...l, cls: 'wheel-label', h: l.fs * 1.35 })),
+      ...subLines.map((l) => ({ ...l, cls: 'wheel-sub', h: l.fs * 1.35 })),
     ]
     const totalH = lines.reduce((a, l) => a + l.h, 0)
     let y = cy + LABEL_R * Math.sin(mid) - totalH / 2
@@ -139,7 +108,7 @@ export default function FlavorWheel({ profile, onSelectNote, context }: { profil
             onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); s.kind === 'cat' ? setCat(s.id) : onSelectNote(s.id) } }}>
             <path d={arcPath(cx, cy, 52, 138, s.a0 + 0.01, s.a1 - 0.01)} fill={s.color} opacity={s.kind === 'note' ? 0.55 + 0.15 * s.weight : 0.85} />
             {s.lines.map((l, i) => (
-              <text key={i} x={s.lx} y={l.y} textAnchor="middle" dominantBaseline="middle" className={l.cls}>{l.text}</text>
+              <text key={i} x={s.lx} y={l.y} textAnchor="middle" dominantBaseline="middle" className={l.cls} style={{ fontSize: l.fs }}>{l.text}</text>
             ))}
           </g>
         ))}
