@@ -127,7 +127,7 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
     expect(screen.getByRole('button', { name: /^渋味（収れん感）（.+）に寄与する物質を見る$/ })).toBeTruthy()
   })
 
-  it('味モード：あさつゆは基本味（苦味・うま味）と口当たり・収れん感（渋味）に分かれ、全セグメントに併記がある', () => {
+  it('味モード：あさつゆは基本味（甘味・苦味・うま味）と口当たり・収れん感（渋味）に分かれ、全セグメントに併記がある', () => {
     const a = analyzeTeaCombo({ kindId: 'green', regionId: '', cultivarId: 'asatsuyu' })
     const { container } = renderPanel(a)
     fireEvent.click(screen.getByRole('tab', { name: '味' }))
@@ -142,14 +142,16 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
     }
     const basic = groups.find((g) => (g.getAttribute('aria-label') ?? '').startsWith('基本味'))!
     const basicSubs = [...basic.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')
+    expect(basicSubs).toContain('甘味')
     expect(basicSubs).toContain('苦味')
     expect(basicSubs).toContain('うま味')
     const mouth = groups.find((g) => (g.getAttribute('aria-label') ?? '').startsWith('口当たり・収れん感'))!
     expect([...mouth.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')).toContain('渋味')
-    // 基本味の中分類は苦味・うま味の2つ。中分類にも小分類（物質名）が併記される
+    // 基本味の中分類は甘味・苦味・うま味の3つ（第16弾で緑茶に甘味が入った）。
+    // 中分類にも小分類（物質名）が併記される
     fireEvent.click(screen.getByLabelText(/基本味を開く/))
     expectNoBlank(container)
-    expect(segs(container)).toHaveLength(2)
+    expect(segs(container)).toHaveLength(3)
     const bitterSeg = screen.getByRole('button', { name: /^苦味（.+）に寄与する物質を見る$/ })
     expect([...bitterSeg.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')).toContain('ガレート型カテキン類')
     // 凡例に併記の説明がある（香り側の凡例と作法を揃える）

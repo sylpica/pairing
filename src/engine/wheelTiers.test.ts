@@ -171,11 +171,12 @@ describe('味の3階層データ（第10弾）', () => {
     })
   })
 
-  it('あさつゆ（緑茶）：基本味（苦味・うま味）と口当たり・収れん感（渋味）に分かれる', () => {
+  it('あさつゆ（緑茶）：基本味（甘味・苦味・うま味）と口当たり・収れん感（渋味）に分かれる', () => {
     const a = analyzeTeaCombo({ kindId: 'green', regionId: '', cultivarId: 'asatsuyu' })
     const tiers = buildTasteTiers(a.tastes)
+    // 第16弾で緑茶の土台プロファイルに甘味（弱い）が入ったため、基本味は3種になる。
     expect(tiers.map((g) => [g.name, g.tastes.map((t) => t.key)])).toEqual([
-      ['基本味', ['bitter', 'umami']],
+      ['基本味', ['sweet', 'bitter', 'umami']],
       ['口当たり・収れん感', ['astringent']],
     ])
   })

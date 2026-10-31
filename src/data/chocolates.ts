@@ -47,11 +47,17 @@ export const chocolateItems: ChocolateItem[] = [
         ...emptyTastes(),
         sour: { intensity: 'normal', basis: 'sensory', sourceIds: [A] },
         sweet: { intensity: 'normal', basis: 'sensory', sourceIds: [A] },
+        // 苦味・渋味（第16弾で補完）: 焙煎カカオニブの呈味成分研究（Stark et al. 2006）が
+        // 同定した苦味（アルカロイド・ジケトピペラジン）・渋味（フラバン-3-オール等）の
+        // 成分群は未焙煎の豆にも共通するため、一般レベルで収録する。焙煎品の
+        // パネル評価（強い）よりは穏やかな位置づけとして「普通」に置く。
+        bitter: { intensity: 'normal', basis: 'general', sourceIds: ['stark-2006-cocoa-nibs-taste'] },
+        astringent: { intensity: 'normal', basis: 'general', sourceIds: ['stark-2006-cocoa-nibs-taste'] },
       },
       chocoTemporal,
     ),
     evidenceLevel: 'general',
-    scopeNote: '上記原著研究で、未焙煎品は果実・花の香りやピーマン様の成分が目立ち、訓練パネルでは焙煎品より酸味と甘味が強いと評価されました（同一研究内の比較）。個別商品の実測ではありません。',
+    scopeNote: '上記原著研究で、未焙煎品は果実・花の香りやピーマン様の成分が目立ち、訓練パネルでは焙煎品より酸味と甘味が強いと評価されました（同一研究内の比較）。個別商品の実測ではありません。苦味・渋味は、カカオニブの呈味成分研究（Stark et al. 2006）で確認された成分群が未焙煎の豆にも共通することから、一般レベルで収録しています（最終製品での直接の官能実測ではありません）。',
     sourceIds: [A],
   },
   {
@@ -79,9 +85,16 @@ export const chocolateItems: ChocolateItem[] = [
       { noteId: 'malt', intensity: 'normal', basis: 'review', sourceIds: [P] },
       { noteId: 'nut-general', intensity: 'normal', basis: 'review', sourceIds: [P] },
       { noteId: 'warm-spice', intensity: 'normal', basis: 'review', sourceIds: [P] },
-    ], undefined, chocoTemporal),
+    ], {
+      ...emptyTastes(),
+      // 苦味・渋味（第16弾で補完）: ダークチョコレートとしての一般レベル。
+      // カカオニブの呈味成分（Stark et al. 2006）と市販ダークのパネル評価
+      // （Luchian et al. 2023）に基づく。ファインフレーバー固有の呈味実測ではない。
+      bitter: { intensity: 'normal', basis: 'general', sourceIds: ['stark-2006-cocoa-nibs-taste', 'luchian-2023-chocolate-profiles'] },
+      astringent: { intensity: 'normal', basis: 'general', sourceIds: ['stark-2006-cocoa-nibs-taste', 'luchian-2023-chocolate-profiles'] },
+    }, chocoTemporal),
     evidenceLevel: 'general',
-    scopeNote: '系統的レビューでファインフレーバーカカオの豆とチョコレートの記述に共通して使われた言葉（キャラメル・果実・花・麦芽・ナッツ・スパイス）を整理したものです。産地ごとに異なり、カカオリカーの特徴が最終製品にそのまま残るとは限らない点が同レビューで指摘されています。',
+    scopeNote: '系統的レビューでファインフレーバーカカオの豆とチョコレートの記述に共通して使われた言葉（キャラメル・果実・花・麦芽・ナッツ・スパイス）を整理したものです。産地ごとに異なり、カカオリカーの特徴が最終製品にそのまま残るとは限らない点が同レビューで指摘されています。味覚はファインフレーバー固有の実測ではなく、ダークチョコレートとしての一般レベル（カカオニブの呈味成分研究 Stark et al. 2006 と市販ダークのパネル評価 Luchian et al. 2023）に基づき、苦味・渋味を収録しています。',
     sourceIds: [P],
   },
   {
@@ -96,9 +109,12 @@ export const chocolateItems: ChocolateItem[] = [
     ], {
       ...emptyTastes(),
       sweet: { intensity: 'strong', basis: 'sensory', sourceIds: ['luchian-2023-chocolate-profiles', 'guinard-1999-milk-chocolate-sugar-fat'] },
+      // 苦味（第16弾で補完）: 同じパネル研究でミルク（カカオ32%）も同一尺度で
+      // 評価され、苦味は低い側だった範囲で弱く収録する。
+      bitter: { intensity: 'weak', basis: 'sensory', sourceIds: ['luchian-2023-chocolate-profiles'] },
     }, milkTemporal),
     evidenceLevel: 'general',
-    scopeNote: '市販ミルクチョコレート1種の AEDA 研究（Schnermann & Schieberle 1997）と、クラムチョコレートのクリーミーさ研究（Samfaß et al. 2021）に基づく一般レベルの整理です。モルト様・ナッツ様の成分が高 FD値で、ラクトン類が甘い香りとクリーミーさに関わります。試料数が限られるため、全てのミルクチョコレートの実測ではありません。甘味は市販品パネル研究（Luchian et al. 2023）で最も甘い群とされた記録と、配合実験（Guinard & Mazzucchelli 1999）に基づきますが、糖分量で大きく変わる配合依存の値です。',
+    scopeNote: '市販ミルクチョコレート1種の AEDA 研究（Schnermann & Schieberle 1997）と、クラムチョコレートのクリーミーさ研究（Samfaß et al. 2021）に基づく一般レベルの整理です。モルト様・ナッツ様の成分が高 FD値で、ラクトン類が甘い香りとクリーミーさに関わります。試料数が限られるため、全てのミルクチョコレートの実測ではありません。甘味は市販品パネル研究（Luchian et al. 2023）で最も甘い群とされた記録と、配合実験（Guinard & Mazzucchelli 1999）に基づきますが、糖分量で大きく変わる配合依存の値です。苦味は同じパネル研究で低い側に評価された範囲で弱く収録しています。',
     sourceIds: ['schnermann-1997-milk-chocolate', 'samfass-2021-crumb-chocolate-lactones'],
   },
   {
@@ -120,12 +136,18 @@ export const chocolateItems: ChocolateItem[] = [
     searchNames: ['ルビーチョコレート', 'ruby chocolate', 'ルビー', 'ピンクチョコレート'],
     profile: prof([
       { noteId: 'berry', intensity: 'weak', basis: 'general', sourceIds: ['barry-callebaut-ruby', 'seremet-2019-ruby-sensory'] },
+      // 花様（第16弾で補完）: 市販ルビーを同一尺度で評価したパネル研究で、花の
+      // ノートが他の試料より知覚されやすかった記録に基づく。
+      { noteId: 'floral-general', intensity: 'weak', basis: 'sensory', sourceIds: ['luchian-2023-chocolate-profiles'] },
     ], {
       ...emptyTastes(),
       sour: { intensity: 'normal', basis: 'sensory', sourceIds: ['seremet-2019-ruby-sensory'] },
+      // 甘味（第16弾で補完）: 同じパネル研究でルビーは甘味の群に位置づけられた
+      // （糖質は供試5種で最も高い側）。酸味と並ぶ味の柱として「普通」に置く。
+      sweet: { intensity: 'normal', basis: 'sensory', sourceIds: ['luchian-2023-chocolate-profiles'] },
     }, chocoTemporal),
     evidenceLevel: 'general',
-    scopeNote: 'ルビーは遺伝的な系統ではなく、色素の前駆体を多く含むカカオ豆の選抜と、発酵を抑えた特殊な製法で生まれる「種類」です（開発元バリーカレボーが2017年に発表。着色料・ベリー香料は無添加と公表されています）。酸味は、ダーク・ミルク・ホワイトと比較した官能評価（Šeremet et al. 2019）で供試試料の中で最も強い酸味とされた記録に基づきます。ベリー様の香りは開発メーカーの説明（参考情報）が中心で、査読済みの官能研究がベリー様の香りそのものを確かめたわけではないため、一般的な知見として弱く表示しています。組成についてはフラバン-3-オールやプロアントシアニジン（A型が特徴的）の定量研究（Tuenter et al. 2021）がありますが、組成の検出は香りの寄与とは別の記録です。カカオ分は製品により異なるため表示しません。',
+    scopeNote: 'ルビーは遺伝的な系統ではなく、色素の前駆体を多く含むカカオ豆の選抜と、発酵を抑えた特殊な製法で生まれる「種類」です（開発元バリーカレボーが2017年に発表。着色料・ベリー香料は無添加と公表されています）。酸味は、ダーク・ミルク・ホワイトと比較した官能評価（Šeremet et al. 2019）で供試試料の中で最も強い酸味とされた記録に基づきます。ベリー様の香りは開発メーカーの説明（参考情報）が中心で、査読済みの官能研究がベリー様の香りそのものを確かめたわけではないため、一般的な知見として弱く表示しています。組成についてはフラバン-3-オールやプロアントシアニジン（A型が特徴的）の定量研究（Tuenter et al. 2021）がありますが、組成の検出は香りの寄与とは別の記録です。カカオ分は製品により異なるため表示しません。甘味と花様の香りは、市販ルビーを同一尺度で評価したパネル研究（Luchian et al. 2023）で、ルビーが甘味の群に位置づけられ、花のノートが比較的よく知覚された記録に基づきます。',
     sourceIds: ['seremet-2019-ruby-sensory', 'tuenter-2021-ruby-composition', 'barry-callebaut-ruby'],
   },
   {
@@ -136,9 +158,13 @@ export const chocolateItems: ChocolateItem[] = [
     ], {
       ...emptyTastes(),
       bitter: { intensity: 'weak', basis: 'general', sourceIds: ['aydin-2021-caramelized-white-chocolate'] },
+      // 甘味（第16弾で補完）: ホワイトチョコレートを土台とする種類であり、甘味が
+      // 味の中心。ブロンド自体の官能研究（Aydın et al. 2021）と、土台のホワイトの
+      // 官能記録（Luchian et al. 2023 で明確な甘味）に基づく一般レベルの整理。
+      sweet: { intensity: 'normal', basis: 'general', sourceIds: ['aydin-2021-caramelized-white-chocolate', 'luchian-2023-chocolate-profiles'] },
     }, chocoTemporal),
     evidenceLevel: 'general',
-    scopeNote: 'ホワイトチョコレートを長時間加熱してキャラメリゼさせた種類で、ヴァローナのデュルセイ（Dulcey、2012年）が始まりとされます。香味は、実験室で調製したキャラメリゼホワイトの香気成分と官能を測定した査読研究（Aydın et al. 2021）に基づく一般的知見レベルの整理です。加熱によりフルフラールやリナロールが生成してキャラメル様の風味が形づくられますが、市販品そのものの実測ではありません。加熱が過ぎた条件（120℃で90分超）では苦味・焦げ・不快な味が知覚されたため、苦味は「弱い」として、加熱条件に依存することを明記します。メーカーが説明するビスケット（ショートブレッド）様の味やキャラメリゼしたミルクの香りは参考情報であり、科学データとしては扱いません。',
+    scopeNote: 'ホワイトチョコレートを長時間加熱してキャラメリゼさせた種類で、ヴァローナのデュルセイ（Dulcey、2012年）が始まりとされます。香味は、実験室で調製したキャラメリゼホワイトの香気成分と官能を測定した査読研究（Aydın et al. 2021）に基づく一般的知見レベルの整理です。加熱によりフルフラールやリナロールが生成してキャラメル様の風味が形づくられますが、市販品そのものの実測ではありません。加熱が過ぎた条件（120℃で90分超）では苦味・焦げ・不快な味が知覚されたため、苦味は「弱い」として、加熱条件に依存することを明記します。メーカーが説明するビスケット（ショートブレッド）様の味やキャラメリゼしたミルクの香りは参考情報であり、科学データとしては扱いません。甘味は、ホワイトチョコレートを土台とする種類であることを踏まえ、その官能研究（Aydın et al. 2021）と土台のホワイトの官能記録（Luchian et al. 2023）に基づく一般レベルで収録しています。',
     sourceIds: ['aydin-2021-caramelized-white-chocolate', 'valrhona-blond-dulcey'],
   },
 ]

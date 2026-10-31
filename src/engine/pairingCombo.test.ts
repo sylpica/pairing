@@ -45,8 +45,13 @@ describe('課題C: 軸指定がペアリング結果に効く', () => {
     expect(characterIds(axed)).not.toEqual(characterIds(base))
   })
 
-  it('チョコの系統を変えると性格チップと相互作用が変わる（青茶 × ダーク、ナシオナル）', () => {
-    const tea = teaById('oolong-tea')!
+  it('チョコの系統を変えると性格チップと相互作用が変わる（白茶 × ダーク、ナシオナル）', () => {
+    // 第16弾で青茶の土台に苦味（普通）が入った結果、M2（カカオ香×苦味）は
+    // お茶側の苦味に結びつくようになり、青茶×ダークでは系統差が相互作用文に
+    // 出なくなった（性格チップの差は残る）。系統差が相互作用文にも出る代表
+    // ケースとして、苦味が弱い白茶との組み合わせに移した（M2 はチョコ側の
+    // 苦味＝強い→普通 の変化をそのまま文に反映する）。
+    const tea = teaById('white-tea')!
     const choco = chocolateById('dark-roasted')!
     const base = assemblePairing(tea, choco, null, null)
     const axed = assemblePairing(tea, choco, null, { kind: 'dark', originId: '', lineage: { layer: 'genetic', id: 'gen-nacional' } })
