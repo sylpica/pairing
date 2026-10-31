@@ -29,9 +29,10 @@ describe('品種・系統ホイールの根拠（全数検査）', () => {
           }
           // スコア的な数値プロパティを持たない
           expect('score' in n).toBe(false)
-          // 推測レベルのノートは、製法の科学由来の根拠を必ず含む（推測の出所の明示）
+          // 推測レベルのノートは、推測の出所を説明する根拠を必ず含む
+          // （製法の科学、または品種・産地の所見の読み替え。分類プロファイルだけでは推測にならない）
           if (n.level === 'inferred') {
-            expect(n.basis.some((b) => b.from === 'process'), `${c.id}/${n.noteId} は推測なのに製法由来の根拠がない`).toBe(true)
+            expect(n.basis.some((b) => b.from !== 'profile'), `${c.id}/${n.noteId} は推測なのに推測の出所の根拠がない`).toBe(true)
           }
         }
         // 組み合わせページへのリンクがある場合、その組み合わせは実在する

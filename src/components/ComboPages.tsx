@@ -30,6 +30,8 @@ function LevelBadge({ level }: { level: ComboNote['level'] }) {
   return <span className={level === 'inferred' ? 'badge badge-inferred' : 'badge'}>{COMBO_LEVEL_LABEL[level]}</span>
 }
 
+const AXIS_SUMMARY_LABEL: Record<string, string> = { region: '産地の反映', cultivar: '品種の反映', origin: '産地の反映', lineage: '系統の反映' }
+
 function AnalysisView({ analysis, children }: { analysis: ComboAnalysis; children?: ReactNode }) {
   const [selNote, setSelNote] = useState<string | null>(null)
   useEffect(() => { setSelNote(null) }, [analysis.title])
@@ -45,6 +47,13 @@ function AnalysisView({ analysis, children }: { analysis: ComboAnalysis; childre
           <ComboNoteDetail note={note} context={analysis.context} />
         </CollapsibleSheet>
       )}
+      {analysis.axisSummaries.length > 0 && <>
+        <h3>ホイールへの反映</h3>
+        <p className="note-small">選んだ産地・品種（系統）の所見が、上のホイールにどう反映されたか／されなかったかを示します。</p>
+        {analysis.axisSummaries.map((s) => (
+          <p key={s.axis} className="note-small"><strong>{AXIS_SUMMARY_LABEL[s.axis]}</strong>：{s.text}</p>
+        ))}
+      </>}
       {analysis.tastes.length > 0 && <>
         <h3>味わい（味覚と渋味）</h3>
         {analysis.tastes.map((t) => (

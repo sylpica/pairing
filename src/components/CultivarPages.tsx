@@ -206,6 +206,7 @@ export function TeaCultivarDetail({ id }: { id: string }) {
         {c.aliases.length > 0 && <span className="note-small"> 別名：{c.aliases.join('、')}</span>}
       </p>
       <VerificationBadges v={c.verification} />
+      <CultivarWheelSection cultivarId={c.id} cultivarName={c.name} />
       {c.registration && <p><strong>登録情報：</strong>{c.registration}</p>}
       {c.breeding && <><h3>由来・育成</h3><p>{c.breeding}</p></>}
       {parents.length > 0 && (
@@ -222,7 +223,6 @@ export function TeaCultivarDetail({ id }: { id: string }) {
             <SourceLinks ids={u.sourceIds} /></li>
         ))}</ul>}
       <p className="note-small">ここに無い組み合わせは「存在しない」ではなく「未確認」です。実測済みとは扱いません。</p>
-      <CultivarWheelSection cultivarId={c.id} cultivarName={c.name} />
       <h3>科学的な所見</h3>
       <ScienceNote science={c.verification.science} note={c.scienceNote} />
       <FindingsList findings={c.findings} />
@@ -249,6 +249,7 @@ export function CacaoDetail({ layer, id }: { layer: CacaoLayer; id: string }) {
         {entity.aliases.length > 0 && <span className="note-small"> 別名：{entity.aliases.join('、')}</span>}
       </p>
       <VerificationBadges v={entity.verification} />
+      <LineageWheelSection layer={layer} id={id} entityName={title} hasFlavorFindings={entity.findings.some((f) => FLAVOR_FINDING_KINDS.includes(f.kind))} />
       {trad && <><h3>この分類について</h3><p>{trad.nature}</p></>}
       {gen && <>
         <p><strong>命名の由来：</strong>{gen.namingBasis}</p>
@@ -278,7 +279,6 @@ export function CacaoDetail({ layer, id }: { layer: CacaoLayer; id: string }) {
           </p>
         )}
       </>}
-      <LineageWheelSection layer={layer} id={id} entityName={title} hasFlavorFindings={entity.findings.some((f) => FLAVOR_FINDING_KINDS.includes(f.kind))} />
       <h3>科学的な所見</h3>
       <ScienceNote science={entity.verification.science} note={entity.scienceNote} />
       <FindingsList findings={entity.findings} />

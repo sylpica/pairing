@@ -169,6 +169,8 @@ const TEA_ITEM_REGIONS: Record<string, string> = {
   sencha: '日本', matcha: '日本', gyokuro: '日本', hojicha: '日本',
   'fenghuang-dancong': '中国',
 }
+const AXIS_SUMMARY_LABEL: Record<string, string> = { region: '産地の反映', cultivar: '品種の反映', origin: '産地の反映', lineage: '系統の反映' }
+
 /** 調べる画面のプルダウン直下に出す、その場の組み合わせ表示（ホイール＋要約）。
  * 分類・産地・品種（チョコは種類・産地・系統）が揃ったときにだけ表示する。 */
 function ComboPreview({ analysis, path }: { analysis: ComboAnalysis; path: string }) {
@@ -186,6 +188,9 @@ function ComboPreview({ analysis, path }: { analysis: ComboAnalysis; path: strin
         </CollapsibleSheet>
       )}
       {analysis.tastes.length > 0 && <p>味わい：{analysis.tastes.map((t) => `${COMBO_TASTE_LABEL[t.key]}（${COMBO_INT_LABEL[t.intensity]}）`).join('、')}</p>}
+      {analysis.axisSummaries.map((s) => (
+        <p key={s.axis} className="note-small"><strong>{AXIS_SUMMARY_LABEL[s.axis]}</strong>：{s.text}</p>
+      ))}
       {analysis.statements.map((s, i) => (
         <p key={i}>{s.level === 'inferred' && <><span className="badge badge-inferred">推測（未検証）</span> </>}{s.text}</p>
       ))}

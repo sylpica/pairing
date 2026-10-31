@@ -13,6 +13,8 @@ import {
   traditionalGroupById, geneticGroupById, cacaoCloneById,
 } from '../data/cacao'
 import { teaProcessRules, chocoProcessRules } from '../data/processRules'
+import { teaAxisRules, chocoAxisRules } from '../data/axisEffects'
+import { noteById } from '../data/flavors'
 import type { CacaoLayer } from './pairingContext'
 import type { CompoundContext } from '../data/compounds'
 
@@ -325,6 +327,16 @@ export interface ComboBasisGroup {
   sourceIds: string[]
 }
 
+/** 選択した軸（産地・品種・産地・系統）がホイールにどう反映されたかの要約。
+ * 反映されなかった軸についても、理由（所見が無い／所見はあるがノートへの
+ * 寄与を示すものではない）を画面で分かるようにするために持つ。 */
+export interface ComboAxisSummary {
+  axis: 'region' | 'cultivar' | 'origin' | 'lineage'
+  entityName: string
+  reflected: boolean
+  text: string
+}
+
 export interface ComboAnalysis {
   title: string
   /** 表示全体の格付け：推測を含む要素があれば 'inferred' */
@@ -334,6 +346,7 @@ export interface ComboAnalysis {
   statements: ComboStatement[]
   groups: ComboBasisGroup[]
   caveats: ComboStatement[]
+  axisSummaries: ComboAxisSummary[]
   sourceIds: string[]
   /** ホイールの化合物併記とノート詳細の階層（tier）判定に使う文脈＝土台アイテム */
   context: CompoundContext
@@ -351,13 +364,37 @@ const shiftIntensity = (i: Intensity, dir: 'milder' | 'stronger'): Intensity => 
   return INTENSITY_STEP[Math.max(0, Math.min(INTENSITY_STEP.length - 1, next))]
 }
 
-interface NoteEffectLike { noteId: string; mode: 'add' | 'emphasize'; intensity?: 'weak' | 'normal'; text: string; sourceIds: string[] }
-interface TasteEffectLike { key: TasteKey; direction: 'milder' | 'stronger'; text: string; sourceIds: string[] }
+// ノート・味覚への効果の統一形。材料は2系統ある:
+// - 軸の所見からの変換（axisEffects.ts）: from は軸（region/cultivar/origin/lineage）、
+//   level は知見の性質どおり（measured/general/inferred）。
+// - 製法の科学からの変換（processRules.ts）: from は 'process'、level は常に
+//   'inferred'（読み替えは推測として扱う、という従来の原則）。
+// 適用順は「軸の所見 → 製法の科学」（対象固有の知見を土台に、読み替えを重ねる）。
+interface NoteEffectU {
+  trackId: string
+  noteId: string
+  mode: 'add' | 'emphasize'
+  intensity?: 'weak' | 'normal'
+  shift?: 'stronger' | 'milder'
+  level: ComboLevel
+  from: ComboBasis['from']
+  text: string
+  sourceIds: string[]
+}
+interface TasteEffectU {
+  trackId: string
+  key: TasteKey
+  direction: 'milder' | 'stronger'
+  level: ComboLevel
+  text: string
+  sourceIds: string[]
+}
 
 function buildNotes(
   baseAromas: { noteId: string; intensity: Intensity; basis: Basis; sourceIds: string[] }[],
   baseDescription: string,
-  effects: NoteEffectLike[],
+  effects: NoteEffectU[],
+  applied: Set<string>,
 ): ComboNote[] {
   const notes: ComboNote[] = baseAromas.map((a) => ({
     noteId: a.noteId,
@@ -369,16 +406,25 @@ function buildNotes(
   for (const ef of effects) {
     const existing = notes.find((n) => n.noteId === ef.noteId)
     if (existing) {
-      existing.basis.push({ from: 'process', text: ef.text, sourceIds: ef.sourceIds })
+      existing.basis.push({ from: ef.from, text: ef.text, sourceIds: ef.sourceIds })
       existing.sourceIds = uniq([...existing.sourceIds, ...ef.sourceIds])
+      if (ef.shift) {
+        existing.intensity = shiftIntensity(existing.intensity, ef.shift)
+        existing.level = ef.level
+      } else if (ef.level === 'measured' && existing.level === 'general') {
+        // 対象自身の試料での寄与・官能の実測が裏付ける場合は、根拠を実測に格上げする
+        existing.level = 'measured'
+      }
+      applied.add(ef.trackId)
     } else if (ef.mode === 'add') {
       notes.push({
         noteId: ef.noteId,
         intensity: ef.intensity ?? 'weak',
-        level: 'inferred',
-        basis: [{ from: 'process', text: ef.text, sourceIds: ef.sourceIds }],
+        level: ef.level,
+        basis: [{ from: ef.from, text: ef.text, sourceIds: ef.sourceIds }],
         sourceIds: [...ef.sourceIds],
       })
+      applied.add(ef.trackId)
     }
   }
   return notes
@@ -387,8 +433,9 @@ function buildNotes(
 function buildTastes(
   baseTastes: Record<TasteKey, { intensity: Intensity; basis: Basis; sourceIds: string[] }>,
   baseDescription: string,
-  effects: TasteEffectLike[],
+  effects: TasteEffectU[],
   extraStatements: ComboStatement[],
+  applied: Set<string>,
 ): ComboTaste[] {
   const tastes: ComboTaste[] = []
   for (const key of TASTE_ORDER) {
@@ -400,17 +447,62 @@ function buildTastes(
     const existing = tastes.find((t) => t.key === ef.key)
     if (existing) {
       existing.intensity = shiftIntensity(existing.intensity, ef.direction)
-      existing.level = 'inferred'
+      existing.level = ef.level
       existing.text = ef.text
       existing.sourceIds = uniq([...existing.sourceIds, ...ef.sourceIds])
+      applied.add(ef.trackId)
     } else {
       extraStatements.push({
         text: `${ef.text}（ただし分類の代表プロファイルに${COMBO_TASTE_LABEL[ef.key]}の記録がないため、強さの目安は示しません）`,
-        level: 'inferred', sourceIds: ef.sourceIds,
+        level: ef.level, sourceIds: ef.sourceIds,
       })
     }
   }
   return tastes
+}
+
+// ===== 軸ごとの反映要約 =====
+
+interface EffectMeta { axis: string; kind: 'note' | 'taste'; label: string }
+
+function summarizeAxis(
+  axis: ComboAxisSummary['axis'],
+  entityName: string,
+  flavorFindingCount: number,
+  applied: Set<string>,
+  meta: Map<string, EffectMeta>,
+  statementsOnly: boolean,
+): ComboAxisSummary {
+  const noteNames: string[] = []
+  const tasteLabels: string[] = []
+  for (const id of applied) {
+    const m = meta.get(id)
+    if (!m || m.axis !== axis) continue
+    const list = m.kind === 'note' ? noteNames : tasteLabels
+    if (!list.includes(m.label)) list.push(m.label)
+  }
+  if (noteNames.length + tasteLabels.length > 0) {
+    return {
+      axis, entityName, reflected: true,
+      text: `「${entityName}」の所見は、ホイール・味覚に反映されています（${[...noteNames, ...tasteLabels].join('、')}）。根拠は各ノート・味覚の内訳をご覧ください。`,
+    }
+  }
+  if (statementsOnly) {
+    return {
+      axis, entityName, reflected: true,
+      text: `「${entityName}」については、製法の科学からの読み替えが「味わいの要約」に反映されています。ホイールのノートそのものは、分類プロファイルのままです。`,
+    }
+  }
+  if (flavorFindingCount > 0) {
+    return {
+      axis, entityName, reflected: false,
+      text: `「${entityName}」の香味の所見はありますが、特定の香りのノートへの寄与を示すものではないため、ホイールのノートには反映していません。所見そのものは詳細ページの「根拠の内訳」にあります。`,
+    }
+  }
+  return {
+    axis, entityName, reflected: false,
+    text: `「${entityName}」については香味の科学的な所見が確認できていないため、この軸はホイールの推測に使っていません。`,
+  }
 }
 
 const INTERACTION_CAVEAT_SOURCES = ['jiang-2018-congou-theaflavins', 'yang-2025-huangjinya-altitude-process', 'owuor-2008-region-clonal-black-tea']
@@ -422,6 +514,7 @@ const interactionCaveat = (): ComboStatement => ({
 function finalize(
   title: string, notes: ComboNote[], tastes: ComboTaste[],
   statements: ComboStatement[], groups: ComboBasisGroup[], caveats: ComboStatement[],
+  axisSummaries: ComboAxisSummary[],
   context: CompoundContext,
 ): ComboAnalysis {
   const sourceIds = uniq([
@@ -437,7 +530,7 @@ function finalize(
   return {
     title,
     overallLevel: hasInferred ? 'inferred' : hasMeasured ? 'measured' : 'general',
-    notes, tastes, statements, groups, caveats, sourceIds, context,
+    notes, tastes, statements, groups, caveats, axisSummaries, sourceIds, context,
   }
 }
 
@@ -451,12 +544,45 @@ export function analyzeTeaCombo(sel: TeaComboSel): ComboAnalysis {
   const regionCountry = teaRegionCountryOf(sel.regionId)
   const rules = teaProcessRules.filter((r) =>
     r.kindCategory === category && (r.cultivarId === undefined || r.cultivarId === sel.cultivarId))
+  const axisRules = teaAxisRules.filter((r) =>
+    (r.kindCategory === undefined || r.kindCategory === category)
+    && ((r.axis === 'region' && region && r.entityId === region.id)
+      || (r.axis === 'cultivar' && cultivar && r.entityId === cultivar.id)))
   const baseDesc = itemSelected
     ? `${rep.name}のプロファイル（茶類・製法レベル）に記録された香りです。個別の産地・品種での実測ではありません。`
     : `${kindName}の代表プロファイル（${rep.name}）に記録された香りです。個別の産地・品種での実測ではありません。`
-  const notes = buildNotes(rep.profile.aromas, baseDesc, rules.flatMap((r) => r.noteEffects))
+  // 効果の適用追跡（軸ごとの反映要約のため）
+  const applied = new Set<string>()
+  const effectMeta = new Map<string, EffectMeta>()
+  const noteEffectsU: NoteEffectU[] = []
+  const tasteEffectsU: TasteEffectU[] = []
+  for (const r of axisRules) {
+    for (const e of r.noteEffects) {
+      const trackId = `${r.id}:${e.noteId}`
+      noteEffectsU.push({ trackId, noteId: e.noteId, mode: e.mode, intensity: e.intensity, shift: e.shift, level: e.level, from: r.axis, text: e.text, sourceIds: e.sourceIds })
+      effectMeta.set(trackId, { axis: r.axis, kind: 'note', label: noteById(e.noteId)?.name ?? e.noteId })
+    }
+    for (const e of r.tasteEffects) {
+      const trackId = `${r.id}:taste:${e.key}`
+      tasteEffectsU.push({ trackId, key: e.key, direction: e.direction, level: e.level, text: e.text, sourceIds: e.sourceIds })
+      effectMeta.set(trackId, { axis: r.axis, kind: 'taste', label: COMBO_TASTE_LABEL[e.key] })
+    }
+  }
+  for (const r of rules) {
+    for (const e of r.noteEffects) {
+      const trackId = `process:${r.id}:${e.noteId}`
+      noteEffectsU.push({ trackId, noteId: e.noteId, mode: e.mode, intensity: e.intensity, level: 'inferred', from: 'process', text: e.text, sourceIds: e.sourceIds })
+      effectMeta.set(trackId, { axis: r.cultivarId ? 'cultivar' : 'none', kind: 'note', label: noteById(e.noteId)?.name ?? e.noteId })
+    }
+    for (const e of r.tasteEffects) {
+      const trackId = `process:${r.id}:taste:${e.key}`
+      tasteEffectsU.push({ trackId, key: e.key, direction: e.direction, level: 'inferred', text: e.text, sourceIds: e.sourceIds })
+      effectMeta.set(trackId, { axis: r.cultivarId ? 'cultivar' : 'none', kind: 'taste', label: COMBO_TASTE_LABEL[e.key] })
+    }
+  }
+  const notes = buildNotes(rep.profile.aromas, baseDesc, noteEffectsU, applied)
   const extraStatements: ComboStatement[] = []
-  const tastes = buildTastes(rep.profile.tastes, itemSelected ? `${rep.name}のプロファイル（茶類・製法レベル）に記録された味覚です。` : `${kindName}の代表プロファイル（${rep.name}）に記録された味覚です。`, rules.flatMap((r) => r.tasteEffects), extraStatements)
+  const tastes = buildTastes(rep.profile.tastes, itemSelected ? `${rep.name}のプロファイル（茶類・製法レベル）に記録された味覚です。` : `${kindName}の代表プロファイル（${rep.name}）に記録された味覚です。`, tasteEffectsU, extraStatements, applied)
 
   const statements: ComboStatement[] = []
   for (const r of rules) statements.push(...r.statements)
@@ -512,7 +638,22 @@ export function analyzeTeaCombo(sel: TeaComboSel): ComboAnalysis {
     })
   }
   if ((region && cultivar) || rules.length > 0) caveats.push(interactionCaveat())
-  return finalize(teaComboTitle(sel), notes, tastes, statements, groups, caveats,
+
+  const axisSummaries: ComboAxisSummary[] = []
+  if (region) {
+    axisSummaries.push(summarizeAxis('region', region.name, flavorFindings(region.findings).length, applied, effectMeta, false))
+  } else if (regionCountry) {
+    axisSummaries.push({
+      axis: 'region', entityName: regionCountry, reflected: false,
+      text: `産地は国レベル（${regionCountry}）の指定です。国レベルの香味データは収録していないため、産地の情報はホイールに反映していません。`,
+    })
+  }
+  if (cultivar) {
+    const cultivarOutcome = [...applied].some((id) => effectMeta.get(id)?.axis === 'cultivar')
+    axisSummaries.push(summarizeAxis('cultivar', cultivar.name, flavorFindings(cultivar.findings).length, applied, effectMeta,
+      !cultivarOutcome && rules.some((r) => r.cultivarId === cultivar.id)))
+  }
+  return finalize(teaComboTitle(sel), notes, tastes, statements, groups, caveats, axisSummaries,
     { side: 'tea', kindId: rep.kindId, itemName: rep.name, itemId: rep.id })
 }
 
@@ -522,10 +663,43 @@ export function analyzeChocoCombo(sel: ChocoComboSel): ComboAnalysis {
   const lineageRef = sel.lineage
   const entity = lineageRef ? lineageEntityOf(lineageRef) : undefined
   const rules = lineageRef ? chocoProcessRules.filter((r) => r.lineageLayer === lineageRef.layer && r.lineageId === lineageRef.id) : []
+  const axisRules = chocoAxisRules.filter((r) =>
+    (r.kinds === undefined || r.kinds.includes(sel.kind))
+    && ((r.axis === 'origin' && origin && r.entityId === origin.id)
+      || (r.axis === 'lineage' && lineageRef && r.lineageLayer === lineageRef.layer && r.entityId === lineageRef.id)))
   const baseDesc = `${CHOCO_KIND_LABEL[sel.kind]}チョコレートの代表プロファイル（${rep.name}）に記録された香りです。個別の産地・系統での実測ではありません。`
-  const notes = buildNotes(rep.profile.aromas, baseDesc, rules.flatMap((r) => r.noteEffects))
+  // 効果の適用追跡（軸ごとの反映要約のため）
+  const applied = new Set<string>()
+  const effectMeta = new Map<string, EffectMeta>()
+  const noteEffectsU: NoteEffectU[] = []
+  const tasteEffectsU: TasteEffectU[] = []
+  for (const r of axisRules) {
+    for (const e of r.noteEffects) {
+      const trackId = `${r.id}:${e.noteId}`
+      noteEffectsU.push({ trackId, noteId: e.noteId, mode: e.mode, intensity: e.intensity, shift: e.shift, level: e.level, from: r.axis, text: e.text, sourceIds: e.sourceIds })
+      effectMeta.set(trackId, { axis: r.axis, kind: 'note', label: noteById(e.noteId)?.name ?? e.noteId })
+    }
+    for (const e of r.tasteEffects) {
+      const trackId = `${r.id}:taste:${e.key}`
+      tasteEffectsU.push({ trackId, key: e.key, direction: e.direction, level: e.level, text: e.text, sourceIds: e.sourceIds })
+      effectMeta.set(trackId, { axis: r.axis, kind: 'taste', label: COMBO_TASTE_LABEL[e.key] })
+    }
+  }
+  for (const r of rules) {
+    for (const e of r.noteEffects) {
+      const trackId = `process:${r.id}:${e.noteId}`
+      noteEffectsU.push({ trackId, noteId: e.noteId, mode: e.mode, intensity: e.intensity, level: 'inferred', from: 'process', text: e.text, sourceIds: e.sourceIds })
+      effectMeta.set(trackId, { axis: 'lineage', kind: 'note', label: noteById(e.noteId)?.name ?? e.noteId })
+    }
+    for (const e of r.tasteEffects) {
+      const trackId = `process:${r.id}:taste:${e.key}`
+      tasteEffectsU.push({ trackId, key: e.key, direction: e.direction, level: 'inferred', text: e.text, sourceIds: e.sourceIds })
+      effectMeta.set(trackId, { axis: 'lineage', kind: 'taste', label: COMBO_TASTE_LABEL[e.key] })
+    }
+  }
+  const notes = buildNotes(rep.profile.aromas, baseDesc, noteEffectsU, applied)
   const extraStatements: ComboStatement[] = []
-  const tastes = buildTastes(rep.profile.tastes, `${CHOCO_KIND_LABEL[sel.kind]}チョコレートの代表プロファイル（${rep.name}）に記録された味覚です。`, rules.flatMap((r) => r.tasteEffects), extraStatements)
+  const tastes = buildTastes(rep.profile.tastes, `${CHOCO_KIND_LABEL[sel.kind]}チョコレートの代表プロファイル（${rep.name}）に記録された味覚です。`, tasteEffectsU, extraStatements, applied)
 
   const statements: ComboStatement[] = []
   for (const r of rules) statements.push(...r.statements)
@@ -574,7 +748,18 @@ export function analyzeChocoCombo(sel: ChocoComboSel): ComboAnalysis {
     })
   }
   if (lineageRef && origin) caveats.push(interactionCaveat())
-  return finalize(chocoComboTitle(sel), notes, tastes, statements, groups, caveats,
+
+  const axisSummaries: ComboAxisSummary[] = []
+  if (origin) {
+    axisSummaries.push(summarizeAxis('origin', origin.name, flavorFindings(origin.findings).length, applied, effectMeta, false))
+  }
+  if (entity && lineageRef) {
+    const lineageName = allLineages().find((l) => l.layer === lineageRef.layer && l.id === lineageRef.id)?.name ?? lineageRef.id
+    const lineageOutcome = [...applied].some((id) => effectMeta.get(id)?.axis === 'lineage')
+    axisSummaries.push(summarizeAxis('lineage', lineageName, flavorFindings(entity.findings).length, applied, effectMeta,
+      !lineageOutcome && rules.length > 0))
+  }
+  return finalize(chocoComboTitle(sel), notes, tastes, statements, groups, caveats, axisSummaries,
     { side: 'chocolate', kindId: rep.kind, itemName: rep.name, itemId: rep.id })
 }
 
