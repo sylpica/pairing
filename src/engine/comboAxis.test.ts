@@ -88,10 +88,22 @@ describe('反映されないのが正しいケースは、変わらない代わ�
     expect(region?.reflected).toBe(false)
     expect(region?.text).toContain('国レベル')
   })
-  it('成分の含有だけの所見（青心烏龍のリナロール等）は、検出≠寄与のためノートに反映されない', () => {
+  it('青心烏龍 × 烏龍茶：GC-O・再構成で検証された花様成分の方向が、推測として反映される（第5弾で方針変更）', () => {
+    // 第3弾では「組成のみ」として反映しない扱いだったが、原所見（Lan 2022）は
+    // GC-O と再構成・除去実験で主要香気活性成分を検証し、未〜中焙煎では花様成分が
+    // 主体という方向を示している。第5弾の足がかり (a) により、実測ではなく
+    // 推測（inferred）として反映する（検出のみの所見を実測扱いにする変更ではない）。
     const a = analyzeTeaCombo({ kindId: 'oolong', regionId: '', cultivarId: 'qingxin-oolong' })
     const cultivar = a.axisSummaries.find((s) => s.axis === 'cultivar')
-    expect(cultivar?.reflected).toBe(false)
+    expect(cultivar?.reflected).toBe(true)
+    const citrus = a.notes.find((n) => n.noteId === 'citrus')
+    expect(citrus?.level).toBe('inferred')
+    expect(citrus?.basis[0].sourceIds).toContain('lan-2022-qingxin-roasting')
+    const honey = a.notes.find((n) => n.noteId === 'honey')
+    expect(honey?.basis.some((b) => b.from === 'cultivar' && b.sourceIds.includes('lan-2022-qingxin-roasting'))).toBe(true)
+    const floral = a.notes.find((n) => n.noteId === 'floral-general')
+    expect(floral?.basis.some((b) => b.from === 'cultivar' && b.sourceIds.includes('lan-2022-qingxin-roasting'))).toBe(true)
+    expect(floral?.level).not.toBe('measured') // 実測への格上げはしない
   })
 })
 
@@ -155,12 +167,26 @@ describe('チョコ側：産地・系統を変えるとホイールが変わる'
     // 既存の製法ルール（花様の推測追加）は従来どおり
     expect(a.notes.find((x) => x.noteId === 'floral-general')?.level).toBe('inferred')
   })
-  it('ダーク × マダガスカル（産地のみ）：ノートは変わらず、反映されない理由が出る', () => {
+  it('ダーク × マダガスカル（産地のみ）：組成実測の成分からの推論で麦芽が推測として出る（第5弾で方針変更）', () => {
+    // 第4弾までは「単一製品の組成実測」として反映しない扱いだった。第5弾の
+    // 足がかり (b)（確認された化合物→既知の香り）により、ストレッカー
+    // アルデヒド類が最高水準だった実測と代表成分 3-メチルブタナールの
+    // 既知の香りから、推測（inferred）として麦芽を反映する。
     const a = analyzeChocoCombo({ kind: 'dark', originId: 'madagascar', lineage: null })
-    expect(noteSig(a)).toEqual(noteSig(darkOnly))
+    expect(noteSig(a)).not.toEqual(noteSig(darkOnly))
+    const malt = a.notes.find((n) => n.noteId === 'malt')
+    expect(malt?.level).toBe('inferred')
+    expect(malt?.intensity).toBe('weak')
+    expect(malt?.basis[0].sourceIds).toContain('godocikova-2020-madagascar-volatiles')
     const origin = a.axisSummaries.find((s) => s.axis === 'origin')
-    expect(origin?.reflected).toBe(false)
-    expect(origin?.text).toContain('反映していません')
+    expect(origin?.reflected).toBe(true)
+    // 対象はダークのみ：ミルクでは従来どおり変わらず、理由が出る
+    const milkOnly = analyzeChocoCombo({ kind: 'milk', originId: '', lineage: null })
+    const milk = analyzeChocoCombo({ kind: 'milk', originId: 'madagascar', lineage: null })
+    expect(noteSig(milk)).toEqual(noteSig(milkOnly))
+    const milkOrigin = milk.axisSummaries.find((s) => s.axis === 'origin')
+    expect(milkOrigin?.reflected).toBe(false)
+    expect(milkOrigin?.text).toContain('反映していません')
   })
   it('ダーク × タンザニア：香味所見が無い産地は、その旨が理由として出る', () => {
     const a = analyzeChocoCombo({ kind: 'dark', originId: 'tanzania', lineage: null })

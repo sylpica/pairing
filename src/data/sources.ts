@@ -1756,6 +1756,16 @@ export const sources: Source[] = [
     license: '未確認', verified: true,
   },
   {
+    id: 'ohno-yada-2021-sfdj-aroma',
+    kind: 'original',
+    title: 'Effects of second flush Darjeeling tea aroma on psychological and nervous system activities',
+    authors: 'Ohno A, Yada Y',
+    year: 2021, journal: 'におい・かおり環境学会誌 52(6):344–',
+    url: 'https://www.jstage.jst.go.jp/article/jao/52/6/52_344/_article/-char/ja',
+    scope: '査読論文（J-STAGE で書誌・抄録を一次確認。三井農林・筑波大学）。セカンドフラッシュ・ダージリン（SFDJ）の香りの吸入がアッサム茶・ウバ茶の香りより鎮静方向の生理応答を示した研究で、SFDJ の特徴香気成分としてゲラニオール、ホトリエノール、2,5-ジメチル-4-ヒドロキシ-3(2H)-フラノン、2-フェニルエチルアルコールが選定された。測定対象は生理・心理応答であり、成分の香味への寄与の検証ではない。調査記録: docs/research/literature-expansion-j-items.md (J-08)。',
+    license: '未確認（におい・かおり環境学会）', verified: true,
+  },
+  {
     id: 'sarmah-2026-assam-orthodox-ctc-biochemical',
     kind: 'original',
     title: 'Biochemical Quality Parameters of Orthodox and CTC Black Teas Produced in Upper Assam and North Bank Regions of Assam, India',

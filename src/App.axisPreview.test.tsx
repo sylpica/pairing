@@ -51,6 +51,89 @@ describe('調べる（チョコ）：系統を変えると直下のホイール�
   })
 })
 
+describe('調べる：部分指定（1〜2軸）でもホイール（プレビュー）が出る（第5弾・要件6）', () => {
+  beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
+
+  it('お茶：分類のみの指定でプレビューが出る', () => {
+    location.hash = '#/tea'
+    render(<App />)
+    fireEvent.change(screen.getByLabelText('分類（茶類）で絞り込み'), { target: { value: 'green' } })
+    const preview = document.querySelector('.combo-preview')
+    expect(preview).toBeTruthy()
+    expect(preview!.textContent).toContain('緑茶')
+    expect(preview!.querySelector('svg.wheel')).toBeTruthy()
+  })
+
+  it('お茶：産地のみの指定で、補完した分類の注記つきでプレビューが出る', () => {
+    location.hash = '#/tea'
+    render(<App />)
+    fireEvent.change(screen.getByLabelText('産地で絞り込み'), { target: { value: 'region:shizuoka' } })
+    const preview = document.querySelector('.combo-preview')
+    expect(preview).toBeTruthy()
+    expect(preview!.textContent).toContain('静岡')
+    // 分類は未指定のため、補完したことを明示する（暗黙の仮定にしない）
+    expect(preview!.textContent).toContain('分類は未指定のため')
+    expect(preview!.textContent).toContain('緑茶として表示しています')
+    // 詳細ページへの導線も、補完した選択で開ける
+    expect(preview!.textContent).toContain('この組み合わせの詳細ページへ')
+  })
+
+  it('お茶：品種のみの指定でプレビューが出る', () => {
+    location.hash = '#/tea'
+    render(<App />)
+    fireEvent.change(screen.getByLabelText('品種で絞り込み'), { target: { value: 'yabukita' } })
+    const preview = document.querySelector('.combo-preview')
+    expect(preview).toBeTruthy()
+    expect(preview!.textContent).toContain('やぶきた')
+  })
+
+  it('チョコ：系統のみの指定で、補完した種類の注記つきでプレビューが出る', () => {
+    location.hash = '#/choco'
+    render(<App />)
+    fireEvent.change(screen.getByLabelText('系統で絞り込み'), { target: { value: 'genetic:gen-nacional' } })
+    const preview = document.querySelector('.combo-preview')
+    expect(preview).toBeTruthy()
+    expect(preview!.textContent).toContain('ナシオナル')
+    expect(preview!.textContent).toContain('種類は未指定のため')
+    expect(preview!.textContent).toContain('ダークチョコレートとして表示しています')
+  })
+
+  it('チョコ：分類のみの指定でプレビューが出る', () => {
+    location.hash = '#/choco'
+    render(<App />)
+    fireEvent.change(screen.getByLabelText('分類（種類）で絞り込み'), { target: { value: 'dark' } })
+    const preview = document.querySelector('.combo-preview')
+    expect(preview).toBeTruthy()
+    expect(preview!.textContent).toContain('ダークチョコレート')
+  })
+})
+
+describe('組み合わせる：分類未指定＋産地のみでも結果が組み立てられる（第5弾・要件6の一般化）', () => {
+  beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
+
+  it('お茶側：分類を外して産地（静岡）だけ指定しても、見出しに静岡が出て結果が出る', () => {
+    location.hash = '#/pair'
+    render(<App />)
+    fireEvent.change(screen.getByLabelText('お茶'), { target: { value: '' } })
+    fireEvent.change(screen.getByLabelText('お茶の産地（任意）'), { target: { value: 'region:shizuoka' } })
+    const summary = document.querySelector('.pair-summary')
+    expect(summary).toBeTruthy()
+    expect(summary!.textContent).toContain('静岡')
+    expect(summary!.textContent).not.toContain('もう一方を選ぶと結果が出ます')
+  })
+
+  it('チョコ側：分類を外して産地（エクアドル）だけ指定しても、見出しにエクアドルが出て結果が出る', () => {
+    location.hash = '#/pair'
+    render(<App />)
+    fireEvent.change(screen.getByLabelText('チョコレート'), { target: { value: '' } })
+    fireEvent.change(screen.getByLabelText('カカオの産地（任意）'), { target: { value: 'ecuador' } })
+    const summary = document.querySelector('.pair-summary')
+    expect(summary).toBeTruthy()
+    expect(summary!.textContent).toContain('エクアドル')
+    expect(summary!.textContent).not.toContain('もう一方を選ぶと結果が出ます')
+  })
+})
+
 describe('組み合わせる：品種の変更が文脈ノートに伝わる', () => {
   beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
 

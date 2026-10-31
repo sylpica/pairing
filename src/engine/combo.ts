@@ -317,6 +317,49 @@ export function chocoComboTitle(sel: ChocoComboSel): string {
   return parts.join(' × ')
 }
 
+// ===== 部分指定の補完（2026-10-31 第5弾・要件6） =====
+// 調べる／組み合わせる画面では、3軸のうち一部だけの指定でもホイールを表示する。
+// 分類（お茶）／種類（チョコ）が未指定の場合、土台になる分類を「成立する範囲で
+// 最も素直な候補」から補完する。補完した場合は assumedKind で呼び出し側に知らせ、
+// 画面では「○○として表示しています」と明示する（暗黙の仮定にしない）。
+// 補完候補の優先順（お茶）: 品種の確認済み利用がある分類 → 地域の適用分類 →
+// TEA_COMBO_KINDS の順。チョコは系統・産地の評価の土台であるダークを先頭とする
+// CHOCO_COMBO_KINDS の順（全て成立するため、実質ダークで補完される）。
+
+export interface CompletedTeaSel { sel: TeaComboSel; assumedKind: boolean }
+export function completeTeaComboSel(partial: TeaComboSel): CompletedTeaSel | null {
+  if (partial.kindId) {
+    return teaComboViable(partial) ? { sel: partial, assumedKind: false } : null
+  }
+  const candidates: string[] = []
+  const push = (k: string) => { if (k && !candidates.includes(k)) candidates.push(k) }
+  if (partial.cultivarId) {
+    for (const u of cultivarTeaUses) {
+      if (u.cultivarId === partial.cultivarId) push(kindCategoryOf(u.kindId))
+    }
+  }
+  const region = teaRegionEntityOf(partial.regionId)
+  if (region) for (const k of region.applicableKindIds) push(k)
+  for (const k of TEA_COMBO_KINDS) push(k)
+  for (const k of candidates) {
+    const sel: TeaComboSel = { ...partial, kindId: k }
+    if (teaComboViable(sel)) return { sel, assumedKind: true }
+  }
+  return null
+}
+
+export interface CompletedChocoSel { sel: ChocoComboSel; assumedKind: boolean }
+export function completeChocoComboSel(partial: ChocoComboSel): CompletedChocoSel | null {
+  if (partial.kind) {
+    return chocoComboViable(partial) ? { sel: partial, assumedKind: false } : null
+  }
+  for (const k of CHOCO_COMBO_KINDS) {
+    const sel: ChocoComboSel = { ...partial, kind: k }
+    if (chocoComboViable(sel)) return { sel, assumedKind: true }
+  }
+  return null
+}
+
 // ===== 統合（第2層の推測） =====
 
 export interface ComboBasisGroup {

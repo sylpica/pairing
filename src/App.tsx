@@ -28,9 +28,10 @@ import { cacaoOrigins, cacaoOriginById, originsForLineage } from './data/origins
 import { teaCultivarPairingNote, cacaoPairingNote, cacaoOriginPairingNote, teaOriginPairingNote, teaRegionPairingNote, DATA_LEVEL_LABEL, CACAO_LAYER_LABEL, type CacaoLayer } from './engine/pairingContext'
 import { teaRegions, teaRegionById } from './data/teaRegions'
 import {
-  teaComboPath, teaComboViable, teaComboBaseItem, teaComboCategoryOf, chocoRepresentativeItem,
+  teaComboPath, teaComboBaseItem, teaComboCategoryOf, chocoRepresentativeItem,
   teaOriginComboRegionIdOfValue, teaOriginCountryOfValue, teaOriginLabelOfValue,
-  analyzeTeaCombo, analyzeChocoCombo, chocoComboPath, chocoComboViable,
+  analyzeTeaCombo, analyzeChocoCombo, chocoComboPath,
+  completeTeaComboSel, completeChocoComboSel, teaKindName, CHOCO_KIND_LABEL, TEA_COMBO_KINDS, CHOCO_COMBO_KINDS,
   COMBO_LEVEL_LABEL, COMBO_TASTE_LABEL, type ComboAnalysis, type ChocoComboSel, type TeaComboSel,
 } from './engine/combo'
 import ComboWheel, { COMBO_INT_LABEL } from './components/ComboWheel'
@@ -174,12 +175,13 @@ const AXIS_SUMMARY_LABEL: Record<string, string> = { region: '産地の反映', 
 
 /** 調べる画面のプルダウン直下に出す、その場の組み合わせ表示（ホイール＋要約）。
  * 分類・産地・品種（チョコは種類・産地・系統）が揃ったときにだけ表示する。 */
-function ComboPreview({ analysis, path }: { analysis: ComboAnalysis; path: string }) {
+function ComboPreview({ analysis, path, note: assumedNote }: { analysis: ComboAnalysis; path: string; note?: string }) {
   const [selNote, setSelNote] = useState<string | null>(null)
   const note = analysis.notes.find((n) => n.noteId === selNote) ?? null
   return (
     <section className="combo-preview" aria-label="選択中の組み合わせのフレーバー">
       <h3>{analysis.title}</h3>
+      {assumedNote && <p className="note-small">{assumedNote}</p>}
       <p><span className="badge">組み合わせ全体の根拠：{COMBO_LEVEL_LABEL[analysis.overallLevel]}</span></p>
       <ComboWheel notes={analysis.notes} context={analysis.context} onSelectNote={(id) => setSelNote(selNote === id ? null : id)} selectedNoteId={selNote} />
       {note && (
@@ -232,11 +234,17 @@ function TeaList() {
     && (f.kind === '' || r.applicableKindIds.includes(filterKindCategory(f.kind)))
     && (f.region === '' || (f.region.startsWith('region:') ? r.id === f.region.slice('region:'.length) : r.country === f.region))
     && (f.cultivarId === '' || teaCultivarById(f.cultivarId)?.country === r.country))
-  // 分類・産地・品種が揃ったら、プルダウンの直下にその組み合わせのフレーバーを出す
-  const previewSel: TeaComboSel | null = kind !== '' && region !== '' && cultivarId !== ''
-    ? { kindId: kind, regionId: teaOriginComboRegionIdOfValue(region), cultivarId }
+  // 3軸のうち1つでも指定があれば、プルダウンの直下にその組み合わせのフレーバーを出す
+  // （第5弾・要件6：部分指定対応。分類が未指定の場合は completeTeaComboSel が
+  //  成立する分類を補完し、補完したことをプレビューに明示する）
+  const previewCompleted = (kind !== '' || region !== '' || cultivarId !== '')
+    ? completeTeaComboSel({ kindId: kind, regionId: teaOriginComboRegionIdOfValue(region), cultivarId })
     : null
-  const previewAnalysis = previewSel && teaComboViable(previewSel) ? analyzeTeaCombo(previewSel) : null
+  const previewSel: TeaComboSel | null = previewCompleted?.sel ?? null
+  const previewAnalysis = previewSel ? analyzeTeaCombo(previewSel) : null
+  const previewNote = previewCompleted?.assumedKind && previewSel
+    ? `分類は未指定のため、${teaKindName(previewSel.kindId)}として表示しています`
+    : undefined
   const current: TeaListFilters = { q, kind, region, cultivarId }
   const shownProfiles = [...profilesFor(current)].sort((a, b) => KIND_ORDER.indexOf(a.kindId) - KIND_ORDER.indexOf(b.kindId))
   const cultivars = cultivarsFor(current)
@@ -258,7 +266,7 @@ function TeaList() {
             }} />
         </div>
       </section>
-      {previewAnalysis && previewSel && <ComboPreview analysis={previewAnalysis} path={teaComboPath(previewSel)} />}
+      {previewAnalysis && previewSel && <ComboPreview analysis={previewAnalysis} path={teaComboPath(previewSel)} note={previewNote} />}
       {empty && !previewAnalysis && <p className="unknown-box">見つかりませんでした。条件に合う項目がありません（収録範囲外のお茶かもしれません）。</p>}
       {shownProfiles.length > 0 && <>
         <h3>プロファイル（茶類・製法）</h3>
@@ -392,11 +400,16 @@ function ChocoList() {
   const lineageEntities = lineagesFor(current)
   const lineageCount = lineageCountOf(current)
   const empty = profiles.length + origins.length + lineageCount === 0
-  // 種類・産地・系統が揃ったら、プルダウンの直下にその組み合わせのフレーバーを出す
-  const chocoPreviewSel: ChocoComboSel | null = kind !== '' && originId !== '' && lineage !== null
-    ? { kind: isItemValue(kind) ? chocolateById(kind)!.kind : kind, originId, lineage }
+  // 3軸のうち1つでも指定があれば、プルダウンの直下にその組み合わせのフレーバーを出す
+  // （第5弾・要件6：部分指定対応。種類が未指定の場合は completeChocoComboSel が補完する）
+  const chocoPreviewCompleted = (kind !== '' || originId !== '' || lineage !== null)
+    ? completeChocoComboSel({ kind: kind === '' ? '' : (isItemValue(kind) ? chocolateById(kind)!.kind : kind), originId, lineage })
     : null
-  const chocoPreviewAnalysis = chocoPreviewSel && chocoComboViable(chocoPreviewSel) ? analyzeChocoCombo(chocoPreviewSel) : null
+  const chocoPreviewSel: ChocoComboSel | null = chocoPreviewCompleted?.sel ?? null
+  const chocoPreviewAnalysis = chocoPreviewSel ? analyzeChocoCombo(chocoPreviewSel) : null
+  const chocoPreviewNote = chocoPreviewCompleted?.assumedKind && chocoPreviewSel
+    ? `種類は未指定のため、${CHOCO_KIND_LABEL[chocoPreviewSel.kind] ?? chocoPreviewSel.kind}チョコレートとして表示しています`
+    : undefined
   return (
     <div>
       <h2>チョコを調べる</h2>
@@ -417,7 +430,7 @@ function ChocoList() {
           </label>
         </div>
       </section>
-      {chocoPreviewAnalysis && chocoPreviewSel && <ComboPreview analysis={chocoPreviewAnalysis} path={chocoComboPath(chocoPreviewSel)} />}
+      {chocoPreviewAnalysis && chocoPreviewSel && <ComboPreview analysis={chocoPreviewAnalysis} path={chocoComboPath(chocoPreviewSel)} note={chocoPreviewNote} />}
       {empty && !chocoPreviewAnalysis && <p className="unknown-box">見つかりませんでした。条件に合う項目がありません（収録範囲外のチョコレートかもしれません）。</p>}
       {profiles.length > 0 && <>
         <h3>プロファイル（種類・製法）</h3>
@@ -557,16 +570,31 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
     if (!next.lineage) setCacaoSel(null)
     else { const [layer, id] = next.lineage.split(':') as [CacaoLayer, string]; setCacaoSel({ layer, id }) }
   }
-  const tea = teaKindValue ? teaComboBaseItem(teaKindValue) : undefined
-  const choco = chocoKindValue ? (chocolateById(chocoKindValue) ?? chocoRepresentativeItem(chocoKindValue)) : undefined
+  // 第5弾・要件6の一般化: 各側は軸の部分指定でも組み立てられる。
+  // 分類・種類が未指定でも産地・品種（系統）の指定があれば、成立する分類を
+  // 補完して土台アイテムと組み合わせ選択を決める。分類だけの指定（カテゴリ
+  // 選択）でも第2層の分析を通す。アイテム単独の指定は従来どおり素のプロファイル。
+  const teaOriginComboId = teaOriginComboRegionIdOfValue(teaOrigin)
+  const teaCompleted = !teaKindValue && (teaOrigin || cultivarId)
+    ? completeTeaComboSel({ kindId: '', regionId: teaOriginComboId, cultivarId })
+    : null
+  const tea = teaKindValue ? teaComboBaseItem(teaKindValue)
+    : teaCompleted ? teaComboBaseItem(teaCompleted.sel.kindId) : undefined
+  const chocoCompleted = !chocoKindValue && (originId || cacaoSel)
+    ? completeChocoComboSel({ kind: '', originId, lineage: cacaoSel })
+    : null
+  const choco = chocoKindValue ? (chocolateById(chocoKindValue) ?? chocoRepresentativeItem(chocoKindValue))
+    : chocoCompleted ? chocoRepresentativeItem(chocoCompleted.sel.kind) : undefined
   // 課題C（2026-10-31）: 産地・品種・系統が指定された側は、素のプロファイルではなく
   // 組み合わせ分析（第2層・軸効果適用後）のノート集合をペアリング（第3層）の入力にする。
-  const teaSel: TeaComboSel | null = tea && (teaOrigin || cultivarId)
-    ? { kindId: teaKindValue, regionId: teaOriginComboRegionIdOfValue(teaOrigin), cultivarId }
-    : null
-  const chocoSel: ChocoComboSel | null = choco && (originId || cacaoSel)
-    ? { kind: choco.kind, originId, lineage: cacaoSel }
-    : null
+  const teaSel: TeaComboSel | null = teaCompleted ? teaCompleted.sel
+    : tea && (teaOrigin || cultivarId || TEA_COMBO_KINDS.includes(teaKindValue))
+      ? { kindId: teaKindValue, regionId: teaOriginComboId, cultivarId }
+      : null
+  const chocoSel: ChocoComboSel | null = chocoCompleted ? chocoCompleted.sel
+    : choco && (originId || cacaoSel || CHOCO_COMBO_KINDS.includes(chocoKindValue))
+      ? { kind: choco.kind, originId, lineage: cacaoSel }
+      : null
   const assembly = tea && choco ? assemblePairing(tea, choco, teaSel, chocoSel) : null
   const result = assembly?.result ?? null
   const interactions = assembly?.interactions ?? null
