@@ -28,12 +28,19 @@ export interface TierSeg {
   drillable?: boolean
   ariaLabel: string
   chip: ReactNode
+  /** チップ（ピル）自体に追加するクラス名（第39弾: 推測の印をピルの破線で表す等） */
+  chipClassName?: string
   /**
-   * チップの直下に小さく出す付随要素（根拠バッジ・強さ等）。
-   * 第37弾: 味・香りのチップの作法を完全に統一するため、チップ本体には
+   * チップの直下に小さく出す付随要素（根拠バッジ等）。
+   * 第37弾: 味・香りのチップの作法を統一するため、チップ本体には
    * 「名前＋％（＋ドリル記号／注記）」と化合物の括弧併記だけを改行なしの
-   * 単位として入れ、根拠バッジ等の付随要素はここへ逃がす。チップ内テキストが
+   * 単位として入れ、根拠バッジはここへ逃がした。チップ内テキストが
    * 狭幅で1文字ずつ縦に潰れるレイアウトを構造的に防ぐための置き場。
+   * 第39弾: 味の第1階層は香りの第1階層と完全に同じ作法（1ピルのみ・
+   * 直下に何もぶら下げない）に改めたため below を使わない。強さは
+   * ピル内の文言に含め、推測（未検証）の印はピル自体の破線
+   * （chipClassName='chip-inferred'）で表す。第2階層は味・香りとも
+   * 従来どおり below のバッジで統一されている。
    */
   below?: ReactNode
   selected?: boolean
@@ -150,7 +157,7 @@ export default function TieredWheel({ segments, centerLabel, ariaLabel, onSelect
       <ul className="wheel-list">
         {segments.map((s) => (
           <li key={s.key} className="wheel-chip-item">
-            <button className="chip" onClick={() => onSelect(s.key)} aria-expanded={s.selected}>
+            <button className={s.chipClassName ? `chip ${s.chipClassName}` : 'chip'} onClick={() => onSelect(s.key)} aria-expanded={s.selected}>
               <span className="dot" style={{ background: s.color }} />
               {s.chip}
             </button>

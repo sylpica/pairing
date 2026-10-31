@@ -136,11 +136,6 @@ function Home() {
           <span className="big-card-title">組み合わせる</span><span>共通の香りと対比を探す</span>
         </button>
       </div>
-      <p className="note-small">産地×品種×分類の具体的な組み合わせごとの味わいは、
-        <button className="linklike" onClick={() => go('combo/tea')}>組み合わせで調べる（お茶）</button>／
-        <button className="linklike" onClick={() => go('combo/choco')}>組み合わせで調べる（チョコ）</button>
-        から（例：長崎の紅茶のやぶきた と 長崎の緑茶のやぶきた の違い）。
-      </p>
     </div>
   )
 }

@@ -283,6 +283,15 @@ export default function TieredWheelPanel({ notes, tastes, context, contexts, res
   // 小さな併記は第2階層の具体名のプレビューだけにする（化合物名は絶対に
   // 出さない。具体名が無い味は併記なし＝空白でよい）。具体名が無い味は
   // 薄く表示し、押すと根拠説明の表示に進む（ドリルダウンはできない）。
+  // 第39弾: 凡例チップを香りの第1階層と構造的に完全に同一にした
+  // （1セグメント＝1ピル、ピルの下に要素をぶら下げない。ユーザー実機FB）。
+  // 第37弾でチップ直下に出していた情報は失わず、香りの作法に倣って
+  // ピル側へ収める: 味の強さはピル内の文言（「甘味 44%（強い） ›」の
+  // 括弧内。香りの「（中分類なし）」と同じ括弧の置き場）、推測（未検証）
+  // の印はピル自体の破線（chip-inferred。セグメントの破線＝推測という
+  // 既存の視覚言語と一致）。根拠レベルの文言自体は、ホイールセグメントの
+  // 濃さ・破線と凡例ボックス、ドリル先の詳細表示で保持する（香りの
+  // 第1階層と同じ扱い）。
   const tasteTopSegments: TierSeg[] = tasteNoteTiers.map((g) => {
     const hasEntries = g.entries.length > 0
     return {
@@ -297,8 +306,8 @@ export default function TieredWheelPanel({ notes, tastes, context, contexts, res
       ariaLabel: hasEntries
         ? `${tasteLabel(g.key)}を開く（${g.percent}%・${COMBO_INT_LABEL[g.taste.intensity]}・${COMBO_LEVEL_LABEL[g.taste.level]}・具体名を表示）`
         : `${tasteLabel(g.key)}（${g.percent}%・${COMBO_INT_LABEL[g.taste.intensity]}・${COMBO_LEVEL_LABEL[g.taste.level]}・対応づく具体名はありません。根拠を表示）`,
-      chip: <span className="chip-label">{tasteLabel(g.key)} {g.percent}%{hasEntries ? ' ›' : '（具体名なし）'}</span>,
-      below: <>{COMBO_INT_LABEL[g.taste.intensity]} <LevelBadge level={g.taste.level} /></>,
+      chip: <span className="chip-label">{tasteLabel(g.key)} {g.percent}%（{COMBO_INT_LABEL[g.taste.intensity]}{hasEntries ? '' : '・具体名なし'}）{hasEntries ? ' ›' : ''}</span>,
+      chipClassName: g.taste.level === 'inferred' ? 'chip-inferred' : undefined,
     }
   })
   const onSelectTasteTop = (key: string) => {

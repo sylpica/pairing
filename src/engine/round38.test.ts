@@ -71,12 +71,13 @@ describe('第38弾A: 渋味5段階の算出', () => {
   })
 
   it('段階表の要点：normal は裏付けで 2〜4 に分かれ、strong は 4〜5、weak は 1〜2', () => {
-    expect(astringencyStageOf('normal', 4)).toBe(2)
+    // 第39弾で帯を再較正（標準的な裏付け=4 を中心帯に置く）。要点の範囲は不変。
+    expect(astringencyStageOf('normal', 4)).toBe(3)
     expect(astringencyStageOf('normal', 8)).toBe(3)
     expect(astringencyStageOf('normal', 15)).toBe(4)
     expect(astringencyStageOf('strong', 4)).toBe(4)
     expect(astringencyStageOf('strong', 11)).toBe(5)
-    expect(astringencyStageOf('weak', 4)).toBe(1)
+    expect(astringencyStageOf('weak', 4)).toBe(2)
     expect(astringencyStageOf('weak', 15)).toBe(2)
   })
 

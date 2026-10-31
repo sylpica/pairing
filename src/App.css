@@ -63,8 +63,13 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
    ひとまとまりの単位とし、狭幅では単位ごとに行を分ける。日本語テキストが
    flex の圧縮で1文字ずつ縦に折れる表示（ユーザー実機指摘）を構造的に防ぐ。
    根拠バッジ等の付随要素は、ホイール本体のチップではチップ直下の
-   .wheel-chip-note に置く（TieredWheel の below 差し込み）。 */
+   .wheel-chip-note に置く（TieredWheel の below 差し込み）。
+   第39弾: 味の第1階層は香りの第1階層と完全に同じ作法（1ピルのみ・直下に
+   何もぶら下げない）に改めた。強さはピル内の括弧文言、推測（未検証）の
+   印はピル自体の破線（.chip-inferred、.badge-inferred と同じ色・破線）で
+   表す。 */
 .wheel-list .chip { flex-wrap: wrap; max-width: 100%; }
+.wheel-list .chip-inferred { border: 1.5px dashed #b08968; }
 .wheel-list .badge { flex: none; }
 .chip-label { white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
 /* 括弧併記（化合物名）は名前＋％のラベルとは別単位。化合物名の途中では

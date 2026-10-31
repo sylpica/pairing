@@ -200,7 +200,11 @@ export const teaItems: TeaItem[] = [
     ], {
       umami: { intensity: 'normal', basis: 'sensory', sourceIds: ['kaneko-2006-matcha-umami'] },
       bitter: { intensity: 'weak', basis: 'review', sourceIds: ['ye-2022-bitterness-astringency'] },
-      astringent: { intensity: 'weak', basis: 'review', sourceIds: ['ye-2022-bitterness-astringency'] },
+      // 渋み（第39弾で weak→normal に見直し）: 被覆で総カテキンはやや減るが、渋みの主成分
+      // EGCG は被覆で減らない（農研機構・堀江ら 2018）。茶葉ごと摂取するため一服の
+      // カテキン量は浸出液の煎茶を大きく上回り、飲み物としての渋みは煎茶と同程度に置く
+      // （Unno et al. 2026）。玉露（浸出液・低温抽出）とは摂取形態が違うため扱いが異なる。
+      astringent: { intensity: 'normal', basis: 'review', sourceIds: ['unno-2026-japanese-green-tea-composition', 'naro-2018-matcha-composition-price', 'ye-2022-bitterness-astringency'] },
       // 甘味（第16弾で補完）: 日本緑茶の官能研究で甘味の知覚が確認された範囲で弱く置く。
       sweet: { intensity: 'weak', basis: 'sensory', sourceIds: ['pramudya-2018-green-tea-temperature-cata', 'zhang-2020-tea-chemistry-taste'] },
     }, {
@@ -209,7 +213,7 @@ export const teaItems: TeaItem[] = [
       finish: { text: '渋みは飲んだ後に残って感じられやすく、繰り返し飲むと積み上がっていく可能性があります。これはワインでの時間強度法の実証と、茶とチョコに共通するフラバノール類の知見からの推測で、お茶での直接測定ではありません。感じ方には個人差も大きいとされています。なお、碾茶・玉露などの覆い下茶は冷蔵保存でおよそ6箇月かけて熟成し、うま味やまろやかさが増すことが官能検査で確認されています（京都府農林水産技術センター茶業研究所）。', basis: 'general', sourceIds: ['ross-2007-wine-astringency-buildup', 'lesschaeve-2005-polyphenols-astringency', 'kyoto-2014-covered-tea-maturation'], estimated: true },
     }),
     evidenceLevel: 'general',
-    scopeNote: 'Tan et al. 2019 に基づきます。蒸し製の茶として葉様の香りが強く花様のノートも高い群に入り、主要香気成分としてはノナナールが最も高い FD値を示しました。中国・山東産抹茶の研究（Luo et al. 2022）は日本産抹茶のデータとしては使っていません。品種・等級固有の実測ではありません。うま味は高級抹茶を対象に官能試験で寄与成分（テアニン等）が同定された研究（Kaneko et al. 2006）に基づき、苦味・渋みは被覆栽培で抑えられる方向を総説（Ye et al. 2022）が支持しています。甘味は日本緑茶の官能研究（Pramudya & Seo 2018）で知覚が確認された範囲で弱く収録しています。',
+    scopeNote: 'Tan et al. 2019 に基づきます。蒸し製の茶として葉様の香りが強く花様のノートも高い群に入り、主要香気成分としてはノナナールが最も高い FD値を示しました。中国・山東産抹茶の研究（Luo et al. 2022）は日本産抹茶のデータとしては使っていません。品種・等級固有の実測ではありません。うま味は高級抹茶を対象に官能試験で寄与成分（テアニン等）が同定された研究（Kaneko et al. 2006）に基づきます。苦味は被覆栽培で抑えられる方向を総説（Ye et al. 2022）が支持するため弱く置きます。渋みは第39弾で見直しました：被覆で総カテキンはやや減るものの、渋みの主成分であるエステル型カテキン（EGCG）は被覆で減らないことが農研機構の分析で示され（堀江ら 2018）、抹茶は茶葉ごと摂取するため一服で摂るカテキン量が浸出液の煎茶を大きく上回ることから、飲み物としての渋みは煎茶と同程度（普通）に置きます（Unno et al. 2026）。甘味は日本緑茶の官能研究（Pramudya & Seo 2018）で知覚が確認された範囲で弱く収録しています。',
     sourceIds: ['tan-2019-japanese-green-tea'],
   },
   {
