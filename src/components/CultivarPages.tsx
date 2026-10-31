@@ -2,7 +2,12 @@ import { useMemo, useState, type ReactNode } from 'react'
 import type { ComboNote, TeaCultivar, TeaCultivarRank } from '../types'
 import { FLAVOR_FINDING_KINDS } from '../types'
 import ComboWheel from './ComboWheel'
-import { COMBO_BASIS_FROM_LABEL, COMBO_LEVEL_LABEL } from '../engine/combo'
+import ComboNoteDetail from './ComboNoteDetail'
+import BackButton from './BackButton'
+import { CollapsibleSheet } from './Sheet'
+import { noteById } from '../data/flavors'
+import type { CompoundContext } from '../data/compounds'
+import { COMBO_LEVEL_LABEL } from '../engine/combo'
 import { cultivarWheels, lineageWheels } from '../engine/entityWheel'
 import { teaCultivars, teaCultivarById, usesForCultivar } from '../data/cultivars'
 import {
@@ -26,6 +31,7 @@ interface WheelTab {
   label: string
   notes: ComboNote[]
   overallLevel: ComboNote['level']
+  context: CompoundContext
   footer: ReactNode
 }
 function EntityWheelTabs({ tabs }: { tabs: WheelTab[] }) {
@@ -46,18 +52,12 @@ function EntityWheelTabs({ tabs }: { tabs: WheelTab[] }) {
         </label>
       )}
       <p><span className="badge">この組み合わせ全体の根拠：{COMBO_LEVEL_LABEL[tab.overallLevel]}</span></p>
-      <ComboWheel notes={tab.notes} onSelectNote={(id) => setSelNote(selNote === id ? null : id)} selectedNoteId={selNote} />
+      <ComboWheel notes={tab.notes} context={tab.context} onSelectNote={(id) => setSelNote(selNote === id ? null : id)} selectedNoteId={selNote} />
       {note && (
-        <div className="temporal-card">
-          <h4>この香りの根拠</h4>
-          {note.basis.map((b, i) => (
-            <div key={i}>
-              <p><span className="badge">{COMBO_BASIS_FROM_LABEL[b.from]}</span></p>
-              <p>{b.text}</p>
-              <SourceLinks ids={b.sourceIds} />
-            </div>
-          ))}
-        </div>
+        <CollapsibleSheet resetKey={`${tab.key}:${note.noteId}`} title={noteById(note.noteId)?.name ?? note.noteId} noun="根拠情報"
+          onDismiss={() => setSelNote(null)}>
+          <ComboNoteDetail note={note} context={tab.context} />
+        </CollapsibleSheet>
       )}
       {tab.footer}
     </div>
@@ -178,6 +178,7 @@ function CultivarWheelSection({ cultivarId, cultivarName }: { cultivarId: string
     label: w.kindName,
     notes: w.notes,
     overallLevel: w.overallLevel,
+    context: w.context,
     footer: w.comboPath
       ? <p><button className="linklike" onClick={() => go(w.comboPath!)}>「{cultivarName} × {w.kindName}」の組み合わせページで、産地違いや根拠の内訳を見る</button></p>
       : <p className="note-small">{w.kindName}は組み合わせページの対象外の形態のため、土台にしたアイテムのページへ案内します。<button className="linklike" onClick={() => go(w.itemPath!)}>{w.kindName}のページを見る</button></p>,
@@ -198,7 +199,7 @@ export function TeaCultivarDetail({ id }: { id: string }) {
   const parents = (c.parentCultivarIds ?? []).map((pid) => teaCultivarById(pid)).filter((p): p is TeaCultivar => !!p)
   return (
     <div>
-      <button className="btn ghost" onClick={() => go('cultivars')}>← 品種・系統の一覧へ</button>
+      <BackButton fallback="cultivars" />
       <h2>{c.name}{c.originalName && c.originalName !== c.name ? `（${c.originalName}）` : ''}</h2>
       <p>
         <span className="badge">{RANK_LABEL[c.rank]}</span> <span className="badge">{c.country}</span>
@@ -241,7 +242,7 @@ export function CacaoDetail({ layer, id }: { layer: CacaoLayer; id: string }) {
   const title = trad ? `${trad.nameJa}（${trad.name}）` : entity.name
   return (
     <div>
-      <button className="btn ghost" onClick={() => go('cultivars')}>← 品種・系統の一覧へ</button>
+      <BackButton fallback="cultivars" />
       <h2>{title}</h2>
       <p>
         <span className="badge">{CACAO_LAYER_LABEL[layer]}</span>
@@ -297,6 +298,7 @@ function LineageWheelSection({ layer, id, entityName, hasFlavorFindings }: {
     label: w.kindLabel,
     notes: w.notes,
     overallLevel: w.overallLevel,
+    context: w.context,
     footer: <p><button className="linklike" onClick={() => go(w.comboPath)}>「{entityName} × {w.kindLabel}」の組み合わせページで、産地違いや根拠の内訳を見る</button></p>,
   }))
   return (
@@ -323,7 +325,7 @@ export function OriginDetail({ id }: { id: string }) {
   const clones = o.relatedCloneIds.map((x) => cacaoCloneById(x)).filter((g) => !!g)
   return (
     <div>
-      <button className="btn ghost" onClick={() => go('cultivars')}>← 品種・系統の一覧へ</button>
+      <BackButton fallback="cultivars" />
       <h2>{o.name}</h2>
       <p>
         <span className="badge">産地</span> <span className="badge">{EVIDENCE_LABEL[o.flavorEvidence]}</span>

@@ -14,6 +14,7 @@ import {
 } from '../data/cacao'
 import { teaProcessRules, chocoProcessRules } from '../data/processRules'
 import type { CacaoLayer } from './pairingContext'
+import type { CompoundContext } from '../data/compounds'
 
 // 組み合わせページ（第2層）の推測エンジン。設計: docs/design/combination-pages.md
 // 第1層（分類プロファイル／品種・系統の所見／産地の所見／製法の科学）を統合して、
@@ -177,6 +178,15 @@ export function teaComboViable(sel: TeaComboSel): boolean {
   return true
 }
 
+/**
+ * 分類が未指定（kindId: ''）のときの成立判定：いずれかの分類で成立すればよい。
+ * 調べる／組み合わせる画面で分類未指定のまま産地・品種の選択肢を出すために使う
+ * （両画面で「存在するか」の基準を揃えるための部品）。
+ */
+export function teaComboViableAnyKind(sel: { regionId: string; cultivarId: string }): boolean {
+  return TEA_COMBO_KINDS.some((k) => teaComboViable({ kindId: k, regionId: sel.regionId, cultivarId: sel.cultivarId }))
+}
+
 export function teaKindOptions(sel: TeaComboSel): string[] {
   return TEA_COMBO_KINDS.filter((k) => teaComboViable({ ...sel, kindId: k }))
 }
@@ -226,7 +236,7 @@ export function allLineages(): LineageRef[] {
 export const lineageEntityOf = (ref: { layer: CacaoLayer; id: string }) =>
   ref.layer === 'traditional' ? traditionalGroupById(ref.id) : ref.layer === 'genetic' ? geneticGroupById(ref.id) : cacaoCloneById(ref.id)
 
-/** 系統と産地が文献・データ上で結びつくか（組み合わせる画面の連動にも使う）。 */
+/** 系統と産地が文献・データ上で結びつくか（データ上の関連の述語。選択肢の制限には使わない）。 */
 export const lineageOriginLinked = (lineage: { layer: CacaoLayer; id: string }, originId: string): boolean => {
   if (originsForLineage(lineage.layer, lineage.id).some((o) => o.id === originId)) return true
   // クローンの作出地が産地名と一致する場合も結びつきとみなす（例：IMC-67 とペルー）
@@ -238,21 +248,64 @@ export const lineageOriginLinked = (lineage: { layer: CacaoLayer; id: string }, 
   return false
 }
 
+/**
+ * クローンについて「記録のある産地」のID一覧を、データから機械的に導く。
+ * 記録の置き場所は2つだけに限定する（推測で産地を足さない）:
+ * 1. 産地エンティティ側の関連付け（originsForLineage('clone', id) = relatedCloneIds）
+ * 2. クローン自身の origin 欄（作出・選抜地として記録された産地名の一致）
+ * 所見文中の研究実施地（例：他国での供試記録）は「そのクローンの産地」の記録とは
+ * みなさない。記録が1件も無いクローンは空配列を返し、呼び出し側は絞り込みをしない。
+ * 2026-10-31 時点: ccn-51 → [ecuador]、imc-67 → [peru]、ics-95 → []（作出地の
+ * トリニダードは産地エンティティとして未収録のため、記録のある産地は無い）。
+ */
+export const cloneRecordedOriginIds = (cloneId: string): string[] => {
+  const ids = new Set(originsForLineage('clone', cloneId).map((o) => o.id))
+  const clone = cacaoCloneById(cloneId)
+  if (clone) for (const o of cacaoOrigins) if (clone.origin.includes(o.name)) ids.add(o.id)
+  return [...ids]
+}
+
+/**
+ * チョコ側の成立条件（2026-10-31 実機フィードバック第2弾で自由化）。
+ * 種類×産地×系統はブレンドの実態として全て「存在する」扱いとし、相互に制限しない
+ * （かつての lineageOriginLinked による絞り込みは廃止）。実在するエンティティの
+ * 組み合わせであれば常に成立する。唯一の例外は UI 到達可能性としてのクローンの
+ * 産地制限で、そちらは chocoOriginOptions / chocoLineageOptions 側で扱い、
+ * この成立空間（種類5×産地9×系統18=810通り）自体は変えない。
+ */
 export function chocoComboViable(sel: ChocoComboSel): boolean {
   if (!sel.kind || !chocoRepresentativeItem(sel.kind)) return false
   if (sel.originId && !cacaoOriginById(sel.originId)) return false
   if (sel.lineage && !lineageEntityOf(sel.lineage)) return false
-  if (sel.originId && sel.lineage && !lineageOriginLinked(sel.lineage, sel.originId)) return false
   return true
 }
 export function chocoKindOptions(sel: ChocoComboSel): string[] {
   return CHOCO_COMBO_KINDS.filter((k) => chocoComboViable({ ...sel, kind: k }))
 }
+/**
+ * 産地の選択肢（UI到達可能性）。原則は全産地を常時出す（自由化）。
+ * 例外はクローン階層のみ：クローンが選ばれている場合、そのクローンについて
+ * 記録のある産地だけに絞る（記録のない産地は「存在しない組み合わせ」として隠す）。
+ * 記録が無いクローン（ICS-95 等）では絞らない。
+ */
 export function chocoOriginOptions(sel: ChocoComboSel) {
-  return cacaoOrigins.filter((o) => chocoComboViable({ ...sel, originId: o.id }))
+  if (sel.lineage?.layer === 'clone') {
+    const recorded = cloneRecordedOriginIds(sel.lineage.id)
+    if (recorded.length > 0) return cacaoOrigins.filter((o) => recorded.includes(o.id))
+  }
+  return [...cacaoOrigins]
 }
+/**
+ * 系統の選択肢（UI到達可能性）。伝統分類・遺伝グループは常時全て出す（自由化）。
+ * クローンは、産地が選ばれていて、そのクローンの記録産地に含まれない場合だけ隠す
+ * （chocoOriginOptions の例外と対称）。記録が無いクローンは隠さない。
+ */
 export function chocoLineageOptions(sel: ChocoComboSel): LineageRef[] {
-  return allLineages().filter((l) => chocoComboViable({ ...sel, lineage: { layer: l.layer, id: l.id } }))
+  return allLineages().filter((l) => {
+    if (l.layer !== 'clone' || !sel.originId) return true
+    const recorded = cloneRecordedOriginIds(l.id)
+    return recorded.length === 0 || recorded.includes(sel.originId)
+  })
 }
 export function chocoComboTitle(sel: ChocoComboSel): string {
   const parts: string[] = []
@@ -282,6 +335,8 @@ export interface ComboAnalysis {
   groups: ComboBasisGroup[]
   caveats: ComboStatement[]
   sourceIds: string[]
+  /** ホイールの化合物併記とノート詳細の階層（tier）判定に使う文脈＝土台アイテム */
+  context: CompoundContext
 }
 
 const TASTE_ORDER: TasteKey[] = ['sweet', 'sour', 'bitter', 'astringent', 'umami']
@@ -367,6 +422,7 @@ const interactionCaveat = (): ComboStatement => ({
 function finalize(
   title: string, notes: ComboNote[], tastes: ComboTaste[],
   statements: ComboStatement[], groups: ComboBasisGroup[], caveats: ComboStatement[],
+  context: CompoundContext,
 ): ComboAnalysis {
   const sourceIds = uniq([
     ...notes.flatMap((n) => n.sourceIds),
@@ -381,7 +437,7 @@ function finalize(
   return {
     title,
     overallLevel: hasInferred ? 'inferred' : hasMeasured ? 'measured' : 'general',
-    notes, tastes, statements, groups, caveats, sourceIds,
+    notes, tastes, statements, groups, caveats, sourceIds, context,
   }
 }
 
@@ -456,7 +512,8 @@ export function analyzeTeaCombo(sel: TeaComboSel): ComboAnalysis {
     })
   }
   if ((region && cultivar) || rules.length > 0) caveats.push(interactionCaveat())
-  return finalize(teaComboTitle(sel), notes, tastes, statements, groups, caveats)
+  return finalize(teaComboTitle(sel), notes, tastes, statements, groups, caveats,
+    { side: 'tea', kindId: rep.kindId, itemName: rep.name, itemId: rep.id })
 }
 
 export function analyzeChocoCombo(sel: ChocoComboSel): ComboAnalysis {
@@ -517,7 +574,8 @@ export function analyzeChocoCombo(sel: ChocoComboSel): ComboAnalysis {
     })
   }
   if (lineageRef && origin) caveats.push(interactionCaveat())
-  return finalize(chocoComboTitle(sel), notes, tastes, statements, groups, caveats)
+  return finalize(chocoComboTitle(sel), notes, tastes, statements, groups, caveats,
+    { side: 'chocolate', kindId: rep.kind, itemName: rep.name, itemId: rep.id })
 }
 
 // ===== 兄弟組み合わせ =====

@@ -89,6 +89,23 @@ describe('品種・系統データベースの画面連携', () => {
     expect(screen.getAllByText(/科学データ未確認/).length).toBeGreaterThan(0)
   })
 
+  it('品種ページのホイールでも、香りを押すと根拠と成分のシートが開く（指示2・3）', () => {
+    location.hash = '#/cultivar/okumidori'; render(<App />)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    // セグメントには化合物名の併記がある（裏付けのある香り）
+    const subs = [...document.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '')
+    expect(subs.length).toBeGreaterThan(0)
+    const chip = [...document.querySelectorAll('.wheel-list .chip')].find((el) => el.textContent?.includes('花様'))
+    expect(chip).toBeTruthy()
+    fireEvent.click(chip!)
+    const dialog = screen.getByRole('dialog')
+    expect(dialog.textContent).toContain('この香りの根拠')
+    expect(dialog.textContent).toContain('この香りに関係する成分')
+    fireEvent.click(screen.getByLabelText('根拠情報を閉じる'))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.getByText(/の根拠情報をもう一度開く/)).toBeTruthy()
+  })
+
   it('組み合わせ画面で品種を指定すると階層（実測）が表示される', () => {
     location.hash = '#/pair'; render(<App />)
     fireEvent.change(screen.getByLabelText('お茶の品種（任意）'), { target: { value: 'qingxin-oolong' } })

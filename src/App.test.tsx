@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import App from './App'
 
@@ -93,15 +93,15 @@ describe('産地データと調べる画面の再設計（2026-10-30）', () => 
     expect(texts.some((t) => t.includes('紅茶'))).toBe(false)
     expect(texts.some((t) => t.includes('べにふうき'))).toBe(false)
   })
-  it('お茶一覧：プルダウン連動で、両立しない品種は選択肢に出ない（2026-10-31 連動仕様）', () => {
+  it('お茶一覧：プルダウン連動で、両立しない選択肢は出ない（隠す方式・2026-10-31 第2弾）', () => {
     location.hash = '#/tea'; render(<App />)
-    // 品種を先に選んでも、分類側で両立しない茶類は disabled になる
+    // 品種を先に選ぶと、分類側で両立しない茶類は選択肢自体に出ない（グレーアウトではない）
     fireEvent.change(screen.getByLabelText('品種で絞り込み'), { target: { value: 'yabukita' } })
     const kindSel = screen.getByLabelText('分類（茶類）で絞り込み') as HTMLSelectElement
-    const blackOpt = [...kindSel.options].find((o) => o.value === 'black')
-    expect(blackOpt?.disabled).toBe(false) // やぶきたは紅茶（製法ルール）でも両立する
-    const darkOpt = [...kindSel.options].find((o) => o.value === 'dark')
-    expect(darkOpt?.disabled).toBe(true) // 黒茶とは両立しないので選べない
+    const kindValues = [...kindSel.options].map((o) => o.value)
+    expect(kindValues).toContain('black') // やぶきたは紅茶（製法ルール）でも両立する
+    expect(kindValues).not.toContain('dark') // 黒茶とは両立しないので出ない
+    expect([...kindSel.options].every((o) => !o.disabled)).toBe(true) // disabled は使わない
     // 分類を先に選ぶと、両立しない品種はプルダウンから消える
     cleanup(); localStorage.clear(); location.hash = '#/tea'; render(<App />)
     fireEvent.change(screen.getByLabelText('分類（茶類）で絞り込み'), { target: { value: 'dark' } })
@@ -221,6 +221,35 @@ describe('UI改善：絞り込みのメイン化・チョコ種類追加・系�
     expect(screen.getByText('カカオの系統：ナシオナル（Nacional）')).toBeTruthy()
     expect(screen.getByText('分類・集団レベルの特徴に基づく参考情報')).toBeTruthy()
   })
+  it('組み合わせ画面：チョコは自由化され、系統を選んでも実在の産地が隠れない（指示5）', () => {
+    location.hash = '#/pair'; render(<App />)
+    fireEvent.change(screen.getByLabelText('カカオの系統（任意）'), { target: { value: 'genetic:gen-criollo' } })
+    const originSel = screen.getByLabelText('カカオの産地（任意）') as HTMLSelectElement
+    const values = [...originSel.options].map((o) => o.value)
+    expect(values).toContain('venezuela')
+    expect(values).toContain('ghana') // 以前は連動で隠れていた実在の産地
+    expect(values).toContain('tanzania')
+    expect(values.length).toBe(9) // 指定しない＋全8産地
+    // 逆向き：産地を選んでも系統は隠れない
+    fireEvent.change(originSel, { target: { value: 'ghana' } })
+    const lineageSel = screen.getByLabelText('カカオの系統（任意）') as HTMLSelectElement
+    const lineageValues = [...lineageSel.options].map((o) => o.value)
+    expect(lineageValues).toContain('genetic:gen-criollo')
+    expect(lineageValues).toContain('traditional:trad-forastero')
+    // 階層バッジつきの産地カードも自由化した組み合わせで出る
+    expect(screen.getByText('カカオの産地：ガーナ')).toBeTruthy()
+  })
+  it('組み合わせ画面：クローンを選んだときだけ産地が記録のある産地に絞られる（指示5の例外）', () => {
+    location.hash = '#/pair'; render(<App />)
+    fireEvent.change(screen.getByLabelText('カカオの系統（任意）'), { target: { value: 'clone:ccn-51' } })
+    const originSel = screen.getByLabelText('カカオの産地（任意）') as HTMLSelectElement
+    const values = [...originSel.options].map((o) => o.value)
+    expect(values).toEqual(['', 'ecuador']) // CCN-51 の記録産地はエクアドルだけ
+    // 記録の無いクローン（ICS-95）は絞られない
+    fireEvent.change(screen.getByLabelText('カカオの系統（任意）'), { target: { value: 'clone:ics-95' } })
+    const after = [...(screen.getByLabelText('カカオの産地（任意）') as HTMLSelectElement).options].map((o) => o.value)
+    expect(after.length).toBe(9)
+  })
   it('組み合わせ画面：チョコの産地も折りたたみに隠れていない', () => {
     location.hash = '#/pair'; render(<App />)
     const sel = screen.getByLabelText('カカオの産地（任意）')
@@ -228,7 +257,7 @@ describe('UI改善：絞り込みのメイン化・チョコ種類追加・系�
   })
   it('組み合わせ画面：お茶に分類と産地の指定がある（産地は階層判定つき）', () => {
     location.hash = '#/pair'; render(<App />)
-    expect(screen.getByLabelText('お茶の分類（茶類）')).toBeTruthy()
+    expect(screen.getByLabelText('お茶')).toBeTruthy()
     fireEvent.change(screen.getByLabelText('お茶の産地（任意）'), { target: { value: 'スリランカ' } })
     expect(screen.getByText('お茶の産地：スリランカ')).toBeTruthy()
     expect(screen.getByText('使えるデータがないため不使用')).toBeTruthy()
@@ -253,20 +282,118 @@ describe('UI改善：絞り込みのメイン化・チョコ種類追加・系�
     const after = [...(screen.getByLabelText('お茶の品種（任意）') as HTMLSelectElement).options].map((o) => o.value)
     expect(after).not.toContain('qingxin-oolong')
   })
-  it('組み合わせ画面：カカオの系統と産地が連動する（結びつかない産地は出ない）', () => {
+  it('組み合わせ画面：お茶の分類（大分類）を選ぶと、その分類の代表がペア対象になる', () => {
     location.hash = '#/pair'; render(<App />)
-    fireEvent.change(screen.getByLabelText('カカオの系統（任意）'), { target: { value: 'genetic:gen-criollo' } })
-    const originSel = screen.getByLabelText('カカオの産地（任意）') as HTMLSelectElement
-    const values = [...originSel.options].map((o) => o.value)
-    expect(values).toContain('venezuela')
-    expect(values).not.toContain('ghana')
-  })
-  it('組み合わせ画面：お茶の分類を選ぶと、その茶類のお茶だけが候補になる', () => {
-    location.hash = '#/pair'; render(<App />)
-    fireEvent.change(screen.getByLabelText('お茶の分類（茶類）'), { target: { value: 'black' } })
     const sel = screen.getByLabelText('お茶') as HTMLSelectElement
     const values = [...sel.querySelectorAll('option')].map((o) => o.value)
+    // 大分類と具体的なお茶が1つのプルダウンに入っている（調べる画面と共通）
+    expect(values).toContain('black')
     expect(values).toContain('black-tea')
-    expect(values).not.toContain('oolong-tea')
+    expect(values).toContain('oolong-tea')
+    fireEvent.change(sel, { target: { value: 'black' } })
+    const summary = screen.getByLabelText('組み合わせの結果（要約）')
+    expect(summary.textContent).toContain('× 紅茶')
+  })
+  it('調べると組み合わせるでプルダウンの選択肢が同じ（指示7）', () => {
+    location.hash = '#/tea'; render(<App />)
+    const optValues = (label: string) => [...(screen.getByLabelText(label) as HTMLSelectElement).options].map((o) => o.value)
+    const teaKindValues = optValues('分類（茶類）で絞り込み')
+    const teaOriginValues = optValues('産地で絞り込み')
+    cleanup(); localStorage.clear(); location.hash = '#/pair'; render(<App />)
+    expect(optValues('お茶')).toEqual(teaKindValues)
+    expect(optValues('お茶の産地（任意）')).toEqual(teaOriginValues)
+    // チョコ側も同じ：分類・産地・系統の値集合が一致する
+    cleanup(); localStorage.clear(); location.hash = '#/choco'; render(<App />)
+    const chocoKindValues = optValues('分類（種類）で絞り込み')
+    const chocoOriginValues = optValues('産地で絞り込み')
+    const chocoLineageValues = optValues('系統で絞り込み')
+    cleanup(); localStorage.clear(); location.hash = '#/pair'; render(<App />)
+    expect(optValues('チョコレート')).toEqual(chocoKindValues)
+    expect(optValues('カカオの産地（任意）')).toEqual(chocoOriginValues)
+    expect(optValues('カカオの系統（任意）')).toEqual(chocoLineageValues)
+  })
+})
+
+describe('実機フィードバック第2弾：保存ボタン位置・タブ・ナビ・戻るボタン', () => {
+  beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
+
+  it('「この組み合わせを保存」は結果の下側にある（タイトル直下ではない・指示6）', () => {
+    location.hash = '#/pair'; render(<App />)
+    const saveBtn = screen.getByRole('button', { name: /この組み合わせを保存/ })
+    const summary = screen.getByLabelText('組み合わせの結果（要約）')
+    expect(summary.contains(saveBtn)).toBe(false) // 要約（タイトル直下）の中には無い
+    const tabs = document.querySelector('.tabs')
+    expect(tabs).toBeTruthy()
+    // タブ・詳細より後（結果ブロックの末尾側）に配置されている
+    expect((tabs as Node).compareDocumentPosition(saveBtn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // 押すと保存済みになる
+    fireEvent.click(saveBtn)
+    expect(screen.getByRole('button', { name: /保存済み/ })).toBeTruthy()
+  })
+
+  it('タブ切り替えでページ先頭へスクロールしない（指示9）', () => {
+    const spy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    location.hash = '#/pair'; render(<App />)
+    spy.mockClear() // 初期表示時のルートスクロールは対象外
+    fireEvent.click(screen.getByRole('tab', { name: 'お茶' }))
+    expect(screen.getByLabelText('フレーバーホイール')).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: 'チョコ' }))
+    fireEvent.click(screen.getByRole('tab', { name: '組み合わせの見方' }))
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
+  })
+
+  it('上部ナビは1行構成で、お気に入り・履歴はアイコンボタン（指示10）', async () => {
+    const { readFileSync } = await import('node:fs')
+    const cssText = readFileSync('src/App.css', 'utf-8')
+    render(<App />)
+    const nav = screen.getByLabelText('主なメニュー')
+    // テキスト項目は従来どおり
+    for (const t of ['お茶', 'チョコ', '品種・系統', '組み合わせる']) {
+      expect([...nav.querySelectorAll('button')].some((b) => b.textContent === t)).toBe(true)
+    }
+    // 「お気に入り・履歴」のテキストボタンは無い
+    expect([...nav.querySelectorAll('button')].some((b) => b.textContent?.includes('お気に入り・履歴'))).toBe(false)
+    // 星と履歴のアイコンボタン（アクセシブルな名前つき・テキストなし・SVG入り）
+    for (const label of ['お気に入り', '履歴']) {
+      const btn = screen.getByLabelText(label)
+      expect(btn.tagName).toBe('BUTTON')
+      expect(btn.textContent).toBe('')
+      expect(btn.querySelector('svg')).toBeTruthy()
+      expect(btn.classList.contains('nav-icon')).toBe(true)
+    }
+    // CSS で1行（nowrap）が指定されている
+    expect(cssText).toMatch(/\.app-nav\s*\{[^}]*flex-wrap:\s*nowrap/)
+    expect(cssText).toMatch(/\.nav-icon/)
+    // アイコンから保存ページへ遷移できる
+    fireEvent.click(screen.getByLabelText('お気に入り'))
+    expect(await screen.findByText('お気に入り・履歴')).toBeTruthy()
+  })
+
+  it('詳細ページの戻るボタンで前の画面に戻れる（指示4）', async () => {
+    location.hash = '#/tea'; render(<App />)
+    const card = [...document.querySelectorAll('.item-card')].find((el) => el.textContent?.includes('煎茶'))
+    expect(card).toBeTruthy()
+    fireEvent.click(card!)
+    expect(await screen.findByText('この茶類で確認済みの品種・系統')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '← 戻る' }))
+    expect(await screen.findByText('お茶を調べる')).toBeTruthy()
+  })
+
+  it('品種・産地の詳細にも戻るボタンがある（指示4）', () => {
+    location.hash = '#/cultivar/yabukita'; render(<App />)
+    expect(screen.getByRole('button', { name: '← 戻る' })).toBeTruthy()
+    cleanup()
+    location.hash = '#/origin/ecuador'; render(<App />)
+    expect(screen.getByRole('button', { name: '← 戻る' })).toBeTruthy()
+    cleanup()
+    location.hash = '#/cacao/genetic/gen-nacional'; render(<App />)
+    expect(screen.getByRole('button', { name: '← 戻る' })).toBeTruthy()
+    cleanup()
+    location.hash = '#/tea/sencha'; render(<App />)
+    expect(screen.getByRole('button', { name: '← 戻る' })).toBeTruthy()
+    cleanup()
+    location.hash = '#/choco/milk-chocolate'; render(<App />)
+    expect(screen.getByRole('button', { name: '← 戻る' })).toBeTruthy()
   })
 })

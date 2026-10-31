@@ -1,4 +1,5 @@
 import type { Basis, ComboLevel, ComboNote } from '../types'
+import type { CompoundContext } from '../data/compounds'
 import { usesForCultivar } from '../data/cultivars'
 import { teaById, teaKinds } from '../data/teas'
 import {
@@ -31,6 +32,8 @@ export interface CultivarWheelEntry {
   /** form 由来の場合の、対応アイテム詳細へのパス */
   itemPath: string | null
   viaForm: boolean
+  /** ホイールの化合物併記とノート詳細の階層判定に使う文脈＝土台アイテム */
+  context: CompoundContext
 }
 
 const FORM_ITEM: Record<string, string> = {
@@ -68,6 +71,7 @@ export function cultivarWheels(cultivarId: string): CultivarWheelEntry[] {
         kindId: u.kindId, kindName: teaKindName(u.kindId),
         notes: a.notes, overallLevel: a.overallLevel,
         comboPath: teaComboPath(sel), itemPath: null, viaForm: false,
+        context: a.context,
       })
       continue
     }
@@ -88,6 +92,7 @@ export function cultivarWheels(cultivarId: string): CultivarWheelEntry[] {
       notes,
       overallLevel: notes.some((n) => n.level === 'measured') ? 'measured' : 'general',
       comboPath: null, itemPath: `tea/${item.id}`, viaForm: true,
+      context: { side: 'tea', kindId: item.kindId, itemName: item.name, itemId: item.id },
     })
   }
   return out
@@ -99,6 +104,8 @@ export interface LineageWheelEntry {
   notes: ComboNote[]
   overallLevel: ComboLevel
   comboPath: string
+  /** ホイールの化合物併記とノート詳細の階層判定に使う文脈＝土台アイテム */
+  context: CompoundContext
 }
 
 export const LINEAGE_WHEEL_KINDS = ['dark', 'milk', 'white', 'ruby']
@@ -111,6 +118,7 @@ export function lineageWheels(layer: CacaoLayer, id: string): LineageWheelEntry[
       kind, kindLabel: `${CHOCO_KIND_LABEL[kind] ?? kind}チョコレート`,
       notes: a.notes, overallLevel: a.overallLevel,
       comboPath: chocoComboPath(sel),
+      context: a.context,
     }
   })
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { usePersistedState } from './hooks/usePersistedState'
 import { teaItems, teaKinds, teaById } from './data/teas'
 import { chocolateItems, chocolateById } from './data/chocolates'
@@ -11,7 +11,7 @@ import { analyzePairingCharacter, CHARACTER_RULE_LABELS } from './engine/pairing
 import type { InteractionStatement, PairingCharacter } from './types'
 import { categoryById } from './data/flavors'
 import { loadSaved, persistSaved, pushHistory, validateSaved, type SavedData } from './storage'
-import { go, scrollTop } from './nav'
+import { go, scrollTop, trackRoute } from './nav'
 import NoteDetail from './components/NoteDetail'
 import { CollapsibleSheet } from './components/Sheet'
 import CompoundCard from './components/CompoundCard'
@@ -27,14 +27,17 @@ import { cacaoOrigins, cacaoOriginById, originsForLineage } from './data/origins
 import { teaCultivarPairingNote, cacaoPairingNote, cacaoOriginPairingNote, teaOriginPairingNote, teaRegionPairingNote, DATA_LEVEL_LABEL, CACAO_LAYER_LABEL, type CacaoLayer } from './engine/pairingContext'
 import { teaRegions, teaRegionById } from './data/teaRegions'
 import {
-  teaComboPath, teaComboViable, teaRegionOptionGroups, lineageOriginLinked,
-  teaOriginComboRegionIdOfValue, teaOriginCountryOfValue, teaOriginLabelOfValue, teaOriginValueOfRegion,
+  teaComboPath, teaComboViable, teaComboBaseItem, teaComboCategoryOf, chocoRepresentativeItem,
+  teaOriginComboRegionIdOfValue, teaOriginCountryOfValue, teaOriginLabelOfValue,
   analyzeTeaCombo, analyzeChocoCombo, chocoComboPath, chocoComboViable,
   COMBO_LEVEL_LABEL, COMBO_TASTE_LABEL, type ComboAnalysis, type ChocoComboSel, type TeaComboSel,
 } from './engine/combo'
 import ComboWheel, { COMBO_INT_LABEL } from './components/ComboWheel'
 import { FindingsList, SCIENCE_LABEL } from './components/EntityViews'
-import { TeaLeafIcon, TeaCupIcon, MapPinIcon, SproutIcon, CacaoPodIcon, ChocoBarIcon, LineageIcon, PercentIcon } from './components/icons'
+import { TeaLeafIcon, TeaCupIcon, MapPinIcon, SproutIcon, CacaoPodIcon, ChocoBarIcon, LineageIcon, PercentIcon, StarIcon, HistoryIcon } from './components/icons'
+import BackButton from './components/BackButton'
+import ComboNoteDetail from './components/ComboNoteDetail'
+import { TeaComboSelects, ChocoComboSelects, type TeaSelectsState, type ChocoSelectsState } from './components/ComboSelectors'
 import type { ChocolateKind } from './types'
 
 type Route = { name: string; id?: string; sub?: string }
@@ -57,6 +60,9 @@ export default function App() {
   const [saved, setSaved] = useState<SavedData>(loadSaved())
   useEffect(() => { const f = () => setRoute(parseRoute()); addEventListener('hashchange', f); return () => removeEventListener('hashchange', f) }, [])
   useEffect(() => { scrollTop() }, [route.name, route.id])
+  // 「戻る」ボタン用に、画面遷移のたびに戻り先を記録する
+  const routePath = [route.name, route.id, route.sub].filter((x) => x !== undefined && x !== '').join('/')
+  useEffect(() => { trackRoute(routePath) }, [routePath])
   useEffect(() => { persistSaved(saved) }, [saved])
 
   const toggleFav = (kind: 'teas' | 'chocolates' | 'pairings', id: string) =>
@@ -76,7 +82,8 @@ export default function App() {
           <button onClick={() => go('choco')}>チョコ</button>
           <button onClick={() => go('cultivars')}>品種・系統</button>
           <button onClick={() => go('pair')}>組み合わせる</button>
-          <button onClick={() => go('saved')}>お気に入り・履歴</button>
+          <button className="nav-icon" onClick={() => go('saved')} aria-label="お気に入り"><StarIcon /></button>
+          <button className="nav-icon" onClick={() => go('saved')} aria-label="履歴"><HistoryIcon /></button>
         </nav>
       </header>
       <main>
@@ -150,9 +157,7 @@ const KIND_COLOR: Record<string, string> = {
 const CHOCO_KIND_COLOR: Record<ChocolateKind, string> = {
   dark: '#6b4f3a', milk: '#a67c52', white: '#dfc07a', ruby: '#d96b8a', blond: '#dfa94e', other: '#999083',
 }
-const CHOCO_KIND_LABEL: Record<ChocolateKind, string> = {
-  dark: 'ダーク', milk: 'ミルク', white: 'ホワイト', ruby: 'ルビー', blond: 'ブロンド', other: 'その他',
-}
+
 /** 茶類IDから大分類（六大茶類）を引く。形態の茶類（煎茶・玉露など）は緑茶に含める。 */
 const kindCategoryOf = (kindId: string) => {
   const k = teaKinds.find((x) => x.id === kindId)
@@ -173,12 +178,12 @@ function ComboPreview({ analysis, path }: { analysis: ComboAnalysis; path: strin
     <section className="combo-preview" aria-label="選択中の組み合わせのフレーバー">
       <h3>{analysis.title}</h3>
       <p><span className="badge">組み合わせ全体の根拠：{COMBO_LEVEL_LABEL[analysis.overallLevel]}</span></p>
-      <ComboWheel notes={analysis.notes} onSelectNote={(id) => setSelNote(selNote === id ? null : id)} selectedNoteId={selNote} />
+      <ComboWheel notes={analysis.notes} context={analysis.context} onSelectNote={(id) => setSelNote(selNote === id ? null : id)} selectedNoteId={selNote} />
       {note && (
-        <div className="temporal-card">
-          <h4>この香りの根拠</h4>
-          {note.basis.map((b, i) => <p key={i}>{b.text}</p>)}
-        </div>
+        <CollapsibleSheet resetKey={note.noteId} title={noteById(note.noteId)?.name ?? note.noteId} noun="根拠情報"
+          onDismiss={() => setSelNote(null)}>
+          <ComboNoteDetail note={note} context={analysis.context} />
+        </CollapsibleSheet>
       )}
       {analysis.tastes.length > 0 && <p>味わい：{analysis.tastes.map((t) => `${COMBO_TASTE_LABEL[t.key]}（${COMBO_INT_LABEL[t.intensity]}）`).join('、')}</p>}
       {analysis.statements.map((s, i) => (
@@ -192,51 +197,40 @@ function ComboPreview({ analysis, path }: { analysis: ComboAnalysis; path: strin
 type TeaListFilters = { q: string; kind: string; region: string; cultivarId: string }
 function TeaList() {
   const [q, setQ] = useState('')
-  const [kind, setKind] = usePersistedState('pairing.teaList.kind', 'all')
-  const [region, setRegion] = usePersistedState('pairing.teaList.region', 'all')
-  const [cultivarId, setCultivarId] = usePersistedState('pairing.teaList.cultivarId', 'all')
-  // 絞り込みは3つの結果集合（プロファイル／品種／産地（地域））の和集合で判定する。
-  // プルダウンの選択肢は「その選択肢を選んだ状態で結果が1件以上になるもの」だけに
-  // 限定する（連動）。検索テキスト q は選択肢の判定には含めない（q による0件は
-  // 「見つかりませんでした」として許容する）。
-  // 分類の値：茶類ID そのままか、`item:<アイテムID>`（具体的なお茶の直接選択）
-  const filterKindCategory = (kindValue: string): string => kindValue.startsWith('item:')
-    ? kindCategoryOf(teaById(kindValue.slice('item:'.length))?.kindId ?? 'green')
-    : kindValue
+  const [kindRaw, setKindRaw] = usePersistedState('pairing.teaList.kind', 'all')
+  const [regionRaw, setRegionRaw] = usePersistedState('pairing.teaList.region', 'all')
+  const [cultivarRaw, setCultivarRaw] = usePersistedState('pairing.teaList.cultivarId', 'all')
+  // プルダウンの値の約束は「組み合わせる」画面と共通（ComboSelectors）：
+  // '' = 指定なし、分類は茶類IDかアイテムID、産地は国名か 'region:<地域ID>'。
+  // 旧形式（'all' / 'item:<id>'）で保存された値は読み替える。
+  const kind = kindRaw === 'all' ? '' : kindRaw.startsWith('item:') ? kindRaw.slice('item:'.length) : kindRaw
+  const region = regionRaw === 'all' ? '' : regionRaw
+  const cultivarId = cultivarRaw === 'all' ? '' : cultivarRaw
+  const selects: TeaSelectsState = { kind, origin: region, cultivar: cultivarId }
+  const applySelects = (next: TeaSelectsState) => { setKindRaw(next.kind); setRegionRaw(next.origin); setCultivarRaw(next.cultivar) }
+  // 分類の値（茶類IDでもアイテムIDでもよい）から大分類を引く
+  const filterKindCategory = (kindValue: string): string => (kindValue ? teaComboCategoryOf(kindValue) : '')
+  const isItemValue = (v: string) => v !== '' && !!teaById(v) && v !== filterKindCategory(v)
   const profilesFor = (f: TeaListFilters) => teaItems.filter((t) =>
     matches(f.q, [t.name, ...t.searchNames])
-    && (f.kind === 'all' || (f.kind.startsWith('item:') ? t.id === f.kind.slice('item:'.length) : t.kindId === f.kind))
-    && (f.region === 'all' || TEA_ITEM_REGIONS[t.id] === teaOriginCountryOfValue(f.region))
-    && (f.cultivarId === 'all' || cultivarsForKind(t.kindId).includes(f.cultivarId)))
+    && (f.kind === '' || (isItemValue(f.kind) ? t.id === f.kind : t.kindId === f.kind))
+    && (f.region === '' || TEA_ITEM_REGIONS[t.id] === teaOriginCountryOfValue(f.region))
+    && (f.cultivarId === '' || cultivarsForKind(t.kindId).includes(f.cultivarId)))
   const cultivarsFor = (f: TeaListFilters) => teaCultivars.filter((c) =>
     matches(f.q, [c.name, c.originalName ?? '', ...c.aliases])
-    && (f.kind === 'all' || usesForCultivar(c.id).some((u) => kindCategoryOf(u.kindId) === filterKindCategory(f.kind)))
-    && (f.region === 'all' || c.country === teaOriginCountryOfValue(f.region))
-    && (f.cultivarId === 'all' || c.id === f.cultivarId))
+    && (f.kind === '' || usesForCultivar(c.id).some((u) => kindCategoryOf(u.kindId) === filterKindCategory(f.kind)))
+    && (f.region === '' || c.country === teaOriginCountryOfValue(f.region))
+    && (f.cultivarId === '' || c.id === f.cultivarId))
   const regionsFor = (f: TeaListFilters) => teaRegions.filter((r) =>
     matches(f.q, [r.name, r.country, r.parentName ?? ''])
-    && (f.kind === 'all' || r.applicableKindIds.includes(filterKindCategory(f.kind)))
-    && (f.region === 'all' || (f.region.startsWith('region:') ? r.id === f.region.slice('region:'.length) : r.country === f.region))
-    && (f.cultivarId === 'all' || teaCultivarById(f.cultivarId)?.country === r.country))
-  const totalFor = (f: TeaListFilters) => profilesFor(f).length + cultivarsFor(f).length + regionsFor(f).length
-  const base: TeaListFilters = { q: '', kind, region, cultivarId }
-  const kindViable = (id: string) => totalFor({ ...base, kind: id }) > 0
-  const itemViable = (id: string) => totalFor({ ...base, kind: `item:${id}` }) > 0
-  const cultivarViable = (id: string) => totalFor({ ...base, cultivarId: id }) > 0
+    && (f.kind === '' || r.applicableKindIds.includes(filterKindCategory(f.kind)))
+    && (f.region === '' || (f.region.startsWith('region:') ? r.id === f.region.slice('region:'.length) : r.country === f.region))
+    && (f.cultivarId === '' || teaCultivarById(f.cultivarId)?.country === r.country))
   // 分類・産地・品種が揃ったら、プルダウンの直下にその組み合わせのフレーバーを出す
-  const previewSel: TeaComboSel | null = kind !== 'all' && region !== 'all' && cultivarId !== 'all'
-    ? { kindId: kind.startsWith('item:') ? kind.slice('item:'.length) : kind, regionId: teaOriginComboRegionIdOfValue(region), cultivarId }
+  const previewSel: TeaComboSel | null = kind !== '' && region !== '' && cultivarId !== ''
+    ? { kindId: kind, regionId: teaOriginComboRegionIdOfValue(region), cultivarId }
     : null
   const previewAnalysis = previewSel && teaComboViable(previewSel) ? analyzeTeaCombo(previewSel) : null
-  const regionGroups = [...new Set(teaRegions.map((r) => r.country))].map((country) => ({
-    country,
-    countryViable: totalFor({ ...base, region: country }) > 0,
-    regions: teaRegions.filter((r) => r.country === country && totalFor({ ...base, region: teaOriginValueOfRegion(r.id) }) > 0),
-  })).filter((g) => g.countryViable || g.regions.length > 0)
-  // 選択変更で無効になった選択は自動でリセットする（選べるのに結果ゼロを作らない）
-  useEffect(() => { if (kind !== 'all' && totalFor({ q: '', kind, region, cultivarId }) === 0) setKind('all') }, [kind, region, cultivarId]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (region !== 'all' && totalFor({ q: '', kind, region, cultivarId }) === 0) setRegion('all') }, [kind, region, cultivarId]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (cultivarId !== 'all' && totalFor({ q: '', kind, region, cultivarId }) === 0) setCultivarId('all') }, [kind, region, cultivarId]) // eslint-disable-line react-hooks/exhaustive-deps
   const current: TeaListFilters = { q, kind, region, cultivarId }
   const shownProfiles = [...profilesFor(current)].sort((a, b) => KIND_ORDER.indexOf(a.kindId) - KIND_ORDER.indexOf(b.kindId))
   const cultivars = cultivarsFor(current)
@@ -249,41 +243,17 @@ function TeaList() {
       <section className="filter-hero" role="group" aria-label="条件で絞り込み">
         <h3 className="filter-hero-title"><TeaLeafIcon className="hero-icon tea" />分類・産地・品種で探す</h3>
         <div className="filter-grid cols-3">
-          <label className="filter-field">
-            <span className="filter-label"><TeaLeafIcon className="filter-icon tea" />分類（茶類）</span>
-            <select className="big-select" value={kind} onChange={(e) => setKind(e.target.value)} aria-label="分類（茶類）で絞り込み">
-              <option value="all">すべて</option>
-              <optgroup label="茶類（大分類）">
-                {teaKinds.filter((k) => k.category !== 'form').map((k) => <option key={k.id} value={k.id} disabled={kind !== k.id && !kindViable(k.id)}>{k.name}</option>)}
-              </optgroup>
-              <optgroup label="具体的なお茶">
-                {teaItems.filter((t) => itemViable(t.id)).map((t) => <option key={t.id} value={`item:${t.id}`}>{t.name}</option>)}
-              </optgroup>
-            </select>
-          </label>
-          <label className="filter-field">
-            <span className="filter-label"><MapPinIcon className="filter-icon pin" />産地</span>
-            <select className="big-select" value={region} onChange={(e) => setRegion(e.target.value)} aria-label="産地で絞り込み">
-              <option value="all">すべて</option>
-              {regionGroups.map((g) => (
-                <optgroup key={g.country} label={g.country}>
-                  {g.countryViable && <option value={g.country}>{g.country}（全体）</option>}
-                  {g.regions.map((r) => <option key={r.id} value={teaOriginValueOfRegion(r.id)}>{r.name}</option>)}
-                </optgroup>
-              ))}
-            </select>
-          </label>
-          <label className="filter-field">
-            <span className="filter-label"><SproutIcon className="filter-icon sprout" />品種</span>
-            <select className="big-select" value={cultivarId} onChange={(e) => setCultivarId(e.target.value)} aria-label="品種で絞り込み">
-              <option value="all">すべて</option>
-              {teaCultivars.filter((c) => cultivarViable(c.id)).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </label>
+          <TeaComboSelects value={selects} onChange={applySelects} variant="hero"
+            labels={{ kind: '分類（茶類）で絞り込み', origin: '産地で絞り込み', cultivar: '品種で絞り込み' }}
+            heads={{
+              kind: <><TeaLeafIcon className="filter-icon tea" />分類（茶類）</>,
+              origin: <><MapPinIcon className="filter-icon pin" />産地</>,
+              cultivar: <><SproutIcon className="filter-icon sprout" />品種</>,
+            }} />
         </div>
       </section>
       {previewAnalysis && previewSel && <ComboPreview analysis={previewAnalysis} path={teaComboPath(previewSel)} />}
-      {empty && <p className="unknown-box">見つかりませんでした。条件に合う項目がありません（収録範囲外のお茶かもしれません）。</p>}
+      {empty && !previewAnalysis && <p className="unknown-box">見つかりませんでした。条件に合う項目がありません（収録範囲外のお茶かもしれません）。</p>}
       {shownProfiles.length > 0 && <>
         <h3>プロファイル（茶類・製法）</h3>
         <ul className="item-list">
@@ -320,7 +290,7 @@ function TeaList() {
           ))}
         </ul>
       </>}
-      <p className="note-small">条件は組み合わせて絞り込めます（すべて満たすものだけを表示）。プルダウンは連動し、他の条件と両立しない選択肢は出ません。産地は国全体か、文献で所見のある地域まで選べます。産地が特定できないプロファイルは、産地を選ぶと結果に出ません。産地（地域）のカードからは、その地域の組み合わせページへ進めます。</p>
+      <p className="note-small">条件は組み合わせて絞り込めます（すべて満たすものだけを表示）。プルダウンは「組み合わせる」画面と共通で、存在しない組み合わせになる選択肢は出ません（品種×茶類の確認記録と、品種の国と産地の国の一致で判定します）。産地は国全体か、文献で所見のある地域まで選べます。産地が特定できないプロファイルは、産地を選ぶと結果に出ません。産地（地域）のカードからは、その地域の組み合わせページへ進めます。</p>
       <details className="kinds-note"><summary>収録していない呼称について</summary>
         {teaKinds.filter((k) => k.category === 'form').map((k) => <p key={k.id}><strong>{k.name}</strong>：{k.note}</p>)}
       </details>
@@ -339,7 +309,7 @@ function TeaDetail({ id, saved, toggleFav, addHistory }: { id: string; saved: Sa
   const kindCultivars = teaCultivars.filter((c) => usesForCultivar(c.id).some((u) => kindCategoryOf(u.kindId) === teaCategory))
   return (
     <div>
-      <button className="btn ghost" onClick={() => go('tea')}>← 一覧へ</button>
+      <BackButton fallback="tea" />
       <h2>{tea.name} <button className="fav-btn" aria-pressed={fav} onClick={() => toggleFav('teas', tea.id)}>{fav ? '★ お気に入り' : '☆ お気に入り'}</button></h2>
       <p><span className="badge">{LEVEL_LABEL[tea.evidenceLevel]}</span></p>
       <ProfileView profile={tea.profile} scopeNote={tea.scopeNote} sourceIds={tea.sourceIds} context={{ side: 'tea', kindId: tea.kindId, itemName: tea.name, itemId: tea.id }} />
@@ -359,41 +329,50 @@ function TeaDetail({ id, saved, toggleFav, addHistory }: { id: string; saved: Sa
 }
 
 type LineageSel = { layer: CacaoLayer; id: string }
-type ChocoListFilters = { q: string; kind: string; percent: string; originId: string; lineage: 'all' | LineageSel }
+type ChocoListFilters = { q: string; kind: string; percent: string; originId: string; lineage: LineageSel | null }
 function ChocoList() {
   const [q, setQ] = useState('')
-  const [kind, setKind] = usePersistedState('pairing.chocoList.kind', 'all')
+  const [kindRaw, setKindRaw] = usePersistedState('pairing.chocoList.kind', 'all')
   const [percent, setPercent] = usePersistedState('pairing.chocoList.percent', '')
-  const [originId, setOriginId] = usePersistedState('pairing.chocoList.originId', 'all')
-  const [lineage, setLineage] = usePersistedState<'all' | LineageSel>('pairing.chocoList.lineage', 'all')
-  const lineageValue = lineage === 'all' ? 'all' : `${lineage.layer}:${lineage.id}`
-  const pickLineage = (v: string) => {
-    if (v === 'all') { setLineage('all'); return }
-    const [layer, id] = v.split(':') as [CacaoLayer, string]
-    setLineage({ layer, id })
-  }
-  // TeaList と同じ連動方式：選択肢は「選んだ状態で結果が1件以上になるもの」だけ。
-  // 検索テキスト q は選択肢の判定に含めない。
+  const [originRaw, setOriginRaw] = usePersistedState('pairing.chocoList.originId', 'all')
+  const [lineageRaw, setLineageRaw] = usePersistedState<unknown>('pairing.chocoList.lineage', 'all')
+  // プルダウンの値の約束は「組み合わせる」画面と共通（ComboSelectors）：
+  // '' = 指定なし、分類は種類IDかアイテムID、系統は '<layer>:<id>'。
+  // 旧形式（'all' / {layer, id} オブジェクト）で保存された値は読み替える。
+  const kind = kindRaw === 'all' ? '' : kindRaw
+  const originId = originRaw === 'all' ? '' : originRaw
+  const lineageValue = lineageRaw === 'all' || lineageRaw == null ? ''
+    : typeof lineageRaw === 'string' ? lineageRaw
+    : `${(lineageRaw as LineageSel).layer}:${(lineageRaw as LineageSel).id}`
+  const lineage: LineageSel | null = lineageValue
+    ? (() => { const [layer, id] = lineageValue.split(':') as [CacaoLayer, string]; return { layer, id } })()
+    : null
+  const selects: ChocoSelectsState = { kind, origin: originId, lineage: lineageValue }
+  const applySelects = (next: ChocoSelectsState) => { setKindRaw(next.kind); setOriginRaw(next.origin); setLineageRaw(next.lineage) }
+  const isItemValue = (v: string) => v !== '' && !!chocolateById(v)
   const profilesFor = (f: ChocoListFilters) => chocolateItems.filter((c) =>
     matches(f.q, [c.name, ...c.searchNames])
-    && (f.kind === 'all' || c.kind === f.kind)
+    && (f.kind === '' || (isItemValue(f.kind) ? c.id === f.kind : c.kind === f.kind))
     && (f.percent === '' || c.cacaoPercent === Number(f.percent))
-    && f.originId === 'all'
-    && f.lineage === 'all')
+    && f.originId === ''
+    && f.lineage === null)
   const originsFor = (f: ChocoListFilters) => cacaoOrigins.filter((o) =>
-    f.kind === 'all' && f.percent === ''
+    f.kind === '' && f.percent === ''
     && matches(f.q, [o.name, o.country, ...o.regions.map((r) => r.name), ...o.tradeNames.map((t) => t.name)])
-    && (f.originId === 'all' || o.id === f.originId)
-    && (f.lineage === 'all' || originsForLineage(f.lineage.layer, f.lineage.id).some((x) => x.id === o.id)))
+    && (f.originId === '' || o.id === f.originId)
+    // 選んだ産地そのものは、系統との記録上の結びつきが無くても結果から消さない
+    && (f.lineage === null || o.id === f.originId || originsForLineage(f.lineage.layer, f.lineage.id).some((x) => x.id === o.id)))
   const lineagesFor = (f: ChocoListFilters): { traditional: typeof cacaoTraditionalGroups; genetic: typeof cacaoGeneticGroups; clones: typeof cacaoClones } => {
-    if (!(f.kind === 'all' && f.percent === '')) return { traditional: [], genetic: [], clones: [] }
-    const origin = f.originId === 'all' ? undefined : cacaoOriginById(f.originId)
+    if (!(f.kind === '' && f.percent === '')) return { traditional: [], genetic: [], clones: [] }
+    const origin = f.originId === '' ? undefined : cacaoOriginById(f.originId)
     const inOrigin = (layer: CacaoLayer, id: string) => !origin
       || (layer === 'traditional' ? origin.relatedTraditionalIds.includes(id)
         : layer === 'genetic' ? origin.relatedGeneticGroupIds.includes(id) || origin.tradeNames.some((t) => t.linkedGeneticGroupId === id)
         : origin.relatedCloneIds.includes(id))
     const pick = <T extends { id: string }>(list: T[], layer: CacaoLayer) => list.filter((e) =>
-      (f.lineage === 'all' || (f.lineage.layer === layer && f.lineage.id === e.id)) && inOrigin(layer, e.id))
+      (f.lineage === null || (f.lineage.layer === layer && f.lineage.id === e.id))
+      // 選んだ系統そのものは、産地との記録上の結びつきが無くても結果から消さない
+      && (inOrigin(layer, e.id) || (f.lineage !== null && f.lineage.layer === layer && f.lineage.id === e.id)))
     return {
       traditional: pick(cacaoTraditionalGroups, 'traditional').filter((g) => matches(f.q, [g.name, g.nameJa, ...g.aliases])),
       genetic: pick(cacaoGeneticGroups, 'genetic').filter((g) => matches(f.q, [g.name, ...g.aliases])),
@@ -401,15 +380,6 @@ function ChocoList() {
     }
   }
   const lineageCountOf = (f: ChocoListFilters) => { const l = lineagesFor(f); return l.traditional.length + l.genetic.length + l.clones.length }
-  const totalFor = (f: ChocoListFilters) => profilesFor(f).length + originsFor(f).length + lineageCountOf(f)
-  const base: ChocoListFilters = { q: '', kind, percent, originId, lineage }
-  const kindViable = (id: string) => totalFor({ ...base, kind: id }) > 0
-  const originViable = (id: string) => totalFor({ ...base, originId: id }) > 0
-  const lineageViable = (layer: CacaoLayer, id: string) => totalFor({ ...base, lineage: { layer, id } }) > 0
-  // 選択変更で無効になった選択は自動でリセットする
-  useEffect(() => { if (kind !== 'all' && totalFor({ q: '', kind, percent, originId, lineage }) === 0) setKind('all') }, [kind, percent, originId, lineage]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (originId !== 'all' && totalFor({ q: '', kind, percent, originId, lineage }) === 0) setOriginId('all') }, [kind, percent, originId, lineage]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (lineage !== 'all' && totalFor({ q: '', kind, percent, originId, lineage }) === 0) setLineage('all') }, [kind, percent, originId, lineage]) // eslint-disable-line react-hooks/exhaustive-deps
   const current: ChocoListFilters = { q, kind, percent, originId, lineage }
   const profiles = profilesFor(current)
   const origins = originsFor(current)
@@ -417,8 +387,8 @@ function ChocoList() {
   const lineageCount = lineageCountOf(current)
   const empty = profiles.length + origins.length + lineageCount === 0
   // 種類・産地・系統が揃ったら、プルダウンの直下にその組み合わせのフレーバーを出す
-  const chocoPreviewSel: ChocoComboSel | null = kind !== 'all' && originId !== 'all' && lineage !== 'all'
-    ? { kind, originId, lineage }
+  const chocoPreviewSel: ChocoComboSel | null = kind !== '' && originId !== '' && lineage !== null
+    ? { kind: isItemValue(kind) ? chocolateById(kind)!.kind : kind, originId, lineage }
     : null
   const chocoPreviewAnalysis = chocoPreviewSel && chocoComboViable(chocoPreviewSel) ? analyzeChocoCombo(chocoPreviewSel) : null
   return (
@@ -428,35 +398,13 @@ function ChocoList() {
       <section className="filter-hero" role="group" aria-label="条件で絞り込み">
         <h3 className="filter-hero-title"><ChocoBarIcon className="hero-icon choco" />分類・産地・系統で探す</h3>
         <div className="filter-grid cols-4">
-          <label className="filter-field">
-            <span className="filter-label"><ChocoBarIcon className="filter-icon choco" />分類（種類）</span>
-            <select className="big-select" value={kind} onChange={(e) => setKind(e.target.value)} aria-label="分類（種類）で絞り込み">
-              <option value="all">すべて</option>
-              {(Object.keys(CHOCO_KIND_LABEL) as ChocolateKind[]).filter((k) => chocolateItems.some((c) => c.kind === k)).map((k) => <option key={k} value={k} disabled={kind !== k && !kindViable(k)}>{CHOCO_KIND_LABEL[k]}</option>)}
-            </select>
-          </label>
-          <label className="filter-field">
-            <span className="filter-label"><CacaoPodIcon className="filter-icon pin" />産地</span>
-            <select className="big-select" value={originId} onChange={(e) => setOriginId(e.target.value)} aria-label="産地で絞り込み">
-              <option value="all">すべて</option>
-              {cacaoOrigins.filter((o) => originViable(o.id)).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-            </select>
-          </label>
-          <label className="filter-field">
-            <span className="filter-label"><LineageIcon className="filter-icon lineage" />系統</span>
-            <select className="big-select" value={lineageValue} onChange={(e) => pickLineage(e.target.value)} aria-label="系統で絞り込み">
-              <option value="all">すべて</option>
-              <optgroup label="伝統的分類">
-                {cacaoTraditionalGroups.filter((g) => lineageViable('traditional', g.id)).map((g) => <option key={g.id} value={`traditional:${g.id}`}>{g.nameJa}（{g.name}）</option>)}
-              </optgroup>
-              <optgroup label="遺伝的分類">
-                {cacaoGeneticGroups.filter((g) => lineageViable('genetic', g.id)).map((g) => <option key={g.id} value={`genetic:${g.id}`}>{g.nameJa}（{g.name}）</option>)}
-              </optgroup>
-              <optgroup label="個別クローン">
-                {cacaoClones.filter((c) => lineageViable('clone', c.id)).map((c) => <option key={c.id} value={`clone:${c.id}`}>{c.name}</option>)}
-              </optgroup>
-            </select>
-          </label>
+          <ChocoComboSelects value={selects} onChange={applySelects} variant="hero"
+            labels={{ kind: '分類（種類）で絞り込み', origin: '産地で絞り込み', cultivar: '系統で絞り込み' }}
+            heads={{
+              kind: <><ChocoBarIcon className="filter-icon choco" />分類（種類）</>,
+              origin: <><CacaoPodIcon className="filter-icon pin" />産地</>,
+              cultivar: <><LineageIcon className="filter-icon lineage" />系統</>,
+            }} />
           <label className="filter-field">
             <span className="filter-label"><PercentIcon className="filter-icon percent" />カカオ含有率</span>
             <span className="percent-wrap"><input className="big-input" type="number" min={0} max={100} value={percent} onChange={(e) => setPercent(e.target.value)} placeholder="数値入力" aria-label="カカオ含有率で絞り込み" />%</span>
@@ -464,7 +412,7 @@ function ChocoList() {
         </div>
       </section>
       {chocoPreviewAnalysis && chocoPreviewSel && <ComboPreview analysis={chocoPreviewAnalysis} path={chocoComboPath(chocoPreviewSel)} />}
-      {empty && <p className="unknown-box">見つかりませんでした。条件に合う項目がありません（収録範囲外のチョコレートかもしれません）。</p>}
+      {empty && !chocoPreviewAnalysis && <p className="unknown-box">見つかりませんでした。条件に合う項目がありません（収録範囲外のチョコレートかもしれません）。</p>}
       {profiles.length > 0 && <>
         <h3>プロファイル（種類・製法）</h3>
         <ul className="item-list">
@@ -515,7 +463,7 @@ function ChocoList() {
           ))}
         </ul>
       </>}
-      <p className="note-small">条件は組み合わせて絞り込めます（すべて満たすものだけを表示）。プルダウンは連動し、他の条件と両立しない選択肢は出ません。プロファイルは種類レベルの情報で産地・系統を持たないため、産地や系統を選ぶと結果に出ません。含有率は、収録データに記録がある場合のみ絞り込めます。含有率だけで甘味・苦味は決まりません。</p>
+      <p className="note-small">条件は組み合わせて絞り込めます（すべて満たすものだけを表示）。プルダウンは「組み合わせる」画面と共通です。チョコレートは種類・産地・系統を相互に制限しないため、存在する組み合わせは必ず選べます（例外はクローンで、記録のある産地だけが選択肢に出ます）。プロファイルは種類レベルの情報で産地・系統を持たないため、産地や系統を選ぶと結果に出ません。含有率は、収録データに記録がある場合のみ絞り込めます。含有率だけで甘味・苦味は決まりません。</p>
     </div>
   )
 }
@@ -528,7 +476,7 @@ function ChocoDetail({ id, saved, toggleFav, addHistory }: { id: string; saved: 
   const harmony = recommend(choco.profile, teaItems, 'harmony')
   return (
     <div>
-      <button className="btn ghost" onClick={() => go('choco')}>← 一覧へ</button>
+      <BackButton fallback="choco" />
       <h2>{choco.name} <button className="fav-btn" aria-pressed={fav} onClick={() => toggleFav('chocolates', choco.id)}>{fav ? '★ お気に入り' : '☆ お気に入り'}</button></h2>
       <p><span className="badge">{LEVEL_LABEL[choco.evidenceLevel]}</span></p>
       <ProfileView profile={choco.profile} scopeNote={choco.scopeNote} sourceIds={choco.sourceIds} context={{ side: 'chocolate', kindId: choco.kind, itemName: choco.name, itemId: choco.id }} />
@@ -578,41 +526,41 @@ function InteractionGroup({ title, items }: { title: string; items: InteractionS
 }
 
 function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFav: (k: 'pairings', id: string) => void; addHistory: (k: 'pairings', id: string) => void }) {
-  const [teaId, setTeaId] = usePersistedState('pairing.pair.teaId', () => teaItems.find((t) => t.id === 'oolong-tea')?.id ?? teaItems[0].id)
-  const [teaKindSel, setTeaKindSel] = usePersistedState('pairing.pair.teaKindSel', '')
+  // 選択は「調べる」画面と共通の3軸プルダウン（ComboSelectors）で持つ。
+  // 分類の値は茶類・種類ID（大分類）かアイテムID（具体的なお茶・チョコ）で、
+  // 大分類を選んだ場合は組み合わせエンジンと同じ代表アイテムをペア対象にする。
+  const [teaKindValue, setTeaKindValue] = usePersistedState('pairing.pair.teaSel', () => teaItems.find((t) => t.id === 'oolong-tea')?.id ?? teaItems[0].id)
   const [teaOrigin, setTeaOrigin] = usePersistedState('pairing.pair.teaOrigin', '')
-  const [chocoId, setChocoId] = usePersistedState('pairing.pair.chocoId', chocolateItems[0].id)
   const [cultivarId, setCultivarId] = usePersistedState('pairing.pair.cultivarId', '')
+  const [chocoKindValue, setChocoKindValue] = usePersistedState('pairing.pair.chocoSel', chocolateItems[0].id)
   const [cacaoSel, setCacaoSel] = usePersistedState<{ layer: CacaoLayer; id: string } | null>('pairing.pair.cacaoSel', null)
   const [originId, setOriginId] = usePersistedState('pairing.pair.originId', '')
   const [tab, setTab] = useState<'tea' | 'choco' | 'pair'>('pair')
   const [selNote, setSelNote] = useState<string | null>(null)
   const [pairNote, setPairNote] = useState<string | null>(null)
   const [pairCat, setPairCat] = useState<string | null>(null)
-  const tea = teaId ? teaById(teaId) : undefined
-  const choco = chocoId ? chocolateById(chocoId) : undefined
+  const teaSelects: TeaSelectsState = { kind: teaKindValue, origin: teaOrigin, cultivar: cultivarId }
+  const applyTeaSelects = (next: TeaSelectsState) => { setTeaKindValue(next.kind); setTeaOrigin(next.origin); setCultivarId(next.cultivar) }
+  const chocoSelects: ChocoSelectsState = {
+    kind: chocoKindValue, origin: originId,
+    lineage: cacaoSel ? `${cacaoSel.layer}:${cacaoSel.id}` : '',
+  }
+  const applyChocoSelects = (next: ChocoSelectsState) => {
+    setChocoKindValue(next.kind)
+    setOriginId(next.origin)
+    if (!next.lineage) setCacaoSel(null)
+    else { const [layer, id] = next.lineage.split(':') as [CacaoLayer, string]; setCacaoSel({ layer, id }) }
+  }
+  const tea = teaKindValue ? teaComboBaseItem(teaKindValue) : undefined
+  const choco = chocoKindValue ? (chocolateById(chocoKindValue) ?? chocoRepresentativeItem(chocoKindValue)) : undefined
   const result = tea && choco ? analyzePairing(tea.profile, choco.profile) : null
   const interactions = tea && choco ? analyzeInteractions(tea, choco) : null
   const characters = tea && choco ? analyzePairingCharacter(tea, choco) : null
   const allCharacters = characters ? [...characters.aroma, ...characters.tasteMouthfeel] : []
   const [charSel, setCharSel] = useState<string | null>(null)
   const selCharacter = allCharacters.find((c) => c.id === charSel) ?? null
-  // 品種の追加指定: 選んだお茶の茶類で確認済みの組み合わせがある品種だけを選べる。
-  // さらに産地（国・地域）を指定したら、その国の品種だけに連動させる。
-  const teaKindId = tea?.kindId
-  const cultivarOptionsAll = useMemo(() => (teaKindId ? [...new Set(cultivarsForKind(teaKindId))] : []), [teaKindId])
-  const teaOriginCountry = teaOriginCountryOfValue(teaOrigin)
-  const cultivarOptions = cultivarOptionsAll.filter((id) => !teaOriginCountry || teaCultivarById(id)?.country === teaOriginCountry)
-  const effectiveCultivarId = cultivarOptions.includes(cultivarId) ? cultivarId : ''
-  const cultivar = effectiveCultivarId ? teaCultivarById(effectiveCultivarId) : undefined
-  // 産地の選択肢は組み合わせエンジンと同じ連動で出す（分類×品種と両立する国・地域だけ）
-  const teaCategoryForOrigin = tea ? kindCategoryOf(tea.kindId) : teaKindSel ? kindCategoryOf(teaKindSel) : 'green'
-  const teaOriginGroups = teaRegionOptionGroups({ kindId: teaCategoryForOrigin, regionId: '', cultivarId: effectiveCultivarId })
-  useEffect(() => {
-    if (teaOrigin && !teaComboViable({ kindId: teaCategoryForOrigin, regionId: teaOriginComboRegionIdOfValue(teaOrigin), cultivarId: effectiveCultivarId })) {
-      setTeaOrigin('')
-    }
-  }, [teaOrigin, teaCategoryForOrigin, effectiveCultivarId])
+  // 品種の追加指定は、組み合わせとして存在するものだけが選択肢に出る（ComboSelectors が担保）。
+  const cultivar = cultivarId ? teaCultivarById(cultivarId) : undefined
   const teaNote = cultivar && tea ? teaCultivarPairingNote(cultivar, tea.kindId) : null
   const cacaoEntity = cacaoSel
     ? (cacaoSel.layer === 'traditional' ? traditionalGroupById(cacaoSel.id) : cacaoSel.layer === 'genetic' ? geneticGroupById(cacaoSel.id) : cacaoCloneById(cacaoSel.id))
@@ -628,35 +576,11 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
   const teaOriginNote = teaOrigin && tea
     ? (teaRegionEntity ? teaRegionPairingNote(teaRegionEntity, tea.kindId) : teaOriginPairingNote(teaOrigin, tea.kindId))
     : null
-  const lineageValue = cacaoSel ? `${cacaoSel.layer}:${cacaoSel.id}` : ''
-  // カカオ側も連動：系統と結びつかない産地、産地と結びつかない系統は選択肢に出さない。
-  // 変更で両立しなくなった相手側の指定は自動で外す。
-  const chocoOriginOptions = cacaoOrigins.filter((o) => !cacaoSel || lineageOriginLinked(cacaoSel, o.id))
-  const chocoLineageLayers: Record<CacaoLayer, { id: string; label: string }[]> = {
-    traditional: cacaoTraditionalGroups.filter((g) => !originId || lineageOriginLinked({ layer: 'traditional', id: g.id }, originId)).map((g) => ({ id: g.id, label: `${g.nameJa}（${g.name}）` })),
-    genetic: cacaoGeneticGroups.filter((g) => !originId || lineageOriginLinked({ layer: 'genetic', id: g.id }, originId)).map((g) => ({ id: g.id, label: `${g.nameJa}（${g.name}）` })),
-    clone: cacaoClones.filter((c) => !originId || lineageOriginLinked({ layer: 'clone', id: c.id }, originId)).map((c) => ({ id: c.id, label: c.name })),
-  }
-  const pickLineage = (v: string) => {
-    if (!v) { setCacaoSel(null); return }
-    const [layer, id] = v.split(':') as [CacaoLayer, string]
-    const next = { layer, id }
-    setCacaoSel(next)
-    if (originId && !lineageOriginLinked(next, originId)) setOriginId('')
-  }
-  const pickOrigin = (v: string) => {
-    setOriginId(v)
-    if (v && cacaoSel && !lineageOriginLinked(cacaoSel, v)) setCacaoSel(null)
-  }
-  const teaOptions = teaKindSel ? teaItems.filter((t) => t.kindId === teaKindSel) : teaItems
-  const pickTeaKind = (v: string) => {
-    setTeaKindSel(v)
-    if (v && teaId && teaById(teaId)?.kindId !== v) setTeaId('')
-  }
-  const pairId = tea && choco ? `${teaId}+${chocoId}` : ''
+  const pairId = tea && choco ? `${tea.id}+${choco.id}` : ''
   useEffect(() => { if (pairId) addHistory('pairings', pairId) }, [pairId])
-  useEffect(() => { setCharSel(null) }, [teaId, chocoId])
-  useEffect(() => { scrollTop() }, [tab])
+  useEffect(() => { setCharSel(null) }, [pairId])
+  // ※タブ切り替えではスクロールしない（その場で内容だけが切り替わる）。
+  //   以前はタブ変更のたびに先頭へスクロールする不具合があった（2026-10-31 指示9）。
   const fav = saved.favorites.pairings.includes(pairId)
   return (
     <div>
@@ -664,53 +588,15 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
       <div className="pair-layout">
         <div className="pair-col">
           <h3 className="col-head"><ChocoBarIcon className="col-icon choco" />チョコレート</h3>
-          <label>分類（種類） <select value={chocoId} onChange={(e) => setChocoId(e.target.value)} aria-label="チョコレート">
-            <option value="">選んでください</option>
-            {chocolateItems.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select></label>
-          <label>産地（任意） <select value={originId} onChange={(e) => pickOrigin(e.target.value)} aria-label="カカオの産地（任意）">
-            <option value="">指定しない</option>
-            {chocoOriginOptions.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-          </select></label>
-          <label>系統（任意） <select value={lineageValue} onChange={(e) => pickLineage(e.target.value)} aria-label="カカオの系統（任意）">
-            <option value="">指定しない</option>
-            <optgroup label="伝統的分類">
-              {chocoLineageLayers.traditional.map((g) => <option key={g.id} value={`traditional:${g.id}`}>{g.label}</option>)}
-            </optgroup>
-            <optgroup label="遺伝的分類">
-              {chocoLineageLayers.genetic.map((g) => <option key={g.id} value={`genetic:${g.id}`}>{g.label}</option>)}
-            </optgroup>
-            <optgroup label="個別クローン">
-              {chocoLineageLayers.clone.map((c) => <option key={c.id} value={`clone:${c.id}`}>{c.label}</option>)}
-            </optgroup>
-          </select></label>
+          <ChocoComboSelects value={chocoSelects} onChange={applyChocoSelects} variant="pair" emptyKindLabel="選んでください"
+            labels={{ kind: 'チョコレート', origin: 'カカオの産地（任意）', cultivar: 'カカオの系統（任意）' }}
+            heads={{ kind: '分類（種類）', origin: '産地（任意）', cultivar: '系統（任意）' }} />
         </div>
         <div className="pair-col">
           <h3 className="col-head"><TeaCupIcon className="col-icon tea" />お茶</h3>
-          <label>分類（茶類） <select value={teaKindSel} onChange={(e) => pickTeaKind(e.target.value)} aria-label="お茶の分類（茶類）">
-            <option value="">すべて</option>
-            {teaKinds.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}
-          </select></label>
-          <label>お茶 <select value={teaId} onChange={(e) => setTeaId(e.target.value)} aria-label="お茶">
-            <option value="">選んでください</option>
-            {teaOptions.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-          </select></label>
-          <label>産地（任意） <select value={teaOrigin} onChange={(e) => setTeaOrigin(e.target.value)} aria-label="お茶の産地（任意）">
-            <option value="">指定しない</option>
-            {teaOriginGroups.map((g) => (
-              <optgroup key={g.country} label={g.country}>
-                {g.options.map((o) => (
-                  <option key={o.id} value={o.id.startsWith('country:') ? g.country : teaOriginValueOfRegion(o.id)}>
-                    {o.id.startsWith('country:') ? '国全体' : (teaRegionById(o.id)?.name ?? o.label)}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select></label>
-          <label>品種（任意） <select value={effectiveCultivarId} onChange={(e) => setCultivarId(e.target.value)} aria-label="お茶の品種（任意）">
-            <option value="">指定しない</option>
-            {cultivarOptions.map((id) => <option key={id} value={id}>{teaCultivarById(id)?.name ?? id}</option>)}
-          </select></label>
+          <TeaComboSelects value={teaSelects} onChange={applyTeaSelects} variant="pair" emptyKindLabel="選んでください"
+            labels={{ kind: 'お茶', origin: 'お茶の産地（任意）', cultivar: 'お茶の品種（任意）' }}
+            heads={{ kind: '分類（茶類）', origin: '産地（任意）', cultivar: '品種（任意）' }} />
         </div>
       </div>
       <section className="pair-summary" aria-live="polite" aria-label="組み合わせの結果（要約）">
@@ -718,7 +604,6 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
           <>
             <div className="pair-summary-head">
               <h3>{choco.name} × {tea.name}</h3>
-              <button className="fav-btn" aria-pressed={fav} onClick={() => toggleFav('pairings', pairId)}>{fav ? '★ 保存済み' : '☆ この組み合わせを保存'}</button>
             </div>
             <p className="pair-summary-line"><span className="badge">{LEVEL_LABEL[result.level]}</span></p>
             {characters && (allCharacters.length > 0 ? (
@@ -756,8 +641,8 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
         <button role="tab" aria-selected={tab === 'choco'} onClick={() => setTab('choco')}>チョコ</button>
         <button role="tab" aria-selected={tab === 'pair'} onClick={() => setTab('pair')}>組み合わせの見方</button>
       </div>
-      {tab === 'tea' && <FlavorWheel profile={tea.profile} onSelectNote={setSelNote} />}
-      {tab === 'choco' && <FlavorWheel profile={choco.profile} onSelectNote={setSelNote} />}
+      {tab === 'tea' && <FlavorWheel profile={tea.profile} onSelectNote={setSelNote} context={{ side: 'tea', kindId: tea.kindId, itemName: tea.name, itemId: tea.id }} />}
+      {tab === 'choco' && <FlavorWheel profile={choco.profile} onSelectNote={setSelNote} context={{ side: 'chocolate', kindId: choco.kind, itemName: choco.name, itemId: choco.id }} />}
       {tab !== 'pair' && selNote && (
         <CollapsibleSheet resetKey={`${tab}:${selNote}`} title={noteById(selNote)?.name ?? selNote} onDismiss={() => setSelNote(null)}>
           <NoteDetail noteId={selNote} profile={tab === 'tea' ? tea.profile : choco.profile}
@@ -852,11 +737,14 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
           <SourceLinks ids={['spence-2020-flavour-pairing']} />
         </section>
       )}
+      <div className="pair-save-row">
+        <button className="fav-btn pair-save-btn" aria-pressed={fav} onClick={() => toggleFav('pairings', pairId)}>{fav ? '★ 保存済み' : '☆ この組み合わせを保存'}</button>
+      </div>
       </>)}
       <details className="pair-notes">
         <summary>指定と見方についての注記</summary>
         <p className="note-small">系統・産地は、原料が分かっている場合だけ指定してください。科学データがない場合は、その旨を示して見方には使いません。お茶の産地・品種も同じです。</p>
-        <p className="note-small">プルダウンは連動します：他の選択と両立しない選択肢は出ません。お茶の産地は、国全体か、文献で所見のある地域（県・省などの単位）まで選べます。選択を変えて両立しなくなった指定は、自動で「指定しない」に戻ります。</p>
+        <p className="note-small">プルダウンは「調べる」画面と共通で、存在しない組み合わせになる選択肢は出ません。お茶は品種×茶類の確認記録と品種・産地の国の一致で判定し、チョコレートは種類・産地・系統を相互に制限しません（例外はクローンで、記録のある産地だけが選択肢に出ます）。お茶の産地は、国全体か、文献で所見のある地域（県・省などの単位）まで選べます。選択を変えて両立しなくなった指定は、自動で「指定しない」に戻ります。</p>
         <p className="note-small">要約の「組み合わせの味わい（推測）」は、両アイテムで確認されている成分・味覚の顔ぶれと、文献に基づく相互作用から推測した「味わいの性格」です。組み合わせ自体を実測したものではありません。性格の名前を押すと根拠が見えます。</p>
         <p className="note-small">組み合わせ後のホイールは、香りを足し算して作ることはしません。共通点と対比に加え、文献に基づく相互作用の一般原理の範囲で、感じ方の変化の可能性を示します。</p>
       </details>

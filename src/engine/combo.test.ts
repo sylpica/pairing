@@ -4,7 +4,7 @@ import {
   allTeaRegionOptions, allLineages,
   teaComboViable, chocoComboViable,
   teaKindOptions, teaRegionOptions, teaCultivarOptions,
-  chocoOriginOptions, chocoLineageOptions,
+  chocoOriginOptions, chocoLineageOptions, cloneRecordedOriginIds,
   analyzeTeaCombo, analyzeChocoCombo,
   teaComboPath, chocoComboPath, parseTeaComboSub, parseChocoComboSub,
   teaComboTitle, type TeaComboSel, type ChocoComboSel, type ComboAnalysis,
@@ -24,7 +24,11 @@ const LEVELS = ['measured', 'general', 'inferred']
 // 2026-10-31 の成立条件修正（分類×産地は常時成立）と地域30件への拡充で
 // 127 から増えた。
 const TEA_VIABLE_COUNT = 564
-const CHOCO_VIABLE_COUNT = 190
+// チョコ 765 の内訳：種類5 × 産地9（指定なし＋8）× 系統17（指定なし＋16）。
+// 2026-10-31 実機フィードバック第2弾の自由化で、種類×産地×系統は全て成立する
+// （旧：系統×産地の結びつきがあるものだけ 190 通り）。クローンの産地制限は
+// UI 到達可能性（選択肢）だけの話で、この成立空間は変えない。
+const CHOCO_VIABLE_COUNT = 765
 
 function* teaSpace(): Generator<TeaComboSel> {
   const regions = ['', ...allTeaRegionOptions().map((o) => o.id)]
@@ -163,22 +167,56 @@ describe('プルダウン連動（存在しない組み合わせは選択でき�
     expect(labels).toContain('nagasaki')
     expect(labels).not.toContain('country:中国')
   })
-  it('タンザニアは、どの系統とも結びつかない（系統の選択肢が空）', () => {
-    expect(chocoLineageOptions({ kind: 'dark', originId: 'tanzania', lineage: null })).toEqual([])
-    expect(chocoComboViable({ kind: 'dark', originId: 'tanzania', lineage: { layer: 'genetic', id: 'gen-criollo' } })).toBe(false)
+})
+
+describe('チョコ側の自由化とクローン例外（2026-10-31 実機フィードバック第2弾）', () => {
+  it('種類×産地×系統は全て成立する（タンザニア×クリオロも成立）', () => {
+    expect(chocoComboViable({ kind: 'dark', originId: 'tanzania', lineage: { layer: 'genetic', id: 'gen-criollo' } })).toBe(true)
+    expect(chocoComboViable({ kind: 'milk', originId: 'ghana', lineage: { layer: 'clone', id: 'ccn-51' } })).toBe(true)
+    expect(chocoComboViable({ kind: 'white', originId: 'peru', lineage: { layer: 'traditional', id: 'trad-forastero' } })).toBe(true)
   })
-  it('クリオロ（遺伝）で選べる産地は、結びつきのある産地だけ', () => {
+  it('タンザニアを選んでも伝統分類・遺伝グループは全て出る（クローンは記録で判定）', () => {
+    const opts = chocoLineageOptions({ kind: 'dark', originId: 'tanzania', lineage: null })
+    expect(opts.filter((l) => l.layer !== 'clone').length).toBe(13) // 伝統3＋遺伝10
+    expect(opts.some((l) => l.id === 'gen-criollo')).toBe(true)
+    // クローン：記録産地にタンザニアを含まない CCN-51・IMC-67 は出ない。
+    // 記録自体が無い ICS-95 は隠さない（絞らない決まり）。
+    expect(opts.filter((l) => l.layer === 'clone').map((l) => l.id)).toEqual(['ics-95'])
+  })
+  it('クリオロ（遺伝）を選んでも産地は全て出る（自由化：実在の産地を隠さない）', () => {
     const ids = chocoOriginOptions({ kind: 'dark', originId: '', lineage: { layer: 'genetic', id: 'gen-criollo' } }).map((o) => o.id)
     expect(ids).toContain('venezuela')
     expect(ids).toContain('madagascar')
-    expect(ids).not.toContain('ghana')
-    expect(ids).not.toContain('cote-divoire')
+    expect(ids).toContain('ghana')
+    expect(ids).toContain('cote-divoire')
+    expect(ids.length).toBe(8)
   })
-  it('エクアドルでは CCN-51 と Nacional が選べ、無関係な系統は選べない', () => {
+  it('エクアドルでは、記録と両立しないクローン以外の全ての系統が選べる', () => {
     const ids = chocoLineageOptions({ kind: 'dark', originId: 'ecuador', lineage: null }).map((l) => l.id)
-    expect(ids).toContain('ccn-51')
+    expect(ids).toContain('ccn-51') // 記録産地がエクアドル
     expect(ids).toContain('gen-nacional')
-    expect(ids).not.toContain('gen-amelonado')
+    expect(ids).toContain('gen-amelonado') // 以前は「無関係」として選べなかった
+    expect(ids).not.toContain('imc-67') // 記録産地がペルーだけのクローンは出ない
+    expect(ids.length).toBe(15) // 全16系統 − IMC-67
+  })
+  it('クローンの記録産地はデータから機械的に導かれる（CCN-51=エクアドル、IMC-67=ペルー、ICS-95=記録なし）', () => {
+    expect(cloneRecordedOriginIds('ccn-51')).toEqual(['ecuador'])
+    expect(cloneRecordedOriginIds('imc-67')).toEqual(['peru'])
+    // ICS-95 の作出地トリニダードは産地エンティティとして未収録 → 記録のある産地は無い
+    expect(cloneRecordedOriginIds('ics-95')).toEqual([])
+  })
+  it('クローンを選んだときだけ、産地は記録のある産地に絞られる', () => {
+    const ccn = chocoOriginOptions({ kind: 'dark', originId: '', lineage: { layer: 'clone', id: 'ccn-51' } }).map((o) => o.id)
+    expect(ccn).toEqual(['ecuador'])
+    const imc = chocoOriginOptions({ kind: 'dark', originId: '', lineage: { layer: 'clone', id: 'imc-67' } }).map((o) => o.id)
+    expect(imc).toEqual(['peru'])
+    // 記録の無いクローン（ICS-95）は絞らない（自由のまま）
+    const ics = chocoOriginOptions({ kind: 'dark', originId: '', lineage: { layer: 'clone', id: 'ics-95' } }).map((o) => o.id)
+    expect(ics.length).toBe(8)
+    // 逆向き：記録と合わない産地を選ぶと、そのクローンは系統の選択肢に出ない
+    const ghanaLineages = chocoLineageOptions({ kind: 'dark', originId: 'ghana', lineage: null })
+    expect(ghanaLineages.some((l) => l.id === 'ccn-51')).toBe(false)
+    expect(ghanaLineages.some((l) => l.id === 'ics-95')).toBe(true) // 記録なし→隠さない
   })
 })
 
