@@ -211,3 +211,82 @@ describe('第18弾：品種・系統ページではホイールが説明文よ�
     expect(isAfter(p2, p3)).toBe(true)
   })
 })
+
+describe('第21弾：品種・系統の比較にもフレーバーホイールを出す', () => {
+  beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
+  const isAfter = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0
+
+  it('同じ茶類・異なる品種：プルダウンの下に2品種のホイールが出て、バッジと全体の根拠は各凡例の中にある', () => {
+    location.hash = '#/compare-cultivars'; render(<App />)
+    const wheels = screen.getAllByLabelText(/組み合わせのフレーバーホイール/)
+    expect(wheels.length).toBe(2)
+    // ホイールはプルダウン類の下（品種 2 のプルダウンより後）にある
+    expect(isAfter(screen.getByLabelText('品種 2'), wheels[0])).toBe(true)
+    // 解釈注記はホイールより前に塊で置かず、パネル群の下（所見の近く）に残る
+    const note = screen.getByText(/所見は研究ごとに試料・条件が異なります/)
+    expect(isAfter(wheels[0], note)).toBe(true)
+    // 各パネルの凡例ボックスに確認バッジと組み合わせ全体の根拠が入っている
+    const legends = document.querySelectorAll('.compare-grid .combo-legend')
+    expect(legends.length).toBe(2)
+    legends.forEach((l) => {
+      expect(l.textContent).toContain('存在：')
+      expect(l.textContent).toMatch(/この組み合わせ全体の根拠/)
+    })
+    // 所見リストは削除されていない（供試情報と出典つき所見が出る）
+    expect(screen.getAllByText(/研究で供試された組み合わせです/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/ジャスミンラクトン/).length).toBeGreaterThan(0)
+  })
+
+  it('同じ品種・異なる茶類：茶類プルダウンの下に2つの組み合わせホイールが出て、茶類の変更に追随する', () => {
+    location.hash = '#/compare-cultivars'; render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '同じ品種・異なる茶類' }))
+    // 品種を やぶきた に切り替える（複数の茶類でホイールが組み立てられる品種）
+    fireEvent.change(screen.getByLabelText('品種'), { target: { value: 'yabukita' } })
+    const kindSelA = screen.getByLabelText('茶類 1') as HTMLSelectElement
+    const kindSelB = screen.getByLabelText('茶類 2') as HTMLSelectElement
+    expect(kindSelA.options.length).toBeGreaterThanOrEqual(2)
+    expect(kindSelA.value).not.toBe(kindSelB.value)
+    expect(screen.getAllByLabelText(/組み合わせのフレーバーホイール/).length).toBe(2)
+    // パネル見出しは「品種 × 茶類」で、ホイールはプルダウンの下にある
+    const headings = screen.getAllByText(/やぶきた × /)
+    expect(headings.length).toBe(2)
+    expect(isAfter(kindSelB, screen.getAllByLabelText(/組み合わせのフレーバーホイール/)[0])).toBe(true)
+    // 茶類 1 を変えると、1つ目のパネルの見出しとホイールが追随する
+    const before = headings[0].textContent
+    const other = [...kindSelA.options].map((o) => o.value).find((v) => v !== kindSelA.value && v !== kindSelB.value) ?? kindSelB.value
+    fireEvent.change(kindSelA, { target: { value: other } })
+    expect(screen.getAllByLabelText(/組み合わせのフレーバーホイール/).length).toBe(2)
+    expect(screen.getAllByText(/やぶきた × /)[0].textContent).not.toBe(before)
+    // 確認済み組み合わせの一覧（所見側の情報）は削除されていない
+    expect(screen.getByText(/確認されている組み合わせは以下のとおりです/)).toBeTruthy()
+  })
+
+  it('カカオ系統の比較：分類を選ぶプルダウンで2系統のホイールが出て、分類の変更に追随する', () => {
+    location.hash = '#/compare-cultivars'; render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'カカオ系統の比較' }))
+    // 分類プルダウンの既定は系統ページと同じダーク
+    const kindSel = screen.getByLabelText('分類を選ぶ') as HTMLSelectElement
+    expect(kindSel.value).toBe('dark')
+    expect(screen.getAllByLabelText(/組み合わせのフレーバーホイール/).length).toBe(2)
+    // ホイールはプルダウン類の下にある
+    expect(isAfter(screen.getByLabelText('系統 2'), screen.getAllByLabelText(/組み合わせのフレーバーホイール/)[0])).toBe(true)
+    // 各パネルの凡例ボックスに確認バッジと組み合わせ全体の根拠が入っている
+    const legends = document.querySelectorAll('.compare-grid .combo-legend')
+    expect(legends.length).toBe(2)
+    legends.forEach((l) => {
+      expect(l.textContent).toContain('存在：')
+      expect(l.textContent).toMatch(/この組み合わせ全体の根拠/)
+    })
+    // 解釈注記はパネル群の下に残る
+    const note = screen.getByText(/伝統的分類・遺伝集団・個別クローンは階層の異なる概念です/)
+    expect(isAfter(screen.getAllByLabelText(/組み合わせのフレーバーホイール/)[0], note)).toBe(true)
+    // 分類をミルクに変えると、ホイールが追随して2つのまま表示される
+    fireEvent.change(kindSel, { target: { value: 'milk' } })
+    expect(kindSel.value).toBe('milk')
+    expect(screen.getAllByLabelText(/組み合わせのフレーバーホイール/).length).toBe(2)
+    expect(document.querySelectorAll('.compare-grid .combo-legend').length).toBe(2)
+    // 系統を変えてもホイールは出続ける
+    fireEvent.change(screen.getByLabelText('系統 1'), { target: { value: '5' } })
+    expect(screen.getAllByLabelText(/組み合わせのフレーバーホイール/).length).toBe(2)
+  })
+})

@@ -978,14 +978,15 @@ function ComparePage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 't
             context={{ side: 'tea', kindId: (sel.side === 'a' ? ta : tb).kindId, itemName: (sel.side === 'a' ? ta : tb).name, itemId: (sel.side === 'a' ? ta : tb).id }} />
         </CollapsibleSheet>
       )}
-      {/* 第20弾（2026-10-31 実機FB）: 研究解説カードは削除せず、比較結果の下へ
-          移動した（「文字だけの細かい説明は全部下へ」の方針）。内容・出典は不変。 */}
+      <p className="note-small">各ホイールは総説に基づく茶類・製法レベルの一般的特徴です。異なる品種・条件の試料では、違いが製法だけによるものとは限りません。</p>
+      {/* 第20弾で比較結果の下へ移した研究解説カードを、第21弾（2026-10-31 実機FB）で
+          さらにページの一番下（注記よりも下の最後尾）へ移動した。
+          「文字だけの細かい説明は全部下へ」の方針。内容・出典は不変。 */}
       <section className="temporal-card">
         <h3>同じ生葉から作った6つの茶（原著研究）</h3>
         <p>同一品種・同一地域の生葉を6茶類にモデル製造した研究では、揮発性成分の総濃度は 紅茶が最も高く（710 µg/g）、緑茶が最も低い（20 µg/g）結果で、順序は 紅茶 ＞ 白茶 ＞ 烏龍茶 ＞ 黒茶 ＞ 黄茶 ＞ 緑茶 でした。これは総量の比較で、香りの良し悪しではありません。</p>
         <SourceLinks ids={['feng-2019-six-processes']} />
       </section>
-      <p className="note-small">各ホイールは総説に基づく茶類・製法レベルの一般的特徴です。異なる品種・条件の試料では、違いが製法だけによるものとは限りません。</p>
     </div>
   )
 }

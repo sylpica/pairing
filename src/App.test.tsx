@@ -103,6 +103,16 @@ describe('画面の基本動作（§16相当のローカル検証）', () => {
     expect(selA.value).toBe(teaItems[1].id)
     expect(selB.value).toBe(teaItems[7].id)
   })
+  it('茶類・製法の比較では研究解説カードがページの一番下（注記より下の最後尾）にある（第21弾）', () => {
+    location.hash = '#/compare'; render(<App />)
+    const note = screen.getByText(/各ホイールは総説に基づく茶類・製法レベルの一般的特徴です/)
+    const card = screen.getByText('同じ生葉から作った6つの茶（原著研究）').closest('section')!
+    // 注記よりも後ろにあり、ページのコンテナの最後の要素である（＝一番下）
+    expect(note.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(card.parentElement!.lastElementChild).toBe(card)
+    // 内容と出典リンクは不変
+    expect(screen.getByText(/同一品種・同一地域の生葉を6茶類にモデル製造した研究では/)).toBeTruthy()
+  })
   it('存在しないお茶の詳細は未収録と表示する', () => {
     location.hash = '#/tea/no-such-tea'; render(<App />)
     expect(screen.getByText(/収録されていません/)).toBeTruthy()

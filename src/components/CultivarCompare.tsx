@@ -9,20 +9,45 @@ import { FindingsList, ScienceNote, VerificationBadges } from './EntityViews'
 import { SourceLinks } from './SourceLinks'
 import { kindNameOf } from './CultivarPages'
 import type { CacaoLayer } from '../engine/pairingContext'
+import ComboWheelPanel from './ComboWheelPanel'
+import { COMBO_LEVEL_LABEL, CHOCO_KIND_LABEL } from '../engine/combo'
+import { cultivarWheels, lineageWheels, LINEAGE_WHEEL_KINDS, type CultivarWheelEntry } from '../engine/entityWheel'
+import type { ComboLevel } from '../types'
 
 // 品種・系統の比較。比較は出典つき所見の並置のみとし、研究条件の異なる数値を
 // 単純な大小関係として表示しない。科学データが無い項目は「不明」と正直に示す。
+// 第21弾（2026-10-31 実機FB）: 茶類・製法の比較と同じように、各パネルに
+// 組み合わせのフレーバーホイール（品種・系統ページと同じエンジン）も出す。
+// 並びは「見出し→モードタブ→プルダウン→ホイール（各パネル内は名前→ホイール→
+// 所見）」とし、解釈注記は所見の近く（パネル群の下）に置く。
 type Mode = 'same-kind' | 'same-cultivar' | 'cacao'
 
+/** 組み合わせ全体の根拠チップ（第19弾の作法で凡例ボックス内に出す） */
+function OverallChip({ level }: { level: ComboLevel }) {
+  return <p><span className="badge">この組み合わせ全体の根拠：{COMBO_LEVEL_LABEL[level]}</span></p>
+}
+
 function CultivarPanel({ id, kindId, saved, toggleFav }: { id: string; kindId?: string; saved?: SavedData; toggleFav?: (k: 'cultivars', id: string) => void }) {
+  // 第21弾：選択中の茶類×この品種の組み合わせホイール（品種ページと同じ材料）
+  const wheel = useMemo(
+    () => (kindId ? cultivarWheels(id).find((w) => w.kindId === kindId) : undefined),
+    [id, kindId],
+  )
   const c = teaCultivarById(id)
   if (!c) return null
   const use = kindId ? usesForCultivar(id).find((u) => u.kindId === kindId) : undefined
+  const badges = <VerificationBadges v={c.verification} />
   return (
     <div>
       <h3><button className="linklike" onClick={() => go(`cultivar/${c.id}`)}>{c.name}</button></h3>
       {saved && toggleFav && <p><FavButton fav={saved.favorites.cultivars.includes(c.id)} onToggle={() => toggleFav('cultivars', c.id)} /></p>}
-      <VerificationBadges v={c.verification} />
+      {/* 確認バッジと組み合わせ全体の根拠は、第19弾の作法でホイールの凡例ボックス内へ。
+          ホイールが組み立てられない品種では、バッジが消えないようその場に出す */}
+      {wheel ? (
+        <ComboWheelPanel notes={wheel.notes} tastes={wheel.tastes} context={wheel.context}
+          resetKey={`${id}:${kindId}`}
+          legendExtra={<>{badges}<OverallChip level={wheel.overallLevel} /></>} />
+      ) : badges}
       {kindId && (use
         ? <p>{kindNameOf(kindId)}：{use.status === 'studied' ? '研究で供試された組み合わせです' : '公的資料で利用が確認できる組み合わせです'}<SourceLinks ids={use.sourceIds} /></p>
         : <p className="unknown-box">{kindNameOf(kindId)}との組み合わせは未確認です（実測済みとは扱いません）。</p>)}
@@ -48,12 +73,25 @@ function SameKindCompare({ saved, toggleFav }: { saved?: SavedData; toggleFav?: 
         <label>品種 1 <select value={selA} onChange={(e) => setA(e.target.value)}>{ids.map((id) => <option key={id} value={id}>{teaCultivarById(id)?.name ?? id}</option>)}</select></label>
         <label>品種 2 <select value={selB} onChange={(e) => setB(e.target.value)}>{ids.map((id) => <option key={id} value={id}>{teaCultivarById(id)?.name ?? id}</option>)}</select></label>
       </div>
-      <p className="note-small">所見は研究ごとに試料・条件が異なります。条件の異なる数値を単純な大小関係として比べることはしません。各所見の条件を併せて確認してください。</p>
       <div className="compare-grid">
         <CultivarPanel id={selA} kindId={kindId} saved={saved} toggleFav={toggleFav} />
         <CultivarPanel id={selB} kindId={kindId} saved={saved} toggleFav={toggleFav} />
       </div>
+      {/* 第21弾：解釈注記はホイールより前に塊で置かず、所見（パネル群）の近く＝下に置く */}
+      <p className="note-small">所見は研究ごとに試料・条件が異なります。条件の異なる数値を単純な大小関係として比べることはしません。各所見の条件を併せて確認してください。</p>
     </section>
+  )
+}
+
+/** 同じ品種・異なる茶類モードの、茶類×品種の組み合わせホイールのパネル */
+function KindComboPanel({ entry, cultivarId, cultivarName }: { entry: CultivarWheelEntry; cultivarId: string; cultivarName: string }) {
+  return (
+    <div>
+      <h3>{cultivarName} × {entry.kindName}</h3>
+      <ComboWheelPanel notes={entry.notes} tastes={entry.tastes} context={entry.context}
+        resetKey={`${cultivarId}:${entry.kindId}`}
+        legendExtra={<OverallChip level={entry.overallLevel} />} />
+    </div>
   )
 }
 
@@ -62,11 +100,30 @@ function SameCultivarCompare({ saved, toggleFav }: { saved?: SavedData; toggleFa
   const [id, setId] = useState('benifuuki')
   const c = teaCultivarById(withUses.some((x) => x.id === id) ? id : withUses[0].id)!
   const uses = usesForCultivar(c.id)
+  // 第21弾：各茶類×この品種の組み合わせホイールを2つ出す（品種ページと同じ材料）。
+  // 茶類の選択肢は、ホイールが組み立てられる組み合わせだけにする。
+  const entries = useMemo(() => cultivarWheels(c.id), [c.id])
+  const [ka, setKa] = useState('')
+  const [kb, setKb] = useState('')
+  const entryA = entries.find((e) => e.kindId === ka) ?? entries[0]
+  const entryB = entries.find((e) => e.kindId === kb) ?? entries.find((e) => e.kindId !== entryA?.kindId) ?? entries[0]
   return (
     <section>
       <div className="pair-selects">
         <label>品種 <select value={c.id} onChange={(e) => setId(e.target.value)}>{withUses.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+        {entries.length > 0 && entryA && (
+          <label>茶類 1 <select value={entryA.kindId} onChange={(e) => setKa(e.target.value)}>{entries.map((e) => <option key={e.kindId} value={e.kindId}>{e.kindName}</option>)}</select></label>
+        )}
+        {entries.length > 0 && entryB && (
+          <label>茶類 2 <select value={entryB.kindId} onChange={(e) => setKb(e.target.value)}>{entries.map((e) => <option key={e.kindId} value={e.kindId}>{e.kindName}</option>)}</select></label>
+        )}
       </div>
+      {entries.length > 0 && entryA && (
+        <div className="compare-grid">
+          <KindComboPanel entry={entryA} cultivarId={c.id} cultivarName={c.name} />
+          {entryB && <KindComboPanel entry={entryB} cultivarId={c.id} cultivarName={c.name} />}
+        </div>
+      )}
       <p>同じ品種でも、加工する茶類によって別のお茶になります。{c.name}で確認されている組み合わせは以下のとおりです。</p>
       <ul>
         {uses.map((u) => (
@@ -93,15 +150,27 @@ const CACAO_OPTIONS: CacaoOption[] = [
 const cacaoEntity = (o: CacaoOption) =>
   o.layer === 'traditional' ? traditionalGroupById(o.id) : o.layer === 'genetic' ? geneticGroupById(o.id) : cacaoCloneById(o.id)
 
-function CacaoPanel({ opt, saved, toggleFav }: { opt: CacaoOption; saved?: SavedData; toggleFav?: (k: 'lineages', id: string) => void }) {
+function CacaoPanel({ opt, kind, saved, toggleFav }: { opt: CacaoOption; kind: string; saved?: SavedData; toggleFav?: (k: 'lineages', id: string) => void }) {
+  // 第21弾：選んだ種類（分類）×この系統の組み合わせホイール（系統ページと同じ材料）
+  const wheel = useMemo(
+    () => lineageWheels(opt.layer, opt.id).find((w) => w.kind === kind),
+    [opt.layer, opt.id, kind],
+  )
   const e = cacaoEntity(opt)
   if (!e) return null
   const favId = `${opt.layer}:${opt.id}`
+  const badges = <VerificationBadges v={e.verification} />
   return (
     <div>
       <h3><button className="linklike" onClick={() => go(`cacao/${opt.layer}/${opt.id}`)}>{opt.label}</button></h3>
       {saved && toggleFav && <p><FavButton fav={saved.favorites.lineages.includes(favId)} onToggle={() => toggleFav('lineages', favId)} /></p>}
-      <VerificationBadges v={e.verification} />
+      {/* 確認バッジと組み合わせ全体の根拠は、第19弾の作法でホイールの凡例ボックス内へ。
+          ホイールが組み立てられない系統では、バッジが消えないようその場に出す */}
+      {wheel ? (
+        <ComboWheelPanel notes={wheel.notes} tastes={wheel.tastes} context={wheel.context}
+          resetKey={`${opt.layer}:${opt.id}:${kind}`}
+          legendExtra={<>{badges}<OverallChip level={wheel.overallLevel} /></>} />
+      ) : badges}
       <ScienceNote science={e.verification.science} note={e.scienceNote} />
       <FindingsList findings={e.findings} />
       {e.findings.length === 0 && <p className="unknown-box">科学的な所見：不明（登録された所見はありません）</p>}
@@ -112,17 +181,22 @@ function CacaoPanel({ opt, saved, toggleFav }: { opt: CacaoOption; saved?: Saved
 function CacaoCompare({ saved, toggleFav }: { saved?: SavedData; toggleFav?: (k: 'lineages', id: string) => void }) {
   const [a, setA] = useState(0)
   const [b, setB] = useState(3)
+  // 第21弾：系統のホイールには種類（分類）が必要なため、系統ページと同じ作法で
+  // 「分類を選ぶ」を追加する。既定は系統ページのタブ先頭（ダーク）と同じ。
+  const [kind, setKind] = useState(LINEAGE_WHEEL_KINDS[0])
   return (
     <section>
       <div className="pair-selects">
+        <label>分類を選ぶ <select value={kind} onChange={(e) => setKind(e.target.value)}>{LINEAGE_WHEEL_KINDS.map((k) => <option key={k} value={k}>{CHOCO_KIND_LABEL[k] ?? k}チョコレート</option>)}</select></label>
         <label>系統 1 <select value={a} onChange={(e) => setA(Number(e.target.value))}>{CACAO_OPTIONS.map((o, i) => <option key={o.layer + o.id} value={i}>{o.label}</option>)}</select></label>
         <label>系統 2 <select value={b} onChange={(e) => setB(Number(e.target.value))}>{CACAO_OPTIONS.map((o, i) => <option key={o.layer + o.id} value={i}>{o.label}</option>)}</select></label>
       </div>
-      <p className="note-small">伝統的分類・遺伝集団・個別クローンは階層の異なる概念です。並べて所見を確認できますが、異なる体系の数値を単純な大小関係として比べることはしません。遺伝的分類だけから味の違いを断定することもできません。</p>
       <div className="compare-grid">
-        <CacaoPanel opt={CACAO_OPTIONS[a]} saved={saved} toggleFav={toggleFav} />
-        <CacaoPanel opt={CACAO_OPTIONS[b]} saved={saved} toggleFav={toggleFav} />
+        <CacaoPanel opt={CACAO_OPTIONS[a]} kind={kind} saved={saved} toggleFav={toggleFav} />
+        <CacaoPanel opt={CACAO_OPTIONS[b]} kind={kind} saved={saved} toggleFav={toggleFav} />
       </div>
+      {/* 第21弾：解釈注記はホイールより前に塊で置かず、所見（パネル群）の近く＝下に置く */}
+      <p className="note-small">伝統的分類・遺伝集団・個別クローンは階層の異なる概念です。並べて所見を確認できますが、異なる体系の数値を単純な大小関係として比べることはしません。遺伝的分類だけから味の違いを断定することもできません。</p>
     </section>
   )
 }
