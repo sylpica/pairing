@@ -98,6 +98,15 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
   .page-head-row .pair-save-btn { font-size: 0.82rem; padding: 6px 8px; }
   .page-head-row .filter-reset-btn { font-size: 0.82rem; padding: 6px 8px; }
 }
+/* 第22弾（自己監査・ルール6）: 300px以下（拡大表示時の実効幅など）では見出し行の
+   3要素（見出し＋リセット＋お気に入り）が最小幅 304px ほどになり横にはみ出すため、
+   この幅域だけさらに詰める。見出しの折り返し禁止・ボタンの縮み禁止は維持する。 */
+@media (max-width: 300px) {
+  .page-head-row { gap: 4px; }
+  .page-head-row h2 { font-size: 1rem; }
+  .page-head-row .pair-save-btn { font-size: 0.75rem; padding: 4px 6px; }
+  .page-head-row .filter-reset-btn { font-size: 0.75rem; padding: 4px 6px; }
+}
 /* 詳細・組み合わせページ冒頭の「戻る」ボタン */
 .back-btn { margin: 4px 0 2px; min-height: 44px; }
 .pair-summary-line { margin: 4px 0; }
@@ -205,7 +214,7 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 .pair-col select { font-size: 0.95rem; }
 /* 極狭幅（端末の拡大表示で実効幅が小さい場合など）では、2列のままだと種別名すら
    収まらずはみ出すため、組み合わせる画面の列を1列に落として可読性を保つ */
-@media (max-width: 340px) { .pair-layout { grid-template-columns: 1fr; } .filter-hero-head .filter-hero-title { font-size: 1rem; } .filter-hero-head .filter-reset-btn { font-size: 0.85rem; padding: 6px 8px; } }
+@media (max-width: 340px) { .pair-layout { grid-template-columns: 1fr; } .filter-hero-head .filter-hero-title { font-size: 0.8rem; } .filter-hero-head .hero-icon { width: 20px; height: 20px; } .filter-hero-head .filter-reset-btn { font-size: 0.78rem; padding: 4px 5px; } }
 /* 狭幅では、長いバッジ（例：組み合わせ全体の根拠、根拠レベルの表示）が nowrap の
    ままだと収まりきらず横スクロールになるため、バッジ内の折り返しを許可する
    （収まる幅では従来どおり1行のピル表示になる） */

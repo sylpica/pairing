@@ -3,8 +3,7 @@ import type { ComboLevel, ComboTaste, FlavorProfile, TasteKey } from '../types'
 import type { CompoundContext } from '../data/compounds'
 import { COMBO_LEVEL_LABEL, COMBO_TASTE_LABEL } from '../engine/combo'
 import { buildTasteCompounds } from '../engine/wheelTiers'
-import { COMBO_INT_LABEL } from './ComboWheel'
-import { fitLabelLines, packScaledLines } from './wheelText'
+import { COMBO_INT_LABEL, fitLabelLines, packScaledLines } from './wheelText'
 
 // 味モードのホイール（第7弾・課題Bで新設、第10弾で3階層化に伴い
 // TieredWheelPanel の味表示は 大分類→中分類→小分類 の汎用ホイールへ移行した。

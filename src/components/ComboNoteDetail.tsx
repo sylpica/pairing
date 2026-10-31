@@ -1,6 +1,6 @@
 import type { ComboNote, Compound } from '../types'
 import { COMBO_BASIS_FROM_LABEL, COMBO_LEVEL_LABEL } from '../engine/combo'
-import { COMBO_INT_LABEL } from './ComboWheel'
+import { COMBO_INT_LABEL } from './wheelText'
 import { SourceLinks } from './SourceLinks'
 import CompoundCard from './CompoundCard'
 import { noteById } from '../data/flavors'

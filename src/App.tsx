@@ -35,7 +35,7 @@ import {
   completeTeaComboSel, completeChocoComboSel, teaKindName, CHOCO_KIND_LABEL, TEA_COMBO_KINDS, CHOCO_COMBO_KINDS,
   COMBO_LEVEL_LABEL, COMBO_TASTE_LABEL, type ComboAnalysis, type ChocoComboSel, type TeaComboSel,
 } from './engine/combo'
-import { COMBO_INT_LABEL } from './components/ComboWheel'
+import { COMBO_INT_LABEL } from './components/wheelText'
 import ComboWheelPanel from './components/ComboWheelPanel'
 import ProfileWheelPanel from './components/ProfileWheelPanel'
 import { FindingsList, SCIENCE_LABEL } from './components/EntityViews'
@@ -1146,6 +1146,17 @@ function SourcesPage() {
     <div>
       <h2>出典・論文一覧</h2>
       <p>表示している香味データは、以下の検証済み論文の範囲に基づきます（2026-10-30 確認）。論文の文章や図表は転載していません。</p>
+      {sources.map((s) => (
+        <article className="temporal-card" key={s.id}>
+          <h3>{s.title}</h3>
+          <p>{s.authors}（{s.year}）{s.journal ?? ''}</p>
+          <p>{s.scope}</p>
+          <p className="note-small">種別：{s.kind === 'original' ? '原著論文' : s.kind === 'review' ? 'レビュー論文' : s.kind === 'manufacturer' ? 'メーカー資料（参考情報）' : '公的・一般資料'}／ライセンス：{s.license}</p>
+          <a href={s.url} target="_blank" rel="noreferrer">{s.doi ? `DOI: ${s.doi}` : '出典ページを開く'}</a>
+        </article>
+      ))}
+      {/* 第22弾（自己監査・ルール2）: 方法論の解説3件は「文字だけの細かい説明」のため、
+          出典リストの上ではなくページ下部（リストの後）へ移動した。内容は不変。 */}
       <article className="temporal-card">
         <h3>香味の時間変化について</h3>
         <p>香りや味が時間とともにどう移ろうかは、TDS（時間的優位性評価）や TI（時間強度）といった方法で研究されています。チョコレートでは時間的に優位な属性が製品で異なること（Jager et al. 2014）、産地の異なるビターチョコレートで甘味の持続に差があること（石川ら 2019）、緑茶では香りを嗅ぐ段階でも優位な香りが移ろうこと（Qiu et al. 2025）が報告され、時間的に優位な属性が甘味の感じ方自体を変えうることも示されています（Khemacheevakul et al. 2021）。</p>
@@ -1162,15 +1173,6 @@ function SourcesPage() {
         <h3>組み合わせの「味わいの性格」の推測について</h3>
         <p>組み合わせ画面の「組み合わせの味わい（推測）」は、両アイテムで確認されている成分・香味・味覚の顔ぶれと、文献に基づく相互作用（甘味が渋味を和らげる、渋味と脂肪が互いを和らげる等）の発火状況から、組み合わせ全体がどのような味わい（アーシー、スパイシー、まろやか、コクがある等）になるかを推測したものです。根拠（成分・香り・味覚・相互作用）を必ず併記し、根拠のない性格は表示しません。成分の量を足し算して予測するものではなく、組み合わせ自体を官能評価した実測でもありません。「コク」の知覚については、コク味物質とカルシウム感知受容体の研究（Ohsu et al. 2010）を概念の根拠にしています。推測の方法と限界は調査記録（docs/research/pairing-character-inference.md）にまとめています。</p>
       </article>
-      {sources.map((s) => (
-        <article className="temporal-card" key={s.id}>
-          <h3>{s.title}</h3>
-          <p>{s.authors}（{s.year}）{s.journal ?? ''}</p>
-          <p>{s.scope}</p>
-          <p className="note-small">種別：{s.kind === 'original' ? '原著論文' : s.kind === 'review' ? 'レビュー論文' : s.kind === 'manufacturer' ? 'メーカー資料（参考情報）' : '公的・一般資料'}／ライセンス：{s.license}</p>
-          <a href={s.url} target="_blank" rel="noreferrer">{s.doi ? `DOI: ${s.doi}` : '出典ページを開く'}</a>
-        </article>
-      ))}
     </div>
   )
 }

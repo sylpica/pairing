@@ -71,20 +71,5 @@ export function LineageIcon({ className }: IconProps) {
   )
 }
 
-export function StarIcon({ className }: IconProps) {
-  return (
-    <svg viewBox="0 0 48 48" className={className} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M24 6l5.3 11.6L42 19.2l-9.4 8.6 2.5 12.5L24 34l-11.1 6.3 2.5-12.5L6 19.2l12.7-1.6z" />
-    </svg>
-  )
-}
-
-export function HistoryIcon({ className }: IconProps) {
-  return (
-    <svg viewBox="0 0 48 48" className={className} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10 24a14 14 0 1 1 4.1 9.9" />
-      <path d="M10 38v-9h9" />
-      <path d="M24 16v8l6 4" />
-    </svg>
-  )
-}
+// 第22弾（自己監査）: StarIcon / HistoryIcon は第15弾でお気に入りが文字ボタン化し
+// 履歴機能が全廃された後、参照が無くなっていたため削除した。

@@ -213,5 +213,10 @@ describe('組み合わせ画面：見出しの横書き一列（第11弾）', ()
     expect(badgeMq.slice(0, 160)).toContain('.badge { white-space: normal; }')
     // 性格チップのタップ高さはアプリ標準の44pxに揃える
     expect(css).toContain('.pair-character .chip { min-height: 44px;')
+    // 第22弾：調べる画面の見出し行（タイトル＋リセット）は340px以下で詰めて、
+    // 320px幅でも横にはみ出さない（第19弾のリセット追加で 328px まで広がっていた）
+    const narrow340 = css.slice(css.indexOf('@media (max-width: 340px)'))
+    expect(narrow340).toContain('.filter-hero-head .filter-hero-title { font-size: 0.8rem; }')
+    expect(narrow340).toContain('.filter-hero-head .filter-reset-btn { font-size: 0.78rem; padding: 4px 5px; }')
   })
 })

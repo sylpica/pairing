@@ -1,9 +1,13 @@
-// ホイール内テキストのフィッティング共通処理（ComboWheel / FlavorWheel 共用）。
+// ホイール内テキストのフィッティング共通処理（TieredWheel / FlavorWheel 共用）。
 //
 // 方針（ユーザー指示・第6弾）: 全てのセグメントに必ずラベル（ノート名）を出す。
 // 入らない場合はフォントサイズを段階的に縮小し（下限 7px）、それでも無理なら
 // 2行に割り、省略（…）は最終手段とする（省略する場合も先頭は必ず残す）。
 // 化合物名のサブラベルも同じ作法で、少なくとも先頭1件を乗せるよう努める。
+
+/** 香味・味の強さの表示ラベル（第22弾で旧 ComboWheel.tsx から移設。旧コンポーネントは
+ * 第8弾の3階層化以降、本番では描画されておらず、参照が自テストのみだったため削除した） */
+export const COMBO_INT_LABEL: Record<string, string> = { strong: '強い', normal: '普通', weak: '弱い', unknown: '不明' }
 
 export const WHEEL_LABEL_FONT = 12
 export const WHEEL_SUB_FONT = 10

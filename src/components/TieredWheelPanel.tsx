@@ -9,7 +9,7 @@ import {
 } from '../engine/wheelTiers'
 import TieredWheel, { TIER_LEVEL_OPACITY, type TierSeg } from './TieredWheel'
 import { TASTE_COLORS } from './TasteWheel'
-import { COMBO_INT_LABEL } from './ComboWheel'
+import { COMBO_INT_LABEL } from './wheelText'
 import CompoundCard from './CompoundCard'
 import { tierHeading } from './NoteDetail'
 import { CollapsibleSheet } from './Sheet'
@@ -75,6 +75,22 @@ function TasteLegend({ level, extra }: { level: 0 | 1; extra?: ReactNode }) {
       {level === 0
         ? <p className="note-small">味の大分類は2つだけです。基本味（甘味・酸味・苦味・うま味）は舌で感じる基本の味、口当たり・収れん感は口の中の感覚として感じるものです（渋味は基本味ではなく、収れん感です）。大分類のセグメントの大きさは、その分類に属する味の強さの合計の目安です。濃さと輪郭による根拠の区別は、中分類以降で表示します。セグメント内の小さな文字は、その大分類の中分類（個々の味）です。</p>
         : <p className="note-small">セグメントの大きさは強さの目安（弱い・普通・強い）です。根拠のある味だけを表示しています（データの無い味は作りません）。セグメント内の小さな文字は、その味に寄与する物質です（寄与する物質の裏付けが無い味は「成分データなし」と示します）。味を押すと、その味に寄与する物質が見えます。</p>}
+      {extra}
+    </div>
+  )
+}
+
+/**
+ * 第22弾（自己監査・ルール3の端ケース解消）：ホイール自体が表示できない状態
+ * （香り・味のデータが無い場合と、寄与する物質が無い味の第3階層）では凡例ボックス
+ * 自体が出ないため、凡例に集約した画面側の注意書き（legendExtra）まで消えてしまう。
+ * その状態でも注意書きが欠落しないよう、凡例ボックスの器だけを出して中身を保つ
+ * （品種・系統ページのフォールバックと同じ作法）。
+ */
+function LegendExtraFallback({ extra }: { extra?: ReactNode }) {
+  if (!extra) return null
+  return (
+    <div className="combo-legend" role="note" aria-label="ホイールの凡例">
       {extra}
     </div>
   )
@@ -245,7 +261,10 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
       </div>
 
       {mode === 'aroma' && tiers.length === 0 && (
-        <p className="unknown-box">この組み合わせでは、根拠のある香りのノートがまだ示せません（分類プロファイル側のデータ不足、または根拠のある推測が成立しないため）。根拠なく香りを並べることはしません。</p>
+        <>
+          <p className="unknown-box">この組み合わせでは、根拠のある香りのノートがまだ示せません（分類プロファイル側のデータ不足、または根拠のある推測が成立しないため）。根拠なく香りを並べることはしません。</p>
+          <LegendExtraFallback extra={legendExtra} />
+        </>
       )}
 
       {mode === 'aroma' && tiers.length > 0 && !tier && (
@@ -334,7 +353,10 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
       )}
 
       {mode === 'taste' && !tasteGroup && tasteTiers.length === 0 && (
-        <p className="unknown-box">この組み合わせでは、根拠のある味のデータがまだ示せません（土台の味覚プロファイル、製法ルールや産地・品種・系統の味への作用が未収録のため）。根拠なく味を並べることはしません。</p>
+        <>
+          <p className="unknown-box">この組み合わせでは、根拠のある味のデータがまだ示せません（土台の味覚プロファイル、製法ルールや産地・品種・系統の味への作用が未収録のため）。根拠なく味を並べることはしません。</p>
+          <LegendExtraFallback extra={legendExtra} />
+        </>
       )}
 
       {mode === 'taste' && !tasteGroup && tasteTiers.length > 0 && (
@@ -368,6 +390,9 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
             <>
               <p className="note-small">この味に直接結びつく成分データは、検証済み文献の範囲では未収録です。架空の成分は表示しません。味そのものの根拠は以下をご覧ください。</p>
               {drilledTaste && renderTasteDetail(drilledTaste)}
+              {/* 第22弾：物質が無い味では凡例ボックス自体が出ないため、集約した注意書きが
+                  消えないよう凡例ボックスの器で受ける（ルール3の端ケース解消） */}
+              <LegendExtraFallback extra={legendExtra} />
             </>
           ) : (
             <>

@@ -113,6 +113,20 @@ describe('画面の基本動作（§16相当のローカル検証）', () => {
     // 内容と出典リンクは不変
     expect(screen.getByText(/同一品種・同一地域の生葉を6茶類にモデル製造した研究では/)).toBeTruthy()
   })
+  it('出典・論文一覧では方法論の解説3件が出典リストの下（ページ下部）にある（第22弾）', () => {
+    location.hash = '#/sources'; render(<App />)
+    const cards = [...document.querySelectorAll('article.temporal-card')]
+    expect(cards.length).toBeGreaterThan(10)
+    const heads = cards.map((c) => c.querySelector('h3')?.textContent ?? '')
+    // 解説3件は出典リストの後ろ（最後の3件）に、元の順序のまま並ぶ
+    expect(heads.slice(-3)).toEqual([
+      expect.stringContaining('香味の時間変化について'),
+      expect.stringContaining('花・果物の具体名の「推測」について'),
+      expect.stringContaining('組み合わせの「味わいの性格」の推測について'),
+    ])
+    // 内容は不変
+    expect(screen.getByText(/TDS（時間的優位性評価）/)).toBeTruthy()
+  })
   it('存在しないお茶の詳細は未収録と表示する', () => {
     location.hash = '#/tea/no-such-tea'; render(<App />)
     expect(screen.getByText(/収録されていません/)).toBeTruthy()

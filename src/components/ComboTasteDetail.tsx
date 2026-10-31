@@ -1,6 +1,6 @@
 import type { ComboTaste } from '../types'
 import { COMBO_LEVEL_LABEL, COMBO_TASTE_LABEL } from '../engine/combo'
-import { COMBO_INT_LABEL } from './ComboWheel'
+import { COMBO_INT_LABEL } from './wheelText'
 import { SourceLinks } from './SourceLinks'
 
 /**

@@ -10,7 +10,7 @@ import ComboTasteDetail from './ComboTasteDetail'
  * 香り／味の切り替えと階層ナビゲーションは TieredWheelPanel が担い、
  * ここでは組み合わせ系の詳細（根拠の内訳＝ComboNoteDetail、
  * 味の根拠＝ComboTasteDetail）を差し込む。
- * ComboWheel のある全画面（組み合わせページ／調べるプレビュー／
+ * 3階層ホイールのある全画面（組み合わせページ／調べるプレビュー／
  * 品種・系統ページ／組み合わせるのタブ）で共通に使う。
  */
 export default function ComboWheelPanel({ notes, tastes, context, resetKey, legendExtra }: {

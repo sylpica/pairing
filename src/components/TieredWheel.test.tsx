@@ -220,6 +220,31 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
     expect(screen.getByRole('button', { name: /^甘味（.+）の根拠を見る$/ })).toBeTruthy()
   })
 
+  it('第22弾：物質の無い味の第3階層でも、凡例に集約した注意書きが消えない（ルール3の端ケース）', () => {
+    const a = analyzeChocoCombo({ kind: 'milk', originId: '', lineage: null })
+    const { container } = render(
+      <ComboWheelPanel notes={a.notes} tastes={a.tastes} context={a.context} resetKey={a.title}
+        legendExtra={<p><span className="badge">組み合わせ全体の根拠：一般的な知見</span></p>} />)
+    fireEvent.click(screen.getByRole('tab', { name: '味' }))
+    fireEvent.click(screen.getByLabelText(/基本味を開く/))
+    fireEvent.click(screen.getByRole('button', { name: /^甘味（.+）の根拠を見る$/ }))
+    // 物質が無いためホイールも通常の凡例も出ないが、集約した注意書きは凡例ボックスの器で残る
+    expect(screen.getByText(/この味に直接結びつく成分データは/)).toBeTruthy()
+    const legend = container.querySelector('.combo-legend')
+    expect(legend).toBeTruthy()
+    expect(legend!.textContent).toContain('組み合わせ全体の根拠：一般的な知見')
+  })
+
+  it('第22弾：香り・味のデータが無い状態でも、凡例に集約した注意書きが消えない', () => {
+    const { container } = render(
+      <ComboWheelPanel notes={[]} tastes={[]} legendExtra={<p><span className="badge">全体の根拠テスト</span></p>} />)
+    // 香りモード（データなし）でも凡例ボックスの器に注意書きが残る
+    expect(container.querySelector('.combo-legend')!.textContent).toContain('全体の根拠テスト')
+    // 味モード（データなし）でも同様
+    fireEvent.click(screen.getByRole('tab', { name: '味' }))
+    expect(container.querySelector('.combo-legend')!.textContent).toContain('全体の根拠テスト')
+  })
+
   it('味の3階層は全アイテムで仕様どおり（大分類は最大2つ、中分類の併記は小分類と一致・全数）', () => {
     const cases: { name: string; profile: typeof teaItems[number]['profile']; context: CompoundContext }[] = [
       ...teaItems.map((t) => ({
