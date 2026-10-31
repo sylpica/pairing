@@ -27,11 +27,13 @@ export function comboNotesFromProfile(profile: FlavorProfile): ComboNote[] {
   }))
 }
 
-export default function ProfileWheelPanel({ profile, context, legendExtra }: {
+export default function ProfileWheelPanel({ profile, context, legendExtra, resetKey }: {
   profile: FlavorProfile
   context?: CompoundContext
   /** 第19弾：根拠・状態系の注意書きを凡例ボックス内に集約するための差し込み口 */
   legendExtra?: ReactNode
+  /** 対象が差し替わったときに階層の状態だけを戻すキー（モードは保持される。第37弾） */
+  resetKey?: string
 }) {
   const notes = useMemo(() => comboNotesFromProfile(profile), [profile])
   const tastes = useMemo(() => comboTastesFromProfile(profile), [profile])
@@ -40,6 +42,7 @@ export default function ProfileWheelPanel({ profile, context, legendExtra }: {
       notes={notes}
       tastes={tastes}
       context={context}
+      resetKey={resetKey}
       legendExtra={legendExtra}
       ariaLabel="フレーバーホイール"
       detailNoun="成分情報"

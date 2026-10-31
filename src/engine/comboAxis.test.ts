@@ -187,13 +187,26 @@ describe('チョコ側：産地・系統を変えるとホイールが変わる'
     expect(malt?.basis[0].sourceIds).toContain('godocikova-2020-madagascar-volatiles')
     const origin = a.axisSummaries.find((s) => s.axis === 'origin')
     expect(origin?.reflected).toBe(true)
-    // 対象はダークのみ：ミルクでは従来どおり変わらず、理由が出る
+    // 第37弾: 同じ原料を使う種類（ミルク／ルビー／ブロンド）へも読み替えの
+    // 推測として麦芽を反映する。ホワイトはカカオマスを使わないため対象外で、
+    // 従来どおり変わらず理由が出る。
     const milkOnly = analyzeChocoCombo({ kind: 'milk', originId: '', lineage: null })
     const milk = analyzeChocoCombo({ kind: 'milk', originId: 'madagascar', lineage: null })
-    expect(noteSig(milk)).toEqual(noteSig(milkOnly))
-    const milkOrigin = milk.axisSummaries.find((s) => s.axis === 'origin')
-    expect(milkOrigin?.reflected).toBe(false)
-    expect(milkOrigin?.text).toContain('反映していません')
+    // 注意：ミルクの土台プロファイル自体に麦芽が measured で既に含まれているため、
+    // 産地効果はノートの顔ぶれ（noteSig）ではなく根拠の内訳にだけ現れる。
+    // 反映の有無は basis（産地由来の推測が積み重なること）で判定する。
+    const milkMalt = milk.notes.find((n) => n.noteId === 'malt')
+    expect(milkMalt?.basis.some((b) => b.from === 'origin'
+      && b.sourceIds.includes('godocikova-2020-madagascar-volatiles'))).toBe(true)
+    const milkOnlyMalt = milkOnly.notes.find((n) => n.noteId === 'malt')
+    expect(milkOnlyMalt?.basis.some((b) => b.from === 'origin')).toBe(false)
+    expect(milk.axisSummaries.find((s) => s.axis === 'origin')?.reflected).toBe(true)
+    const whiteOnly = analyzeChocoCombo({ kind: 'white', originId: '', lineage: null })
+    const white = analyzeChocoCombo({ kind: 'white', originId: 'madagascar', lineage: null })
+    expect(noteSig(white)).toEqual(noteSig(whiteOnly))
+    const whiteOrigin = white.axisSummaries.find((s) => s.axis === 'origin')
+    expect(whiteOrigin?.reflected).toBe(false)
+    expect(whiteOrigin?.text).toContain('反映していません')
   })
   it('ダーク × タンザニア：香味所見が無い産地は、その旨が理由として出る', () => {
     const a = analyzeChocoCombo({ kind: 'dark', originId: 'tanzania', lineage: null })

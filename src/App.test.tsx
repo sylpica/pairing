@@ -1083,3 +1083,56 @@ describe('実機フィードバック第25弾：ホイールの無いページ�
     expect(screen.getByText(/産地の情報は味わいの推測に使っていません/)).toBeTruthy()
   })
 })
+
+// 第37弾（実機FB）: 「香り」を選んだ後にプルダウンを変えると「味」に戻ってしまう
+// バグの回帰テスト。同じパネルにいる間はモードを保持し、リセットボタンで
+// 初期状態に戻した場合だけ既定（味）に戻る。
+describe('第37弾：ホイールのモード（味／香り）は選択変更後も保持される', () => {
+  beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
+
+  it('調べる（お茶）: 香りに切り替えて分類を変えても香りのまま。リセット後は味に戻る', () => {
+    location.hash = '#/tea'; render(<App />)
+    fireEvent.change(screen.getByLabelText('分類（茶類）で絞り込み'), { target: { value: 'green' } })
+    const preview = document.querySelector('.combo-preview') as HTMLElement
+    expect(preview).toBeTruthy()
+    fireEvent.click(within(preview).getByRole('tab', { name: '香り' }))
+    expect(within(preview).getByRole('tab', { name: '香り' }).getAttribute('aria-selected')).toBe('true')
+    // プルダウン変更（プレビューのデータ＝resetKey が差し替わる）
+    fireEvent.change(screen.getByLabelText('分類（茶類）で絞り込み'), { target: { value: 'black' } })
+    const preview2 = document.querySelector('.combo-preview') as HTMLElement
+    expect(within(preview2).getByRole('tab', { name: '香り' }).getAttribute('aria-selected')).toBe('true')
+    // リセット→再選択では既定の味に戻る
+    fireEvent.click(screen.getByRole('button', { name: 'リセット' }))
+    fireEvent.change(screen.getByLabelText('分類（茶類）で絞り込み'), { target: { value: 'green' } })
+    const preview3 = document.querySelector('.combo-preview') as HTMLElement
+    expect(within(preview3).getByRole('tab', { name: '味' }).getAttribute('aria-selected')).toBe('true')
+  })
+
+  it('調べる（チョコ）: 香りに切り替えて分類を変えても香りのまま', () => {
+    location.hash = '#/choco'; render(<App />)
+    fireEvent.change(screen.getByLabelText('分類（種類）で絞り込み'), { target: { value: 'dark' } })
+    const preview = document.querySelector('.combo-preview') as HTMLElement
+    expect(preview).toBeTruthy()
+    fireEvent.click(within(preview).getByRole('tab', { name: '香り' }))
+    expect(within(preview).getByRole('tab', { name: '香り' }).getAttribute('aria-selected')).toBe('true')
+    fireEvent.change(screen.getByLabelText('分類（種類）で絞り込み'), { target: { value: 'milk' } })
+    const preview2 = document.querySelector('.combo-preview') as HTMLElement
+    expect(within(preview2).getByRole('tab', { name: '香り' }).getAttribute('aria-selected')).toBe('true')
+  })
+
+  it('組み合わせる: 香りに切り替えてプルダウンを変えても香りのまま。リセット後は味に戻る', () => {
+    location.hash = '#/pair'; render(<App />)
+    const summary = screen.getByLabelText('組み合わせの結果（要約）')
+    fireEvent.click(within(summary).getByRole('tab', { name: '香り' }))
+    expect(within(summary).getByRole('tab', { name: '香り' }).getAttribute('aria-selected')).toBe('true')
+    fireEvent.change(screen.getByLabelText('お茶'), { target: { value: 'matcha' } })
+    const summary2 = screen.getByLabelText('組み合わせの結果（要約）')
+    expect(within(summary2).getByRole('tab', { name: '香り' }).getAttribute('aria-selected')).toBe('true')
+    // リセットで両側とも未選択に戻る。再選択すると新しいパネルになり既定の味に戻る
+    fireEvent.click(screen.getByRole('button', { name: 'リセット' }))
+    fireEvent.change(screen.getByLabelText('チョコレート'), { target: { value: 'dark-roasted' } })
+    fireEvent.change(screen.getByLabelText('お茶'), { target: { value: 'matcha' } })
+    const summary3 = screen.getByLabelText('組み合わせの結果（要約）')
+    expect(within(summary3).getByRole('tab', { name: '味' }).getAttribute('aria-selected')).toBe('true')
+  })
+})

@@ -13,6 +13,7 @@ import type { ChocolateItem, InteractionStatement, PairingCharacter, TeaItem } f
 import { categoryById } from './data/flavors'
 import { loadSaved, persistSaved, pairIdOf, parsePairId, comboFavId, parseComboFavId, parseLineageFavId, type SavedData } from './storage'
 import FavButton from './components/FavButton'
+import { itemNameClass } from './components/itemName'
 import { go, scrollTop, trackRoute } from './nav'
 import CompoundCard from './components/CompoundCard'
 import { PairNoteCompounds, PairCategoryCompounds, type PairCompoundSide } from './components/PairCompounds'
@@ -202,6 +203,9 @@ function TeaList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combo
   const cultivarId = cultivarRaw === 'all' ? '' : cultivarRaw
   const selects: TeaSelectsState = { kind, origin: region, cultivar: cultivarId }
   const applySelects = (next: TeaSelectsState) => { setKindRaw(next.kind); setRegionRaw(next.origin); setCultivarRaw(next.cultivar) }
+  // 第37弾: リセットボタンでプレビューのホイールを初期状態（モード=味）に戻すための
+  // 作り直しキー。通常のプルダウン変更では変わらず、モード（味／香り）は保持される。
+  const [previewNonce, setPreviewNonce] = useState(0)
   // 分類の値（茶類IDでもアイテムIDでもよい）から大分類を引く
   const filterKindCategory = (kindValue: string): string => (kindValue ? teaComboCategoryOf(kindValue) : '')
   const isItemValue = (v: string) => v !== '' && !!teaById(v) && v !== filterKindCategory(v)
@@ -249,7 +253,7 @@ function TeaList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combo
         <div className="filter-hero-head">
           <h3 className="filter-hero-title"><TeaLeafIcon className="hero-icon tea" />分類・産地・品種で探す</h3>
           {/* 第19弾追加指示：全部「指定しない」に戻すリセットを見出しの右に置く */}
-          <button type="button" className="btn ghost filter-reset-btn" onClick={() => applySelects({ kind: '', origin: '', cultivar: '' })}>リセット</button>
+          <button type="button" className="btn ghost filter-reset-btn" onClick={() => { applySelects({ kind: '', origin: '', cultivar: '' }); setPreviewNonce((n) => n + 1) }}>リセット</button>
         </div>
         <div className="filter-grid cols-3">
           <TeaComboSelects value={selects} onChange={applySelects} variant="hero"
@@ -261,7 +265,7 @@ function TeaList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combo
             }} />
         </div>
       </section>
-      {previewAnalysis && previewSel && <ComboPreview analysis={previewAnalysis} path={teaComboPath(previewSel)} note={previewNote} />}
+      {previewAnalysis && previewSel && <ComboPreview key={previewNonce} analysis={previewAnalysis} path={teaComboPath(previewSel)} note={previewNote} />}
       {empty && !previewAnalysis && <p className="unknown-box">見つかりませんでした。条件に合う項目がありません（収録範囲外のお茶かもしれません）。</p>}
       {shownProfiles.length > 0 && <>
         <h3>プロファイル（茶類・製法）</h3>
@@ -269,7 +273,7 @@ function TeaList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combo
           {shownProfiles.map((t) => (
             <li key={t.id}><button className="item-card" onClick={() => go(`tea/${t.id}`)}>
               <span className="card-icon" style={{ background: KIND_COLOR[kindCategoryOf(t.kindId)] ?? '#7fb069' }}><TeaLeafIcon /></span>
-              <span className="item-name">{t.name}</span>
+              <span className={itemNameClass(t.name)}>{t.name}</span>
               <span className="card-badges"><span className="badge">プロファイル</span> <span className="badge">{LEVEL_LABEL[t.evidenceLevel]}</span></span>
             </button></li>
           ))}
@@ -281,7 +285,7 @@ function TeaList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combo
           {regions.map((r) => (
             <li key={r.id}><button className="item-card" onClick={() => go(teaComboPath({ kindId: r.applicableKindIds[0], regionId: r.id, cultivarId: '' }))}>
               <span className="card-icon" style={{ background: '#c98a5e' }}><MapPinIcon /></span>
-              <span className="item-name">{r.name}</span>
+              <span className={itemNameClass(r.name)}>{r.name}</span>
               <span className="card-badges"><span className="badge">産地（地域）</span> <span className="badge">{r.country}</span> <span className="badge">{SCIENCE_LABEL[r.verification.science]}</span></span>
             </button></li>
           ))}
@@ -293,7 +297,7 @@ function TeaList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combo
           {cultivars.map((c) => (
             <li key={c.id}><button className="item-card" onClick={() => go(`cultivar/${c.id}`)}>
               <span className="card-icon" style={{ background: '#8aa864' }}><SproutIcon /></span>
-              <span className="item-name">{c.name}</span>
+              <span className={itemNameClass(c.name)}>{c.name}</span>
               <span className="card-badges"><span className="badge">{RANK_LABEL[c.rank]}</span> <span className="badge">{c.country}</span> <span className="badge">{SCIENCE_LABEL[c.verification.science]}</span></span>
             </button></li>
           ))}
@@ -356,6 +360,8 @@ function ChocoList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'com
     : null
   const selects: ChocoSelectsState = { kind, origin: originId, lineage: lineageValue }
   const applySelects = (next: ChocoSelectsState) => { setKindRaw(next.kind); setOriginRaw(next.origin); setLineageRaw(next.lineage) }
+  // 第37弾: お茶側と同じく、リセットボタンでのみプレビューを作り直す（モード初期化）
+  const [previewNonce, setPreviewNonce] = useState(0)
   const isItemValue = (v: string) => v !== '' && !!chocolateById(v)
   const profilesFor = (f: ChocoListFilters) => chocolateItems.filter((c) =>
     (f.kind === '' || (isItemValue(f.kind) ? c.id === f.kind : c.kind === f.kind))
@@ -415,7 +421,7 @@ function ChocoList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'com
         <div className="filter-hero-head">
           <h3 className="filter-hero-title"><ChocoBarIcon className="hero-icon choco" />分類・産地・系統で探す</h3>
           {/* 第19弾追加指示：全部「指定しない」に戻すリセットを見出しの右に置く */}
-          <button type="button" className="btn ghost filter-reset-btn" onClick={() => applySelects({ kind: '', origin: '', lineage: '' })}>リセット</button>
+          <button type="button" className="btn ghost filter-reset-btn" onClick={() => { applySelects({ kind: '', origin: '', lineage: '' }); setPreviewNonce((n) => n + 1) }}>リセット</button>
         </div>
         <div className="filter-grid cols-3">
           <ChocoComboSelects value={selects} onChange={applySelects} variant="hero"
@@ -427,7 +433,7 @@ function ChocoList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'com
             }} />
         </div>
       </section>
-      {chocoPreviewAnalysis && chocoPreviewSel && <ComboPreview analysis={chocoPreviewAnalysis} path={chocoComboPath(chocoPreviewSel)} note={chocoPreviewNote} />}
+      {chocoPreviewAnalysis && chocoPreviewSel && <ComboPreview key={previewNonce} analysis={chocoPreviewAnalysis} path={chocoComboPath(chocoPreviewSel)} note={chocoPreviewNote} />}
       {empty && !chocoPreviewAnalysis && <p className="unknown-box">見つかりませんでした。条件に合う項目がありません（収録範囲外のチョコレートかもしれません）。</p>}
       {profiles.length > 0 && <>
         <h3>プロファイル（種類・製法）</h3>
@@ -435,7 +441,7 @@ function ChocoList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'com
           {profiles.map((c) => (
             <li key={c.id}><button className="item-card" onClick={() => go(`choco/${c.id}`)}>
               <span className="card-icon" style={{ background: CHOCO_KIND_COLOR[c.kind] }}><ChocoBarIcon /></span>
-              <span className="item-name">{c.name}</span>
+              <span className={itemNameClass(c.name)}>{c.name}</span>
               <span className="card-badges"><span className="badge">プロファイル</span> <span className="badge">{LEVEL_LABEL[c.evidenceLevel]}</span></span>
             </button></li>
           ))}
@@ -447,7 +453,7 @@ function ChocoList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'com
           {origins.map((o) => (
             <li key={o.id}><button className="item-card" onClick={() => go(`origin/${o.id}`)}>
               <span className="card-icon" style={{ background: '#b08968' }}><CacaoPodIcon /></span>
-              <span className="item-name">{o.name}</span>
+              <span className={itemNameClass(o.name)}>{o.name}</span>
               <span className="card-badges"><span className="badge">産地</span> <span className="badge">{SCIENCE_LABEL[o.verification.science]}</span></span>
             </button></li>
           ))}
@@ -459,21 +465,21 @@ function ChocoList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'com
           {lineageEntities.traditional.map((g) => (
             <li key={g.id}><button className="item-card" onClick={() => go('cacao/traditional/' + g.id)}>
               <span className="card-icon" style={{ background: '#8d7b68' }}><LineageIcon /></span>
-              <span className="item-name">{g.nameJa}（{g.name}）</span>
+              <span className={itemNameClass(`${g.nameJa}（${g.name}）`)}>{g.nameJa}（{g.name}）</span>
               <span className="card-badges"><span className="badge">{CACAO_LAYER_LABEL.traditional}</span> <span className="badge">{SCIENCE_LABEL[g.verification.science]}</span></span>
             </button></li>
           ))}
           {lineageEntities.genetic.map((g) => (
             <li key={g.id}><button className="item-card" onClick={() => go('cacao/genetic/' + g.id)}>
               <span className="card-icon" style={{ background: '#8d7b68' }}><LineageIcon /></span>
-              <span className="item-name">{g.nameJa}（{g.name}）</span>
+              <span className={itemNameClass(`${g.nameJa}（${g.name}）`)}>{g.nameJa}（{g.name}）</span>
               <span className="card-badges"><span className="badge">遺伝的分類</span> <span className="badge">{SCIENCE_LABEL[g.verification.science]}</span></span>
             </button></li>
           ))}
           {lineageEntities.clones.map((c) => (
             <li key={c.id}><button className="item-card" onClick={() => go('cacao/clone/' + c.id)}>
               <span className="card-icon" style={{ background: '#8d7b68' }}><LineageIcon /></span>
-              <span className="item-name">{c.name}</span>
+              <span className={itemNameClass(c.name)}>{c.name}</span>
               <span className="card-badges"><span className="badge">{CACAO_LAYER_LABEL.clone}</span> <span className="badge">{SCIENCE_LABEL[c.verification.science]}</span></span>
             </button></li>
           ))}
@@ -617,6 +623,9 @@ function PairPage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'pair
   const [rightChocoOrigin, setRightChocoOrigin] = usePersistedState('pairing.pair.right.originId', '')
   const [rightCacaoSel, setRightCacaoSel] = usePersistedState<CacaoSel | null>('pairing.pair.right.cacaoSel', null)
   const [tab, setTab] = useState<'a' | 'b' | 'pair'>('pair')
+  // 第37弾: リセットボタンでのみ結果ホイールを作り直す（モード=味に戻す）キー。
+  // 通常のプルダウン変更では変わらず、モード（味／香り）は保持される。
+  const [wheelNonce, setWheelNonce] = useState(0)
   const [pairNote, setPairNote] = useState<string | null>(null)
   const [pairCat, setPairCat] = useState<string | null>(null)
   // 第20弾（2026-10-31 実機FB）: 見出し行のリセットで両側を初期状態に戻す。
@@ -630,6 +639,7 @@ function PairPage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'pair
     setRightTeaKind(''); setRightTeaOrigin(''); setRightTeaCultivar('')
     setRightChocoKind(''); setRightChocoOrigin(''); setRightCacaoSel(null)
     setTab('pair'); setPairNote(null); setPairCat(null)
+    setWheelNonce((n) => n + 1)
   }
 
   interface SideCfg {
@@ -824,7 +834,7 @@ function PairPage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'pair
             {wheel && (wheel.notes.length + wheel.tastes.length > 0 ? (
               <div className="pair-wheel">
                 <p className="pair-wheel-head"><strong>組み合わせの味わい（推測）</strong></p>
-                <PairingWheelPanel data={wheel} resetKey={wheelResetKey} />
+                <PairingWheelPanel key={wheelNonce} data={wheel} resetKey={wheelResetKey} />
               </div>
             ) : (
               <p className="pair-summary-line note-small">組み合わせの味わいの推測は、根拠のある条件が揃わないため表示できません。</p>
@@ -966,8 +976,10 @@ function PairPage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'pair
 function ComparePage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'teas', id: string) => void }) {
   const [a, setA] = useState(teaItems[1].id); const [b, setB] = useState(teaItems[7].id)
   const ta = teaById(a)!; const tb = teaById(b)!
+  // 第37弾: リセットボタンでのみパネルを作り直す（モード=味に戻す）キー
+  const [compareNonce, setCompareNonce] = useState(0)
   // 第20弾: 見出し行のリセットで2つのプルダウンを開いた直後の既定に戻す。
-  const resetCompare = () => { setA(teaItems[1].id); setB(teaItems[7].id) }
+  const resetCompare = () => { setA(teaItems[1].id); setB(teaItems[7].id); setCompareNonce((n) => n + 1) }
   return (
     <div>
       <div className="page-head-row">
@@ -979,13 +991,12 @@ function ComparePage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 't
         <label>比べるお茶 2 <select value={b} onChange={(e) => setB(e.target.value)}>{teaItems.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
       </div>
       {/* 第23弾（第22弾の提案P2をユーザーが承認）: 旧フラットホイール（FlavorWheel）を
-          アイテム詳細と同じ3階層ホイール（ProfileWheelPanel）に差し替え、香り／味切替・
-          ドリルダウン・凡例ボックスを他の画面と統一した。根拠レベルバッジは詳細ページと
-          同じ作法で凡例ボックス内（legendExtra）へ入れる。パネルは key でアイテムごとに
-          作り直し、プルダウン変更時に階層の状態を持ち越さない。 */}
+          アイテム詳細と同じ3階層ホイール（ProfileWheelPanel）に差し替えた。
+          第37弾: パネルの作り直し（key）はやめ、resetKey で階層の状態だけを戻す。
+          プルダウン変更で階層は戻るが、モード（味／香り）は保持される。 */}
       <div className="compare-grid">
-        <div><h3>{ta.name}</h3><p><FavButton fav={saved.favorites.teas.includes(ta.id)} onToggle={() => toggleFav('teas', ta.id)} /></p><ProfileWheelPanel key={ta.id} profile={ta.profile} context={{ side: 'tea', kindId: ta.kindId, itemName: ta.name, itemId: ta.id }} legendExtra={<p><span className="badge">{LEVEL_LABEL[ta.evidenceLevel]}</span></p>} /></div>
-        <div><h3>{tb.name}</h3><p><FavButton fav={saved.favorites.teas.includes(tb.id)} onToggle={() => toggleFav('teas', tb.id)} /></p><ProfileWheelPanel key={tb.id} profile={tb.profile} context={{ side: 'tea', kindId: tb.kindId, itemName: tb.name, itemId: tb.id }} legendExtra={<p><span className="badge">{LEVEL_LABEL[tb.evidenceLevel]}</span></p>} /></div>
+        <div><h3>{ta.name}</h3><p><FavButton fav={saved.favorites.teas.includes(ta.id)} onToggle={() => toggleFav('teas', ta.id)} /></p><ProfileWheelPanel key={compareNonce} resetKey={ta.id} profile={ta.profile} context={{ side: 'tea', kindId: ta.kindId, itemName: ta.name, itemId: ta.id }} legendExtra={<p><span className="badge">{LEVEL_LABEL[ta.evidenceLevel]}</span></p>} /></div>
+        <div><h3>{tb.name}</h3><p><FavButton fav={saved.favorites.teas.includes(tb.id)} onToggle={() => toggleFav('teas', tb.id)} /></p><ProfileWheelPanel key={compareNonce} resetKey={tb.id} profile={tb.profile} context={{ side: 'tea', kindId: tb.kindId, itemName: tb.name, itemId: tb.id }} legendExtra={<p><span className="badge">{LEVEL_LABEL[tb.evidenceLevel]}</span></p>} /></div>
       </div>
       <p className="note-small">各ホイールは総説に基づく茶類・製法レベルの一般的特徴です。異なる品種・条件の試料では、違いが製法だけによるものとは限りません。</p>
       {/* 第20弾で比較結果の下へ移した研究解説カードを、第21弾（2026-10-31 実機FB）で

@@ -23,15 +23,23 @@ import { cacaoOrigins } from '../data/origins'
 //     八女等では、品種側の味覚効果が上限・下限で潰れる
 //  T3 ホイール代表選択の段階化: 第2層では差があっても、ペアリングホイール
 //     （両側の重み合計を段階化し代表を最大7件に絞る）では同じ表示になる
-//  C1 野生遺伝集団の香味実測なし: Curaray / Marañon / Nanay / Purús と
+//  C1 野生遺伝集団の香味実測なし: Curaray / Nanay / Purús と
 //     総称フォラステロ（実測は原理的に存在しない）、Guiana のダーク
-//     （カカオの裏付けのみで土台と同値）
-//  C2 足がかりが同一: Contamana と Iquitos はどちらもリナロール→花様のみ
+//     （カカオの裏付けのみで土台と同値）。Marañon は第37弾で参考情報
+//     （白豆の記述）に基づく推測効果を持ち、主にホワイト等の対象外の
+//     種類でのみ残る
+//  C2 足がかりが同一・同方向: クリオロ対応の3者（伝統／遺伝／トリニタリオ
+//     は穏やかさの方向が同じ）、Marañon と Nacional（穏やかな酸味＋果実）、
+//     Marañon とトリニタリオ（ベネズエラ文脈）。産地側の追加が系統差を
+//     吸収するケースも含む（ガーナの果実追加で ICS-95 と Contamana が
+//     一致、ドミニカの柑橘追加で Contamana と Iquitos が一致）
 //  C3 種類の構造: ホワイトはカカオマスを使わず系統差が原理的に出ない。
 //     ブロンドはホワイト系で系統ルールの適用が限られる。ルビーは土台
 //     プロファイルが薄く系統効果の多くが既存ノートへの裏付けに留まる
 //  C4 対応関係そのもの: 遺伝集団クリオロの唯一の足がかりは伝統的分類との
-//     対応であり、ミルク／ルビーでは伝統側の味覚効果も土台に現れない
+//     対応であり、ミルク／ルビーでは伝統側の味覚効果も土台に現れない。
+//     Iquitos と IMC-67 も、集団とその構成クローンで足がかりが同一
+//  （第37弾で味ホイール側の監査は tasteIdentityAudit.test.ts に分離・拡張）
 
 const norm = (members: string[]) => [...members].sort().join(',')
 
@@ -66,55 +74,58 @@ const TEA_WHEEL_EXCEPTIONS = new Set([
 ].map((s) => norm(s.split(','))))
 
 const CHOCO_COMBO_EXCEPTIONS = new Set([
+  'clone:ccn-51,clone:ics-95,clone:imc-67,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'clone:ccn-51,clone:ics-95,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'clone:ccn-51,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-nanay,genetic:gen-purus,traditional:trad-forastero',
+  'clone:ics-95,clone:imc-67,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'clone:ics-95,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'clone:ics-95,genetic:gen-contamana',
+  'clone:imc-67,genetic:gen-iquitos',
+  'genetic:gen-amelonado,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'genetic:gen-amelonado,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-nanay,genetic:gen-purus,traditional:trad-forastero',
   'genetic:gen-amelonado,genetic:gen-guiana',
+  'genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-nanay,genetic:gen-purus,traditional:trad-forastero',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-nanay,genetic:gen-purus,traditional:trad-forastero',
   'genetic:gen-contamana,genetic:gen-iquitos',
-  'genetic:gen-contamana,genetic:gen-iquitos,clone:ics-95',
-  'traditional:trad-criollo,genetic:gen-criollo',
-  'traditional:trad-criollo,traditional:trad-forastero,genetic:gen-criollo,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus',
-  'traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario,genetic:gen-criollo,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,clone:ccn-51,clone:ics-95',
-  'traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario,genetic:gen-criollo,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,clone:ccn-51,clone:ics-95,clone:imc-67',
-  'traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario,genetic:gen-criollo,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,clone:ics-95',
-  'traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario,genetic:gen-criollo,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,clone:ics-95,clone:imc-67',
-  'traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario,genetic:gen-criollo,genetic:gen-amelonado,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus',
-  'traditional:trad-criollo,traditional:trad-trinitario,genetic:gen-criollo',
-  'traditional:trad-forastero,genetic:gen-amelonado,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus',
-  'traditional:trad-forastero,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus',
-  'traditional:trad-forastero,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,clone:ccn-51',
-  'traditional:trad-forastero,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,clone:ics-95',
-  'traditional:trad-forastero,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus',
-  'traditional:trad-forastero,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus',
-  'traditional:trad-forastero,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus',
-  'traditional:trad-forastero,genetic:gen-curaray,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus',
-  'traditional:trad-trinitario,clone:ics-95',
-  'traditional:trad-trinitario,genetic:gen-criollo',
+  'genetic:gen-criollo,traditional:trad-criollo',
+  'genetic:gen-criollo,traditional:trad-criollo,traditional:trad-trinitario',
+  'genetic:gen-criollo,traditional:trad-trinitario',
+  'genetic:gen-curaray,genetic:gen-guiana,genetic:gen-nanay,genetic:gen-purus,traditional:trad-forastero',
+  'genetic:gen-curaray,genetic:gen-nanay,genetic:gen-purus,traditional:trad-forastero',
+  'genetic:gen-maranon,traditional:trad-trinitario',
 ].map((s) => norm(s.split(','))))
 
 const CHOCO_WHEEL_EXCEPTIONS = new Set([
-  'genetic:gen-amelonado,clone:ics-95',
+  'clone:ccn-51,clone:ics-95,clone:imc-67,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nacional,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'clone:ccn-51,clone:ics-95,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nacional,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'clone:ccn-51,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'clone:ccn-51,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-nanay,genetic:gen-purus,traditional:trad-forastero',
+  'clone:ccn-51,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-nanay,genetic:gen-purus,traditional:trad-forastero',
+  'clone:ics-95,clone:imc-67,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nacional,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'clone:ics-95,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nacional,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'clone:ics-95,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'clone:ics-95,genetic:gen-amelonado,genetic:gen-maranon',
+  'clone:ics-95,genetic:gen-amelonado,genetic:gen-maranon,genetic:gen-nacional',
+  'clone:ics-95,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,traditional:trad-forastero',
+  'clone:ics-95,genetic:gen-maranon',
+  'clone:ics-95,genetic:gen-maranon,genetic:gen-nacional',
+  'clone:ics-95,genetic:gen-nacional',
+  'clone:imc-67,genetic:gen-iquitos',
+  'genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-nanay,genetic:gen-purus,traditional:trad-forastero',
   'genetic:gen-amelonado,genetic:gen-guiana',
+  'genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-nanay,genetic:gen-purus,traditional:trad-forastero',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-nanay,genetic:gen-purus,traditional:trad-forastero',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-nanay,genetic:gen-purus,traditional:trad-forastero',
   'genetic:gen-contamana,genetic:gen-iquitos',
-  'genetic:gen-nacional,clone:ics-95',
-  'traditional:trad-criollo,genetic:gen-criollo',
-  'traditional:trad-criollo,traditional:trad-forastero,genetic:gen-criollo,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus',
-  'traditional:trad-criollo,traditional:trad-forastero,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus',
-  'traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario,genetic:gen-criollo,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus',
-  'traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario,genetic:gen-criollo,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,clone:ccn-51',
-  'traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario,genetic:gen-criollo,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,clone:ics-95',
-  'traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario,genetic:gen-criollo,genetic:gen-amelonado,genetic:gen-nacional,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,clone:ccn-51,clone:ics-95',
-  'traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario,genetic:gen-criollo,genetic:gen-amelonado,genetic:gen-nacional,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,clone:ccn-51,clone:ics-95,clone:imc-67',
-  'traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario,genetic:gen-criollo,genetic:gen-amelonado,genetic:gen-nacional,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,clone:ics-95',
-  'traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario,genetic:gen-criollo,genetic:gen-amelonado,genetic:gen-nacional,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,clone:ics-95,clone:imc-67',
-  'traditional:trad-criollo,traditional:trad-trinitario,genetic:gen-criollo',
-  'traditional:trad-forastero,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,clone:ics-95',
-  'traditional:trad-forastero,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus',
-  'traditional:trad-forastero,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,clone:ccn-51',
-  'traditional:trad-forastero,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus',
-  'traditional:trad-forastero,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,clone:ccn-51',
-  'traditional:trad-forastero,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,clone:ics-95',
-  'traditional:trad-forastero,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus',
-  'traditional:trad-trinitario,clone:ics-95',
-  'traditional:trad-trinitario,genetic:gen-amelonado',
-  'traditional:trad-trinitario,genetic:gen-criollo',
+  'genetic:gen-criollo,genetic:gen-curaray,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero',
+  'genetic:gen-criollo,traditional:trad-criollo',
+  'genetic:gen-criollo,traditional:trad-criollo,traditional:trad-trinitario',
+  'genetic:gen-curaray,genetic:gen-guiana,genetic:gen-nanay,genetic:gen-purus,traditional:trad-forastero',
+  'genetic:gen-maranon,genetic:gen-nacional',
+  'genetic:gen-maranon,traditional:trad-trinitario',
 ].map((s) => norm(s.split(','))))
 
 const comboSigTea = (sel: TeaComboSel) => {

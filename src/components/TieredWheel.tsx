@@ -28,6 +28,14 @@ export interface TierSeg {
   drillable?: boolean
   ariaLabel: string
   chip: ReactNode
+  /**
+   * チップの直下に小さく出す付随要素（根拠バッジ・強さ等）。
+   * 第37弾: 味・香りのチップの作法を完全に統一するため、チップ本体には
+   * 「名前＋％（＋ドリル記号／注記）」と化合物の括弧併記だけを改行なしの
+   * 単位として入れ、根拠バッジ等の付随要素はここへ逃がす。チップ内テキストが
+   * 狭幅で1文字ずつ縦に潰れるレイアウトを構造的に防ぐための置き場。
+   */
+  below?: ReactNode
   selected?: boolean
 }
 
@@ -141,11 +149,12 @@ export default function TieredWheel({ segments, centerLabel, ariaLabel, onSelect
       {footer}
       <ul className="wheel-list">
         {segments.map((s) => (
-          <li key={s.key}>
+          <li key={s.key} className="wheel-chip-item">
             <button className="chip" onClick={() => onSelect(s.key)} aria-expanded={s.selected}>
               <span className="dot" style={{ background: s.color }} />
               {s.chip}
             </button>
+            {s.below ? <div className="wheel-chip-note">{s.below}</div> : null}
           </li>
         ))}
       </ul>

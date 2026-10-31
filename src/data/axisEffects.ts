@@ -566,7 +566,13 @@ export const teaAxisRules: TeaAxisRule[] = [
         sourceIds: ['shiratori-2022-kaori-ryokucha'],
       },
     ],
-    tasteEffects: [],
+    tasteEffects: [
+      {
+        key: 'astringent', direction: 'stronger', level: 'inferred',
+        text: '育成地の埼玉県（公的資料）はさやまかおりを「濃厚な色と味が特徴」と紹介し、複数の茶商・専門解説も、カテキン含量が多く渋味が強い品種である点で一致しています（いずれも参考情報であり、官能の実測ではありません）。所見が述べる味の方向に基づく推測として、渋味（収れん感）を一段強く示します。',
+        sourceIds: ['saitama-pref-tea-cultivars'],
+      },
+    ],
   },
   {
     id: 'ax-kanayamidori-green',
@@ -1260,6 +1266,25 @@ export const chocoAxisRules: ChocoAxisRule[] = [
     ],
   },
   {
+    // 第37弾: 遺伝集団クリオロへも、伝統的クリオロとの対応関係（鏡写しで既に
+    // 使っている対応）に基づき、同じ味覚の方向を読み替える。集団自体の実測ではない。
+    id: 'axl-gencriollo-taste-inf',
+    axis: 'lineage', entityId: 'gen-criollo', lineageLayer: 'genetic', kinds: ['dark', 'milk', 'ruby'],
+    noteEffects: [],
+    tasteEffects: [
+      {
+        key: 'bitter', direction: 'milder', level: 'inferred',
+        text: '遺伝集団クリオロは伝統的分類のクリオロと概ね対応することが記録されており、ノートの鏡写しでもその対応を使っています。同じ対応に基づく読み替えの推測として、伝統的クリオロ側の知見（Elwers 2009 の著者解釈による穏やかさの方向）を苦味にも適用し、一段穏やかに示します（遺伝集団そのものの官能実測ではありません）。',
+        sourceIds: ['elwers-2009-cocoa-phenolics'],
+      },
+      {
+        key: 'astringent', direction: 'milder', level: 'inferred',
+        text: '同じ対応に基づく読み替えの推測として、渋味も一段穏やかに示します。',
+        sourceIds: ['elwers-2009-cocoa-phenolics'],
+      },
+    ],
+  },
+  {
     id: 'ax-guiana-dark',
     axis: 'lineage', entityId: 'gen-guiana', lineageLayer: 'genetic', kinds: ['dark'],
     noteEffects: [
@@ -1286,7 +1311,13 @@ export const chocoAxisRules: ChocoAxisRule[] = [
         sourceIds: ['ramon-2023-colombia-cacao-clones'],
       },
     ],
-    tasteEffects: [],
+    tasteEffects: [
+      {
+        key: 'sour', direction: 'stronger', level: 'inferred',
+        text: '同じ研究で、ICS-95 が含まれた群の最良の官能属性には「酸味」も挙げられました。属性として挙げられたという方向に基づく推測として、酸味を一段強く示します（酸味の強さ自体が格付けされた実測ではありません）。',
+        sourceIds: ['ramon-2023-colombia-cacao-clones'],
+      },
+    ],
   },
   {
     id: 'ax-nacional-tastes',
@@ -1352,7 +1383,18 @@ export const chocoAxisRules: ChocoAxisRule[] = [
     id: 'axl-trinitario-dark-inf',
     axis: 'lineage', entityId: 'trad-trinitario', lineageLayer: 'traditional', kinds: ['dark', 'milk', 'ruby'],
     noteEffects: crioMirrorEffects('トリニタリオはクリオロとフォラステロの交雑に由来する集団であることが記録されています。香味の方向が文献で示されているのはクリオロ側のみのため、交配親（祖先）の記録に基づく推測として、クリオロ側の記述子だけを合成します（フォラステロ側には香味の知見がありません）。', ['ramos-2013-venezuela-criollo-liquor', 'motamayor-2008-cacao-populations']),
-    tasteEffects: [],
+    tasteEffects: [
+      {
+        key: 'bitter', direction: 'milder', level: 'inferred',
+        text: '味覚についても同じ作法（交配親のうち方向が文献で示されている側だけを合成する）を適用します。クリオロ側には Elwers 2009 の著者解釈による「穏やかさ」の方向があり、フォラステロ側には味覚の方向を示す知見がありません。そのため、祖先の記録に基づく推測として、苦味を一段穏やかに示します（トリニタリオ自体の官能実測ではありません）。',
+        sourceIds: ['elwers-2009-cocoa-phenolics', 'motamayor-2008-cacao-populations'],
+      },
+      {
+        key: 'astringent', direction: 'milder', level: 'inferred',
+        text: '同じ合成に基づく推測として、渋味も一段穏やかに示します。',
+        sourceIds: ['elwers-2009-cocoa-phenolics', 'motamayor-2008-cacao-populations'],
+      },
+    ],
   },
   {
     id: 'axl-trinitario-fruit-inf',
@@ -1456,8 +1498,44 @@ export const chocoAxisRules: ChocoAxisRule[] = [
         text: 'イキトス集団そのものの香味実測は未確認です。同クラスターの54%を占める IMC 系列のクローン IMC-67 では、発酵豆でリナロール（花様の香りの成分）が供試遺伝子型の中で最も高濃度でした。同じ遺伝グループのクローンの実測からの推測として、花様を弱く示します（集団自体の実測ではありません）。',
         sourceIds: ['collin-2023-cocoa-bean-genotypes-aroma', 'motamayor-2008-cacao-populations'],
       },
+      {
+        noteId: 'citrus', mode: 'add', level: 'inferred',
+        text: '同じ実測で最も高濃度だったリナロールは、成分データでは柑橘様の香りにも結びつけられています（IMC-67 クローン自身のルールでも同じ写像を使っています）。同じ遺伝グループのクローンの実測からの読み替え推測として、柑橘を弱く示します（集団自体の実測ではありません）。',
+        sourceIds: ['collin-2023-cocoa-bean-genotypes-aroma', 'motamayor-2008-cacao-populations'],
+      },
     ],
     tasteEffects: [],
+  },
+  {
+    // 第37弾: マラニョン集団そのものの香味実測は無いが、集団名の由来地
+    // （マラニョン峡谷）の栽培カカオについての参考情報（白豆の比率と
+    // 苦味・渋味・酸味の低さ、果実様の風味）を (d) 近接の足がかりとして使う。
+    id: 'axl-maranon-inf',
+    axis: 'lineage', entityId: 'gen-maranon', lineageLayer: 'genetic', kinds: ['dark', 'milk', 'ruby', 'blond'],
+    noteEffects: [
+      {
+        noteId: 'fruit-general', mode: 'add', level: 'inferred',
+        text: 'マラニョン集団そのものの香味実測は未確認です。集団名の由来地であるマラニョン峡谷（ペルー）の栽培カカオ（Fortunato No.4）の販売者による香味記述では、果実様・花様の複雑な風味とされています（参考情報・販売者の商品説明）。近接する栽培材料の記述に基づく仮説として、果実全般を弱く示します（集団自体の実測ではありません）。',
+        sourceIds: ['cocoa-hub-fortunato-no4'],
+      },
+    ],
+    tasteEffects: [
+      {
+        key: 'bitter', direction: 'milder', level: 'inferred',
+        text: '同じく近接の足がかりとして、Heirloom Cacao Preservation の文書は、マラニョン峡谷のカカオが白い種子を持つ Nacional 系の品種であり、白い種子（アントシアニンを欠く種子）は品種によらず苦味・渋味が低い傾向にあると整理しています（参考情報・業界団体の文書）。白豆を多く含む原料では苦味が穏やかな方向という仮説として、一段穏やかに示します（集団自体の実測ではありません）。',
+        sourceIds: ['tango-lowy-2022-hcp-cacao-flavor'],
+      },
+      {
+        key: 'astringent', direction: 'milder', level: 'inferred',
+        text: '同じ整理（白い種子は苦味・渋味が低い傾向）に基づく仮説として、渋味も一段穏やかに示します。',
+        sourceIds: ['tango-lowy-2022-hcp-cacao-flavor'],
+      },
+      {
+        key: 'sour', direction: 'milder', level: 'inferred',
+        text: 'マラニョン峡谷の栽培カカオ（Fortunato No.4）の販売者による香味記述では「苦味と酸味が低く、渋味がない」とされています（参考情報・販売者の商品説明）。近接する栽培材料の記述に基づく仮説として、酸味を一段穏やかに示します（実測ではありません）。',
+        sourceIds: ['cocoa-hub-fortunato-no4'],
+      },
+    ],
   },
   {
     id: 'axl-imc67-inf',
@@ -1535,20 +1613,30 @@ export const chocoAxisRules: ChocoAxisRule[] = [
         text: '同じ比較実測とチュンチョの特性報告に基づく推測として、渋味を一段穏やかに示します。',
         sourceIds: ['mejia-2021-peru-native-cocoa', 'eskes-2018-chuncho-fine-flavour'],
       },
+      {
+        key: 'sour', direction: 'milder', level: 'inferred',
+        text: '同じ根拠文が述べるチュンチョの特性には「酸味が低い」ことも含まれます（バグアは酸のノートで区別された側でした）。同じ読み替えの推測として、酸味も一段穏やかに示します。ルビーチョコレートでは酸味が土台にあるため、この方向が表示にも現れます。',
+        sourceIds: ['mejia-2021-peru-native-cocoa', 'eskes-2018-chuncho-fine-flavour'],
+      },
     ],
   },
   {
     id: 'axo-dominican-dark-inf',
-    axis: 'origin', entityId: 'dominican-republic', kinds: ['dark', 'milk'],
+    axis: 'origin', entityId: 'dominican-republic', kinds: ['dark', 'milk', 'ruby'],
     noteEffects: [
       {
         noteId: 'dried-fruit', mode: 'add', level: 'inferred',
-        text: 'ドミニカ共和国産トリニタリオのダークチョコレート54試料の訓練パネル評価では、ドライフルーツが評価属性の一つとして挙げられました。ただし同研究は、同じ産地でも発酵の進め方で香味が大きく変わることも示しています。属性群からの統合推測として、ドライフルーツを弱く示します（ミルクチョコレートへの適用は読み替えです。単一の方向として未検証です）。',
+        text: 'ドミニカ共和国産トリニタリオのダークチョコレート54試料の訓練パネル評価では、ドライフルーツが評価属性の一つとして挙げられました。ただし同研究は、同じ産地でも発酵の進め方で香味が大きく変わることも示しています。属性群からの統合推測として、ドライフルーツを弱く示します（ミルク／ルビーチョコレートへの適用は、原料由来の属性が残る前提の読み替えです。単一の方向として未検証です）。',
         sourceIds: ['guzman-penella-2023-dominican-cacao'],
       },
       {
         noteId: 'wood', mode: 'add', level: 'inferred',
         text: '同じパネル評価で挙げられた木質の属性です。同様に、属性群からの統合推測として木を弱く示します。',
+        sourceIds: ['guzman-penella-2023-dominican-cacao'],
+      },
+      {
+        noteId: 'citrus', mode: 'add', level: 'inferred',
+        text: '同じパネル評価の属性リストには、柑橘系や甘味の属性も含まれていました。属性群からの統合推測として、柑橘を弱く示します（ルビーでは酸味の具体名として現れます）。',
         sourceIds: ['guzman-penella-2023-dominican-cacao'],
       },
     ],
@@ -1569,6 +1657,36 @@ export const chocoAxisRules: ChocoAxisRule[] = [
         sourceIds: ['colonges-2021-nacional-floral'],
       },
     ],
+    tasteEffects: [
+      {
+        key: 'sour', direction: 'milder', level: 'inferred',
+        text: 'エクアドルは伝統的 Nacional の主産地です。系統側では、伝統的 Nacional の発酵豆が低酸味・低苦味・低渋味と整理されています（Boza et al. 2014、一般的知見）。その方向を産地へ読み替えた推測として、系統側の一般的知見より一段弱い位置づけで、酸味を一段穏やかに示します。なお現代の栽培集団には CCN-51 等との交雑も含まれるため、産地全体の実測ではありません。',
+        sourceIds: ['boza-2014-ccn51'],
+      },
+      {
+        key: 'bitter', direction: 'milder', level: 'inferred',
+        text: '同じ読み替えの推測として、苦味も一段穏やかに示します。',
+        sourceIds: ['boza-2014-ccn51'],
+      },
+      {
+        key: 'astringent', direction: 'milder', level: 'inferred',
+        text: '同じ読み替えの推測として、渋味も一段穏やかに示します。',
+        sourceIds: ['boza-2014-ccn51'],
+      },
+    ],
+  },
+  {
+    // 第37弾: マダガスカルの組成実測（ダーク1製品）を、同じ原料を使う
+    // 種類へ読み替える。ホワイトはカカオマスを使わないため対象外。
+    id: 'axo-madagascar-xkind-inf',
+    axis: 'origin', entityId: 'madagascar', kinds: ['milk', 'ruby', 'blond'],
+    noteEffects: [
+      {
+        noteId: 'malt', mode: 'add', level: 'inferred',
+        text: 'マダガスカル産と表示された単一産地チョコレート1製品（ダーク）の揮発成分の実測では、ストレッカーアルデヒド類が比較試料の中で最も高い水準で、その代表成分3-メチルブタナールは麦芽様の香りの成分として知られます。同じカカオ原料を使うミルク／ルビー／ブロンドへの読み替えの推測として、麦芽を弱く示します（単一製品の組成実測からの推論であり、産地全体の香味を示すものではありません）。ホワイトチョコレートはカカオマスを使わないため対象外としています。',
+        sourceIds: ['godocikova-2020-madagascar-volatiles'],
+      },
+    ],
     tasteEffects: [],
   },
   {
@@ -1586,7 +1704,13 @@ export const chocoAxisRules: ChocoAxisRule[] = [
         sourceIds: ['ramon-2023-colombia-cacao-clones'],
       },
     ],
-    tasteEffects: [],
+    tasteEffects: [
+      {
+        key: 'sour', direction: 'stronger', level: 'inferred',
+        text: '同じ研究で最良の官能属性の一つとして「酸味」が挙げられた方向を、ルビー／ブロンドへの読み替えの推測として、酸味を一段強く示します（ダークチョコレートとしての評価に基づく読み替えであり、強さの格付けではありません）。ブロンドの土台には酸味がないため、その場合は文章でのみ示します。',
+        sourceIds: ['ramon-2023-colombia-cacao-clones'],
+      },
+    ],
   },
   {
     id: 'axl-criollo-xkind-inf',
@@ -1722,15 +1846,15 @@ export const axisNoEffects: AxisNoEffect[] = [
   { axis: 'origin', entityId: 'venezuela', category: 'genetic-only',
     text: '「ベネズエラ」の所見は、栽培集団の遺伝的な混合の実測と、栄養成分等の組成の比較です。ダーク・ミルク・ルビーチョコレートでは、在来クリオロ等のリカーの官能ホイールの記述子を推測として反映しています。この種類については、産地としての香味の方向を示す所見がないため、ホイールのノートには反映していません。' },
   { axis: 'origin', entityId: 'ecuador', category: 'cultivar-variation',
-    text: '「エクアドル」の香味に関する実測は、産地そのものではなく「現代 Nacional」という栽培集団のレベルで行われています。ダーク・ミルク・ルビーチョコレートでは、その集団で同定された花ノートの生合成経路の知見を、産地への読み替えの推測として弱く反映しています。産地固有の実測プロファイルではなく、系統（ナシオナル）を選んだ場合の反映が主です。その他の種類については反映していません。' },
+    text: '「エクアドル」の香味に関する実測は、産地そのものではなく「現代 Nacional」という栽培集団のレベルで行われています。ダーク・ミルク・ルビーチョコレートでは、その集団で同定された花ノートの生合成経路の知見と、伝統的 Nacional の味覚の一般的知見（低酸味・低苦味・低渋味の方向）を、産地への読み替えの推測として弱く反映しています。産地固有の実測プロファイルではなく、系統（ナシオナル）を選んだ場合の反映が主です。その他の種類については反映していません。' },
   { axis: 'origin', entityId: 'dominican-republic', category: 'condition-variation',
-    text: '「ドミニカ共和国」については産地試料の官能・揮発成分の実測がありますが、その結論は「同じ産地でも発酵の進め方で香味が大きく変わる」というものです。ダーク・ミルクチョコレートでは、同国産トリニタリオの訓練パネル評価で挙げられた属性（ドライフルーツ・木質等）の方向を、ばらつきが大きいことを明記した推測として弱く反映しています。その他の種類については、産地として単一の方向を示す所見がないため、ホイールのノートには反映していません。' },
+    text: '「ドミニカ共和国」については産地試料の官能・揮発成分の実測がありますが、その結論は「同じ産地でも発酵の進め方で香味が大きく変わる」というものです。ダーク・ミルク・ルビーチョコレートでは、同国産トリニタリオの訓練パネル評価で挙げられた属性（ドライフルーツ・木質・柑橘等）の方向を、ばらつきが大きいことを明記した推測として弱く反映しています。その他の種類については、産地として単一の方向を示す所見がないため、ホイールのノートには反映していません。' },
   { axis: 'origin', entityId: 'ghana', category: 'process-variation',
     text: '「ガーナ」の所見は、発酵法や焙煎・コンチングの条件で香味がどう変わるかという加工条件の実測が中心です。総説ではガーナのフォラステロが「強い基本的なカカオ感と果実の含み」を持つ標準的なカカオ香味の源と特徴づけられており、その特徴づけに基づく推測として、カカオ・ナッツ・果実の方向を弱く反映しています。' },
   { axis: 'origin', entityId: 'madagascar', category: 'composition-only',
-    text: '「マダガスカル」の所見は、農家試料の遺伝解析と、単一製品の揮発成分の組成実測です。ダークチョコレートでは、その組成実測（ストレッカーアルデヒド類が最高水準）からの推論として麦芽を推測で反映しています。この種類については、香味の方向を示す所見がないため、ホイールのノートには反映していません。' },
+    text: '「マダガスカル」の所見は、農家試料の遺伝解析と、単一製品の揮発成分の組成実測です。ダークチョコレートでは、その組成実測（ストレッカーアルデヒド類が最高水準）からの推論として麦芽を推測で反映しています。ミルク・ルビー・ブロンドでも、同じカカオ原料を使う種類への読み替えとして麦芽を推測で反映しています。ホワイトチョコレートはカカオマスを使わないため、この種類については反映していません。' },
   { axis: 'origin', entityId: 'peru', category: 'genetic-only',
-    text: '「ペルー」の所見は、ピウラ・ポルセラーナの遺伝的な位置づけと、バグア産・クイジャバンバ産（チュンチョ）の比較実測です。味覚については、チュンチョ側の実測の方向（苦味・渋味が穏やかな側）をペルー全体へ広げた推測として反映しています。香りのノートについては、産地全体の方向を示す所見がないため、ホイールのノートには反映していません。' },
+    text: '「ペルー」の所見は、ピウラ・ポルセラーナの遺伝的な位置づけと、バグア産・クイジャバンバ産（チュンチョ）の比較実測です。味覚については、チュンチョ側の実測の方向（苦味・酸味・渋味が穏やかな側）をペルー全体へ広げた推測として反映しています。香りのノートについては、産地全体の方向を示す所見がないため、ホイールのノートには反映していません。' },
   { axis: 'origin', entityId: 'cote-divoire', category: 'no-direction',
     text: '「コートジボワール」については官能・揮発成分の実測があり、その結論は「発酵・焙煎後のチョコレートでは産地による違いは見られない」というものです。一方で総説では、西アフリカ群（ガーナ・コートジボワール・ナイジェリア）が標準（ベンチマーク）カカオ香味の源と特徴づけられています。その群としての特徴づけに基づく推測として、カカオ・ナッツの方向を弱く反映しています（コートジボワール単独の個性として確定したものではありません）。' },
   { axis: 'origin', entityId: 'tanzania', category: 'no-flavor-findings',
@@ -1740,9 +1864,11 @@ export const axisNoEffects: AxisNoEffect[] = [
   { axis: 'lineage', entityId: 'trad-forastero', lineageLayer: 'traditional', category: 'no-flavor-findings',
     text: '「フォラステロ（Forastero）」は大きな集団の総称で、総称としての香味の実測は原理的に存在しません。そのため系統の情報はホイールの推測に使っていません。' },
   { axis: 'lineage', entityId: 'trad-trinitario', lineageLayer: 'traditional', category: 'composition-only',
-    text: '「トリニタリオ（Trinitario）」の所見は、タイプ別種子のフェノール組成の分析で、総ポリフェノール量等に遺伝的に決まる差は見出されなかったという知見を含みます。ダーク・ミルク・ルビーチョコレートでは、交雑由来の記録に基づき、香味の知見がある祖先（クリオロ）側の記述子を合成した推測を反映しています。この種類については反映していません。' },
+    text: '「トリニタリオ（Trinitario）」の所見は、タイプ別種子のフェノール組成の分析で、総ポリフェノール量等に遺伝的に決まる差は見出されなかったという知見を含みます。ダーク・ミルク・ルビーチョコレートでは、交雑由来の記録に基づき、香味の知見がある祖先（クリオロ）側の記述子と味覚の方向（穏やかさ）を合成した推測を反映しています。この種類については反映していません。' },
   { axis: 'lineage', entityId: 'gen-criollo', lineageLayer: 'genetic', category: 'genetic-only',
-    text: '遺伝集団「クリオロ（Criollo）」の所見は、家畜化の過程に関する集団ゲノミクスの知見です。ダーク・ミルク・ルビーチョコレートでは、伝統的分類のクリオロと概ね対応するという記録に基づき、その記述子を読み替えた推測を反映しています。この種類については反映していません（伝統的分類のクリオロとは別エンティティとして扱います）。' },
+    text: '遺伝集団「クリオロ（Criollo）」の所見は、家畜化の過程に関する集団ゲノミクスの知見です。ダーク・ミルク・ルビーチョコレートでは、伝統的分類のクリオロと概ね対応するという記録に基づき、その記述子と味覚の方向（穏やかさ）を読み替えた推測を反映しています。この種類については反映していません（伝統的分類のクリオロとは別エンティティとして扱います）。' },
+  { axis: 'lineage', entityId: 'gen-maranon', lineageLayer: 'genetic', category: 'genetic-only',
+    text: '遺伝集団「マラニョン（Marañón）」そのものの香味実測は未確認です。ダーク・ミルク・ルビー・ブロンドでは、集団名の由来地であるマラニョン峡谷の栽培カカオについて、白豆を多く含み苦味・渋味が低い傾向とする業界団体の文書と、販売者の香味記述（いずれも参考情報）を足がかりに、苦味・渋味・酸味の穏やかさと果実の方向を推測として反映しています。この種類については反映していません。' },
   { axis: 'lineage', entityId: 'imc-67', lineageLayer: 'clone', category: 'composition-only',
     text: '「IMC-67」の所見は、加工工程を通じた揮発成分の検出・組成の測定と、発酵豆でのリナロール濃度の比較です。ホワイトチョコレートはカカオマスを使わないため、系統の香味の推測は適用していません。' },
 ]

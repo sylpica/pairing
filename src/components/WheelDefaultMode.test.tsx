@@ -30,13 +30,17 @@ describe('ホイールの既定モードとボタン順（第33弾）', () => {
     expect(tasteTab.getAttribute('aria-selected')).toBe('true')
   })
 
-  it('対象を切り替える（resetKey 変更）と既定の味に戻る', () => {
+  // 第37弾（実機FB）: 対象を切り替えても（resetKey 変更）、ユーザーが選んだ
+  // モードは保持される。既定の味に戻るのは、パネルが作り直される時
+  // （画面側のリセットボタン等）だけ。
+  it('対象を切り替える（resetKey 変更）でも、選んだモード（香り）は保持される', () => {
     const a = analyzeTeaCombo({ kindId: 'green', regionId: 'nagasaki', cultivarId: 'yabukita' })
     const b = analyzeTeaCombo({ kindId: 'black', regionId: '', cultivarId: '' })
     const { rerender } = render(<ComboWheelPanel notes={a.notes} tastes={a.tastes} context={a.context} resetKey={a.title} />)
     fireEvent.click(screen.getByRole('tab', { name: '香り' }))
     expect(screen.getByRole('tab', { name: '香り' }).getAttribute('aria-selected')).toBe('true')
     rerender(<ComboWheelPanel notes={b.notes} tastes={b.tastes} context={b.context} resetKey={b.title} />)
-    expect(screen.getByRole('tab', { name: '味' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('tab', { name: '香り' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('tab', { name: '味' }).getAttribute('aria-selected')).toBe('false')
   })
 })

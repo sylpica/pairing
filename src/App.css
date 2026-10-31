@@ -25,10 +25,25 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
 .item-list { list-style: none; padding: 0; display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
 .item-card { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 16px; background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; font: inherit; cursor: pointer; text-align: left; min-height: 56px; }
-.item-name { font-weight: 700; }
+/* 第37弾 F監査: 狭幅（〜375px）では長い名称が nowrap のまま隣のバッジを押し出し、
+   画面右端からはみ出す実測を確認した。統一契約（名称は1行・縦折れなし・
+   はみ出しなし）を守るため、収まらない場合に限り段階的にフォントを縮小して
+   1行に収める（省略記号では隠さない）。 */
+.item-name { font-weight: 700; white-space: nowrap; flex: none; }
+@media (max-width: 480px) { .item-name { font-size: 0.92rem; } }
+@media (max-width: 360px) { .item-name { font-size: 0.86rem; } }
+@media (max-width: 300px) { .item-name { font-size: 0.8rem; } }
+/* 最長の名称（ブロンドチョコレート（キャラメリゼホワイト）＝21文字）は
+   280px でもバッジブロックと並べて1行に収めるため、実文字数に応じた
+   クラス（.name-len-2xl）でさらに段階縮小する。名称は省略せず全文を
+   見せる方針（第29弾の段階的縮小の作法）。 */
+@media (max-width: 360px) { .item-name.name-len-xl { font-size: 0.8rem; } }
+@media (max-width: 320px) { .item-name.name-len-2xl { font-size: 0.78rem; } }
+@media (max-width: 300px) { .item-name.name-len-xl { font-size: 0.76rem; } .item-name.name-len-2xl { font-size: 0.72rem; } }
+@media (max-width: 290px) { .item-name.name-len-2xl { font-size: 0.7rem; } }
 .badge { background: #f7ead2; border-radius: 999px; padding: 2px 10px; font-size: 0.8rem; white-space: nowrap; }
 .wheel-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.astringency-gauge { display: flex; flex-direction: column; gap: 4px; width: min(320px, 90vw); background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 14px; font: inherit; cursor: pointer; text-align: left; margin: 2px auto; }
+.astringency-gauge { display: flex; flex-direction: column; gap: 4px; width: min(320px, 100%); background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 14px; font: inherit; cursor: pointer; text-align: left; margin: 2px auto; }
 .astringency-gauge .gauge-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .astringency-gauge .gauge-title { font-weight: 700; }
 .astringency-gauge .gauge-bar { display: flex; gap: 4px; }
@@ -36,13 +51,29 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 .astringency-gauge .gauge-seg.on { opacity: 0.9; }
 .astringency-gauge .gauge-scale { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--ink); opacity: 0.75; }
 .astringency-gauge .gauge-hint { font-size: 0.8rem; opacity: 0.85; }
-.wheel { width: min(320px, 90vw); height: auto; }
+.wheel { width: min(320px, 100%); height: auto; }
 .wheel-seg { cursor: pointer; }
 .wheel-label { font-size: 12px; fill: #2f2318; font-weight: 700; pointer-events: none; text-shadow: 0 0 3px rgba(255,255,255,.55); }
 .wheel-sub { font-size: 10px; fill: #4a3421; font-weight: 600; pointer-events: none; text-shadow: 0 0 3px rgba(255,255,255,.55); }
 .wheel-center { font-size: 15px; fill: var(--ink); font-weight: 700; }
 .wheel-list { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
 .wheel-list li { margin: 0; }
+/* 第37弾: 凡例チップの作法を味・香りで完全統一。チップ本体は内容幅のピル型で、
+   中の要素（ラベル／化合物の括弧併記／根拠バッジ）はそれぞれ改行しない
+   ひとまとまりの単位とし、狭幅では単位ごとに行を分ける。日本語テキストが
+   flex の圧縮で1文字ずつ縦に折れる表示（ユーザー実機指摘）を構造的に防ぐ。
+   根拠バッジ等の付随要素は、ホイール本体のチップではチップ直下の
+   .wheel-chip-note に置く（TieredWheel の below 差し込み）。 */
+.wheel-list .chip { flex-wrap: wrap; max-width: 100%; }
+.wheel-list .badge { flex: none; }
+.chip-label { white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
+/* 括弧併記（化合物名）は名前＋％のラベルとは別単位。化合物名の途中では
+   切らず、区切り（読点・空白）でのみ折り返す（最長トークン幅が下限になる
+   ため、1文字ずつの縦折れにはならない）。 */
+.chip-aux { font-size: 0.78rem; opacity: 0.85; }
+.wheel-chip-item { display: flex; flex-direction: column; align-items: center; gap: 2px; max-width: 100%; }
+.wheel-chip-note { display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap; font-size: 0.78rem; opacity: 0.85; }
+@media (max-width: 400px) { .wheel-list .badge { white-space: nowrap; } }
 .btn.ghost { background: none; border: none; color: var(--accent2); padding-left: 0; }
 .fav-btn { background: #fff3d6; border: 1.5px solid var(--line); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 0.85rem; cursor: pointer; min-height: 40px; }
 .note-detail, .temporal-card { background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; padding: 14px 16px; margin: 12px 0; }
@@ -207,8 +238,20 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 /* 結果カードのアイコンとバッジ配置 */
 .card-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; color: #fff; flex: none; }
 .card-icon svg { width: 24px; height: 24px; }
-.item-card { justify-content: flex-start; }
-.card-badges { margin-left: auto; text-align: right; display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 6px; }
+.item-card { justify-content: flex-start; flex-wrap: wrap; }
+/* 第37弾（ユーザー指定）: バッジブロックの幅はカード幅の47%に固定し、名称の
+   長さやバッジの個数で並びが変わらないようにする。最小幅は最長バッジの
+   min-content（バッジ自体が潰れない）。1行に収まらない場合はブロックごと
+   次の行へ回り（.item-card の flex-wrap）、そこでも右寄せを維持する。 */
+.card-badges { margin-left: auto; text-align: right; display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 6px; flex: none; width: 47%; min-width: min-content; }
+/* 第37弾（実機FB）: 一覧カードの名称が、右のバッジ群に押されて1文字ずつ
+   縦に折れる表示を直す。名称は左で必ず1行（nowrap・圧縮しない）、バッジ群は
+   右側にひとまとまりのブロックとして固め、折り返しはブロックの中でだけ行う。
+   1行に収まらない場合も、バッジブロック全体が次の行へ回って右寄せを保ち、
+   名称が潰れることはない。全ての一覧カード（産地・品種・系統・アイテム）で共通。
+   （.item-name の nowrap 等は基本定義側にある） */
+.card-badges .badge { flex: none; }
+@media (max-width: 400px) { .card-badges .badge { white-space: nowrap; } }
 /* 組み合わせ画面の見出しアイコン */
 .col-head { display: flex; align-items: center; gap: 8px; }
 .col-icon { width: 26px; height: 26px; flex: none; }

@@ -174,6 +174,11 @@ export default function TieredWheelPanel({ notes, tastes, context, contexts, res
   renderTasteDetail: (taste: ComboTaste) => ReactNode
 }) {
   // 第33弾: 既定モードは「味」（香りより先に味を見せる。ボタン順も 味｜香り）
+  // 第37弾（実機FB）: モードはパネルが表示されている間、ユーザーの選択を保持する。
+  // 以前は resetKey（対象データの差し替え）のたびに既定の「味」に戻していたため、
+  // 「香り」に切り替えてからプルダウンを変えると味に戻ってしまった。
+  // モードを既定に戻すのは、パネル自体が作り直される（key の変更）ときだけ:
+  // 各画面のリセットボタンは key を変えて作り直す実装になっている。
   const [mode, setMode] = useState<'aroma' | 'taste'>('taste')
   const [catId, setCatId] = useState<string | null>(null)
   const [entryKey, setEntryKey] = useState<string | null>(null)
@@ -184,7 +189,8 @@ export default function TieredWheelPanel({ notes, tastes, context, contexts, res
   const [gaugeOpen, setGaugeOpen] = useState(false)
   const [sheet, setSheet] = useState<SheetState | null>(null)
   useEffect(() => {
-    setMode('taste'); setCatId(null); setEntryKey(null); setTasteSel(null); setTasteEntryKey(null); setGaugeOpen(false); setSheet(null)
+    // 対象データが差し替わったら階層の状態だけを戻す（モードは保持する）
+    setCatId(null); setEntryKey(null); setTasteSel(null); setTasteEntryKey(null); setGaugeOpen(false); setSheet(null)
   }, [resetKey])
 
   const wheelContext = contexts ?? context
@@ -210,7 +216,7 @@ export default function TieredWheelPanel({ notes, tastes, context, contexts, res
     drillable: t.drillable,
     subLabels: t.drillable ? t.entries.map((e) => e.label) : ['具体名の裏付けなし'],
     ariaLabel: t.drillable ? `${t.name}を開く（${t.percent}%・中分類を表示）` : `${t.name}（${t.percent}%・具体名の中分類はありません）`,
-    chip: <>{t.name} {t.percent}%{t.drillable ? ' ›' : '（中分類なし）'}</>,
+    chip: <span className="chip-label">{t.name} {t.percent}%{t.drillable ? ' ›' : '（中分類なし）'}</span>,
   }))
   const onSelectCategory = (key: string) => {
     const t = tiers.find((x) => x.categoryId === key)
@@ -249,7 +255,8 @@ export default function TieredWheelPanel({ notes, tastes, context, contexts, res
       ariaLabel: e.compounds.length > 0
         ? `${e.label}（${e.percent}%）に寄与する化学物質を見る`
         : `${e.label}（${e.percent}%）の根拠を見る`,
-      chip: <>{e.label} {e.percent}%（{chipNames}） <LevelBadge level={e.level} /></>,
+      chip: <><span className="chip-label">{e.label} {e.percent}%</span><span className="chip-aux">（{chipNames}）</span></>,
+      below: <LevelBadge level={e.level} />,
     }
   }) : []
   const onSelectEntry = (key: string) => {
@@ -268,7 +275,7 @@ export default function TieredWheelPanel({ notes, tastes, context, contexts, res
     percent: tc.percent,
     opacity: tierOpacity(tc.tier),
     ariaLabel: `${tc.compound.name}（${tc.percent}%）の詳細を見る`,
-    chip: <>{tc.compound.name} {tc.percent}%</>,
+    chip: <span className="chip-label">{tc.compound.name} {tc.percent}%</span>,
   })) : []
 
   // ===== 味・第1階層（基本味そのもの。第34弾。第36弾で再構成） =====
@@ -287,9 +294,10 @@ export default function TieredWheelPanel({ notes, tastes, context, contexts, res
       drillable: hasEntries,
       subLabels: hasEntries ? g.entries.map((e) => e.label) : [],
       ariaLabel: hasEntries
-        ? `${tasteLabel(g.key)}を開く（${g.percent}%・具体名を表示）`
-        : `${tasteLabel(g.key)}（${g.percent}%・対応づく具体名はありません。根拠を表示）`,
-      chip: <>{tasteLabel(g.key)} {g.percent}%（{COMBO_INT_LABEL[g.taste.intensity]}） <LevelBadge level={g.taste.level} />{hasEntries ? ' ›' : '（具体名なし）'}</>,
+        ? `${tasteLabel(g.key)}を開く（${g.percent}%・${COMBO_INT_LABEL[g.taste.intensity]}・${COMBO_LEVEL_LABEL[g.taste.level]}・具体名を表示）`
+        : `${tasteLabel(g.key)}（${g.percent}%・${COMBO_INT_LABEL[g.taste.intensity]}・${COMBO_LEVEL_LABEL[g.taste.level]}・対応づく具体名はありません。根拠を表示）`,
+      chip: <span className="chip-label">{tasteLabel(g.key)} {g.percent}%{hasEntries ? ' ›' : '（具体名なし）'}</span>,
+      below: <>{COMBO_INT_LABEL[g.taste.intensity]} <LevelBadge level={g.taste.level} /></>,
     }
   })
   const onSelectTasteTop = (key: string) => {
@@ -313,7 +321,8 @@ export default function TieredWheelPanel({ notes, tastes, context, contexts, res
       ariaLabel: e.compounds.length > 0
         ? `${e.label}（${e.percent}%）に寄与する化学物質を見る`
         : `${e.label}（${e.percent}%）の根拠を見る`,
-      chip: <>{e.label} {e.percent}%（{chipNames}） <LevelBadge level={e.level} /></>,
+      chip: <><span className="chip-label">{e.label} {e.percent}%</span><span className="chip-aux">（{chipNames}）</span></>,
+      below: <LevelBadge level={e.level} />,
     }
   }) : []
   const onSelectTasteNote = (key: string) => {
@@ -332,7 +341,7 @@ export default function TieredWheelPanel({ notes, tastes, context, contexts, res
     percent: tc.percent,
     opacity: tierOpacity(tc.tier),
     ariaLabel: `${tc.compound.name}（${tc.percent}%）の詳細を見る`,
-    chip: <>{tc.compound.name} {tc.percent}%</>,
+    chip: <span className="chip-label">{tc.compound.name} {tc.percent}%</span>,
   })) : []
 
   // ===== 味・第3階層（具体名に寄与する化学物質） =====
@@ -344,7 +353,7 @@ export default function TieredWheelPanel({ notes, tastes, context, contexts, res
     percent: tc.percent,
     opacity: tierOpacity(tc.tier),
     ariaLabel: `${tc.compound.name}（${tc.percent}%）の詳細を見る`,
-    chip: <>{tc.compound.name} {tc.percent}%</>,
+    chip: <span className="chip-label">{tc.compound.name} {tc.percent}%</span>,
   })) : []
 
   const parentNote = entry ? tier?.notes.find((n) => n.noteId === entry.noteId) ?? null : null
@@ -378,7 +387,7 @@ export default function TieredWheelPanel({ notes, tastes, context, contexts, res
                   {t.notes.map((n) => (
                     <li key={n.noteId}>
                       <button className="chip" onClick={() => openNoteFromIndex(t, n)}>
-                        {noteById(n.noteId)!.name}（{COMBO_INT_LABEL[n.intensity]}） <LevelBadge level={n.level} />
+                        <span className="chip-label">{noteById(n.noteId)!.name}（{COMBO_INT_LABEL[n.intensity]}）</span> <LevelBadge level={n.level} />
                       </button>
                     </li>
                   ))}

@@ -208,9 +208,12 @@ describe('組み合わせ画面：見出しの横書き一列（第11弾）', ()
     expect(css).toContain('grid-template-columns: minmax(0, 1fr)')
     // 出典の DOI リンクが狭幅ではみ出さない
     expect(css).toContain('.temporal-card a { overflow-wrap: anywhere; }')
-    // バッジは狭幅で内部折り返しを許可する
+    // 第37弾で方針転換: バッジの内部折り返しは「1文字ずつ縦に折れる」崩れの
+    // 原因だったため、狭幅でも折り返さない（旧・第11弾の許可は廃止）。
+    // 凡例チップ内と一覧カード内のバッジは nowrap を不変条件とする。
     const badgeMq = css.slice(css.indexOf('@media (max-width: 400px)'))
-    expect(badgeMq.slice(0, 160)).toContain('.badge { white-space: normal; }')
+    expect(badgeMq.slice(0, 160)).toContain('.wheel-list .badge { white-space: nowrap; }')
+    expect(css).toContain('.card-badges .badge { white-space: nowrap; }')
     // 味わいホイール内チップのタップ高さはアプリ標準の44pxに揃える（第26弾で .pair-wheel に改称）
     expect(css).toContain('.pair-wheel .chip { min-height: 44px;')
     // 第22弾：調べる画面の見出し行（タイトル＋リセット）は340px以下で詰めて、

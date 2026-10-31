@@ -185,7 +185,7 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
     fireEvent.click(screen.getByRole('button', { name: '← 中分類に戻る' }))
     fireEvent.click(screen.getByRole('button', { name: '← 味に戻る' }))
     // 第2階層（苦味）：対応づく具体名が無いため、化合物を直接は出さず根拠説明が出る
-    fireEvent.click(screen.getByLabelText(/苦味（\d+%・対応づく具体名はありません/))
+    fireEvent.click(screen.getByLabelText(/苦味（\d+%・[^）]*対応づく具体名はありません/))
     expect(container.querySelectorAll('svg g.wheel-seg')).toHaveLength(0)
     expect(screen.getByText(/対応づく具体名（フレーバー）は、この対象ではまだ示せません/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '← 味に戻る' }))
@@ -235,7 +235,7 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
     // 第1階層は甘味・酸味の2つ（データのある基本味のみ）
     expectNoBlank(container)
     expect(segs(container)).toHaveLength(2)
-    fireEvent.click(screen.getByLabelText(/甘味（\d+%・対応づく具体名はありません/))
+    fireEvent.click(screen.getByLabelText(/甘味（\d+%・[^）]*対応づく具体名はありません/))
     // 具体名が無いため、ホイールは作らず根拠説明が出る（化合物への直行表示もしない）
     expect(container.querySelectorAll('svg g.wheel-seg')).toHaveLength(0)
     expect(screen.getByText(/対応づく具体名（フレーバー）は、この対象ではまだ示せません/)).toBeTruthy()
@@ -262,7 +262,7 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
     const { container } = render(
       <ComboWheelPanel notes={a.notes} tastes={a.tastes} context={a.context} resetKey={a.title}
         legendExtra={<p><span className="badge">組み合わせ全体の根拠：一般的な知見</span></p>} />)
-    fireEvent.click(screen.getByLabelText(/甘味（\d+%・対応づく具体名はありません/))
+    fireEvent.click(screen.getByLabelText(/甘味（\d+%・[^）]*対応づく具体名はありません/))
     // ホイールも通常の凡例も出ないが、集約した注意書きは凡例ボックスの器で残る
     expect(screen.getByText(/対応づく具体名（フレーバー）は、この対象ではまだ示せません/)).toBeTruthy()
     const legend = container.querySelector('.combo-legend')
