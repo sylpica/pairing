@@ -129,17 +129,25 @@ function CacaoCompare({ saved, toggleFav }: { saved?: SavedData; toggleFav?: (k:
 
 export default function CultivarComparePage({ saved, toggleFav }: { saved?: SavedData; toggleFav?: (k: 'cultivars' | 'lineages', id: string) => void } = {}) {
   const [mode, setMode] = useState<Mode>('same-kind')
+  // 第20弾（2026-10-31 実機FB）: 見出し行のリセットで開いた直後の状態に戻す。
+  // 各モードの内部 state は子コンポーネントが抱えているため、モードを既定に
+  // 戻したうえで key を差し替えて再マウントし、全モード分の選択を初期値に戻す。
+  const [resetKey, setResetKey] = useState(0)
+  const resetCompare = () => { setMode('same-kind'); setResetKey((k) => k + 1) }
   return (
     <div>
-      <h2>品種・系統の比較</h2>
+      <div className="page-head-row">
+        <h2>品種・系統の比較</h2>
+        <button type="button" className="btn ghost filter-reset-btn" onClick={resetCompare}>リセット</button>
+      </div>
       <div className="filter-row" role="group" aria-label="比較の種類">
         <button className={mode === 'same-kind' ? 'chip active' : 'chip'} onClick={() => setMode('same-kind')}>同じ茶類・異なる品種</button>
         <button className={mode === 'same-cultivar' ? 'chip active' : 'chip'} onClick={() => setMode('same-cultivar')}>同じ品種・異なる茶類</button>
         <button className={mode === 'cacao' ? 'chip active' : 'chip'} onClick={() => setMode('cacao')}>カカオ系統の比較</button>
       </div>
-      {mode === 'same-kind' && <SameKindCompare saved={saved} toggleFav={toggleFav} />}
-      {mode === 'same-cultivar' && <SameCultivarCompare saved={saved} toggleFav={toggleFav} />}
-      {mode === 'cacao' && <CacaoCompare saved={saved} toggleFav={toggleFav} />}
+      {mode === 'same-kind' && <SameKindCompare key={`same-kind-${resetKey}`} saved={saved} toggleFav={toggleFav} />}
+      {mode === 'same-cultivar' && <SameCultivarCompare key={`same-cultivar-${resetKey}`} saved={saved} toggleFav={toggleFav} />}
+      {mode === 'cacao' && <CacaoCompare key={`cacao-${resetKey}`} saved={saved} toggleFav={toggleFav} />}
     </div>
   )
 }

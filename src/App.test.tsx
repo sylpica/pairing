@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import App from './App'
 import { compounds } from './data/compounds'
+import { teaItems } from './data/teas'
 
 describe('画面の基本動作（§16相当のローカル検証）', () => {
   beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
@@ -80,6 +81,27 @@ describe('画面の基本動作（§16相当のローカル検証）', () => {
     const lastCard = cards[cards.length - 1]
     expect(lastCard.compareDocumentPosition(desc) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(desc.textContent).not.toMatch(/探せます|検索/)
+  })
+  it('茶類・製法の比較ではホイールが研究解説カードより上にあり、リセットで既定の2アイテムに戻る（第20弾）', () => {
+    location.hash = '#/compare'; render(<App />)
+    // 並び：プルダウン→各アイテムのフレーバーホイール→研究解説カード（解説は比較結果の下へ移動）
+    const grid = document.querySelector('.compare-grid')!
+    const card = screen.getByText('同じ生葉から作った6つの茶（原著研究）').closest('section')!
+    expect(grid.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getAllByLabelText('フレーバーホイール').length).toBe(2)
+    // 出典リンクつきの解説内容は移動後も残っている
+    expect(screen.getByText(/揮発性成分の総濃度は 紅茶が最も高く/)).toBeTruthy()
+    // リセット：両プルダウンを変えてから押すと、開いた直後の既定（teaItems[1]／teaItems[7]）に戻る
+    const selA = screen.getByLabelText('比べるお茶 1') as HTMLSelectElement
+    const selB = screen.getByLabelText('比べるお茶 2') as HTMLSelectElement
+    expect(selA.value).toBe(teaItems[1].id)
+    expect(selB.value).toBe(teaItems[7].id)
+    fireEvent.change(selA, { target: { value: selA.options[3].value } })
+    fireEvent.change(selB, { target: { value: selB.options[4].value } })
+    expect(selA.value).not.toBe(teaItems[1].id)
+    fireEvent.click(screen.getByRole('button', { name: 'リセット' }))
+    expect(selA.value).toBe(teaItems[1].id)
+    expect(selB.value).toBe(teaItems[7].id)
   })
   it('存在しないお茶の詳細は未収録と表示する', () => {
     location.hash = '#/tea/no-such-tea'; render(<App />)

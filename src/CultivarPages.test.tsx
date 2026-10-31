@@ -68,6 +68,34 @@ describe('品種・系統データベースの画面連携', () => {
     expect(screen.getByText(/所見：不明/)).toBeTruthy()
   })
 
+  it('品種・系統の比較のリセットで、モードと各プルダウンが開いた直後の既定に戻る（第20弾）', () => {
+    location.hash = '#/compare-cultivars'; render(<App />)
+    const kindSel = () => screen.getByLabelText('茶類') as HTMLSelectElement
+    // 開いた直後の既定：茶類＝緑茶、品種 1＝やぶきた、品種 2＝おくみどり
+    expect(kindSel().value).toBe('green')
+    expect((screen.getByLabelText('品種 1') as HTMLSelectElement).value).toBe('yabukita')
+    expect((screen.getByLabelText('品種 2') as HTMLSelectElement).value).toBe('okumidori')
+    // 茶類を別のものに変え、カカオ系統モードでも系統を変える
+    fireEvent.change(kindSel(), { target: { value: kindSel().options[1].value } })
+    expect(kindSel().value).not.toBe('green')
+    fireEvent.click(screen.getByRole('button', { name: 'カカオ系統の比較' }))
+    const cacaoSel = screen.getByLabelText('系統 1') as HTMLSelectElement
+    fireEvent.change(cacaoSel, { target: { value: cacaoSel.options[5].value } })
+    expect(cacaoSel.value).toBe('5')
+
+    fireEvent.click(screen.getByRole('button', { name: 'リセット' }))
+
+    // モードは既定のタブに戻り、プルダウンも既定値に戻る（比較結果の表示も初期状態）
+    expect(screen.getByRole('button', { name: '同じ茶類・異なる品種' }).className).toContain('active')
+    expect(kindSel().value).toBe('green')
+    expect((screen.getByLabelText('品種 1') as HTMLSelectElement).value).toBe('yabukita')
+    expect((screen.getByLabelText('品種 2') as HTMLSelectElement).value).toBe('okumidori')
+    // カカオモード側の選択も初期値（系統 1＝0、系統 2＝3）に戻っている
+    fireEvent.click(screen.getByRole('button', { name: 'カカオ系統の比較' }))
+    expect((screen.getByLabelText('系統 1') as HTMLSelectElement).value).toBe('0')
+    expect((screen.getByLabelText('系統 2') as HTMLSelectElement).value).toBe('3')
+  })
+
   it('ICS-95 詳細では追加された官能の所見が出る', () => {
     location.hash = '#/cacao/clone/ics-95'; render(<App />)
     expect(screen.getByText(/最良の官能属性/)).toBeTruthy()

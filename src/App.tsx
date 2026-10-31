@@ -620,6 +620,18 @@ function PairPage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'pair
   const [tab, setTab] = useState<'a' | 'b' | 'pair'>('pair')
   const [pairNote, setPairNote] = useState<string | null>(null)
   const [pairCat, setPairCat] = useState<string | null>(null)
+  // 第20弾（2026-10-31 実機FB）: 見出し行のリセットで両側を初期状態に戻す。
+  // 初期状態＝種別は既定（左：チョコレート、右：お茶）、各側のプルダウンは
+  // 種別ごとの保持分も含めて全て「指定しない」。usePersistedState の setter を
+  // 経由するため、保存済みの保持値もリセット後の状態で上書きされる。
+  const resetPair = () => {
+    setLeftType('chocolate'); setRightType('tea')
+    setLeftTeaKind(''); setLeftTeaOrigin(''); setLeftTeaCultivar('')
+    setLeftChocoKind(''); setLeftChocoOrigin(''); setLeftCacaoSel(null)
+    setRightTeaKind(''); setRightTeaOrigin(''); setRightTeaCultivar('')
+    setRightChocoKind(''); setRightChocoOrigin(''); setRightCacaoSel(null)
+    setTab('pair'); setPairNote(null); setPairCat(null)
+  }
 
   interface SideCfg {
     pos: 'left' | 'right'
@@ -759,6 +771,9 @@ function PairPage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'pair
           第15弾: 文言は共通部品 FavButton の「お気に入り」に統一した。 */}
       <div className="page-head-row">
         <h2>組み合わせる</h2>
+        {/* 第20弾: 調べる画面（第19弾）と同じリセットを見出し行に置く。
+            お気に入りボタンの既存の挙動・表示条件は変えない。 */}
+        <button type="button" className="btn ghost filter-reset-btn" onClick={resetPair}>リセット</button>
         {bothSelected && result && (
           <FavButton className="pair-save-btn" fav={fav} onToggle={() => toggleFav('pairings', pairId)} />
         )}
@@ -941,14 +956,14 @@ function ComparePage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 't
   const [a, setA] = useState(teaItems[1].id); const [b, setB] = useState(teaItems[7].id)
   const [sel, setSel] = useState<{ noteId: string; side: 'a' | 'b' } | null>(null)
   const ta = teaById(a)!; const tb = teaById(b)!
+  // 第20弾: 見出し行のリセットで2つのプルダウンを開いた直後の既定に戻す。
+  const resetCompare = () => { setA(teaItems[1].id); setB(teaItems[7].id); setSel(null) }
   return (
     <div>
-      <h2>茶類・製法の比較</h2>
-      <section className="temporal-card">
-        <h3>同じ生葉から作った6つの茶（原著研究）</h3>
-        <p>同一品種・同一地域の生葉を6茶類にモデル製造した研究では、揮発性成分の総濃度は 紅茶が最も高く（710 µg/g）、緑茶が最も低い（20 µg/g）結果で、順序は 紅茶 ＞ 白茶 ＞ 烏龍茶 ＞ 黒茶 ＞ 黄茶 ＞ 緑茶 でした。これは総量の比較で、香りの良し悪しではありません。</p>
-        <SourceLinks ids={['feng-2019-six-processes']} />
-      </section>
+      <div className="page-head-row">
+        <h2>茶類・製法の比較</h2>
+        <button type="button" className="btn ghost filter-reset-btn" onClick={resetCompare}>リセット</button>
+      </div>
       <div className="pair-selects">
         <label>比べるお茶 1 <select value={a} onChange={(e) => setA(e.target.value)}>{teaItems.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
         <label>比べるお茶 2 <select value={b} onChange={(e) => setB(e.target.value)}>{teaItems.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
@@ -963,6 +978,13 @@ function ComparePage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 't
             context={{ side: 'tea', kindId: (sel.side === 'a' ? ta : tb).kindId, itemName: (sel.side === 'a' ? ta : tb).name, itemId: (sel.side === 'a' ? ta : tb).id }} />
         </CollapsibleSheet>
       )}
+      {/* 第20弾（2026-10-31 実機FB）: 研究解説カードは削除せず、比較結果の下へ
+          移動した（「文字だけの細かい説明は全部下へ」の方針）。内容・出典は不変。 */}
+      <section className="temporal-card">
+        <h3>同じ生葉から作った6つの茶（原著研究）</h3>
+        <p>同一品種・同一地域の生葉を6茶類にモデル製造した研究では、揮発性成分の総濃度は 紅茶が最も高く（710 µg/g）、緑茶が最も低い（20 µg/g）結果で、順序は 紅茶 ＞ 白茶 ＞ 烏龍茶 ＞ 黒茶 ＞ 黄茶 ＞ 緑茶 でした。これは総量の比較で、香りの良し悪しではありません。</p>
+        <SourceLinks ids={['feng-2019-six-processes']} />
+      </section>
       <p className="note-small">各ホイールは総説に基づく茶類・製法レベルの一般的特徴です。異なる品種・条件の試料では、違いが製法だけによるものとは限りません。</p>
     </div>
   )

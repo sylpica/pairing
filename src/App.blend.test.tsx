@@ -102,6 +102,53 @@ describe('組み合わせ画面：自家ブレンド（種別切り替え）', (
   })
 })
 
+// 実機フィードバック第20弾：組み合わせる画面の見出し行にも、調べる画面（第19弾）と
+// 同じリセットボタンを置く。押すと両側が初期状態（種別は左チョコ・右お茶、
+// プルダウンは種別ごとの保持分も含めて全て「指定しない」）に戻り、
+// 保存済みの保持値もリセット後の状態で上書きされる。
+describe('組み合わせ画面：リセットボタン（第20弾）', () => {
+  beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
+
+  const cols = () => document.querySelectorAll('.pair-col')
+  const switchOf = (colIdx: number) => within(cols()[colIdx] as HTMLElement).getByRole('button', { name: /種類を切り替える/ })
+  const summaryText = () => screen.getByLabelText('組み合わせの結果（要約）').textContent ?? ''
+  const selVal = (label: string) => (screen.getByLabelText(label) as HTMLSelectElement).value
+
+  it('両側の選択と種別を変えてからリセットすると、初期状態に戻り保持値も上書きされる', () => {
+    location.hash = '#/pair'; render(<App />)
+    // 右のお茶を紅茶に、左を種別切り替えしてお茶（煎茶）に変える
+    fireEvent.change(screen.getByLabelText('お茶'), { target: { value: 'black-tea' } })
+    fireEvent.click(switchOf(0))
+    fireEvent.change(screen.getByLabelText('左：お茶'), { target: { value: 'sencha' } })
+    expect(summaryText()).not.toContain('両方を選ぶと、ここに結果が出ます')
+
+    fireEvent.click(screen.getByRole('button', { name: 'リセット' }))
+
+    // 種別は既定（左チョコ・右お茶）に戻る
+    expect(switchOf(0).querySelector('.col-head-name')?.textContent).toBe('チョコレート')
+    expect(switchOf(1).querySelector('.col-head-name')?.textContent).toBe('お茶')
+    // 表示中（左チョコ・右お茶）のプルダウンは全て「指定しない」
+    expect(selVal('チョコレート')).toBe('')
+    expect(selVal('カカオの産地（任意）')).toBe('')
+    expect(selVal('カカオの系統（任意）')).toBe('')
+    expect(selVal('お茶')).toBe('')
+    expect(selVal('お茶の産地（任意）')).toBe('')
+    expect(selVal('お茶の品種（任意）')).toBe('')
+    // 結果表示も未選択の初期状態に戻る
+    expect(summaryText()).toContain('両方を選ぶと、ここに結果が出ます')
+    // 保存済みの保持値もリセット後の状態で上書きされている
+    expect(localStorage.getItem('pairing.pair.leftType')).toBe('"chocolate"')
+    expect(localStorage.getItem('pairing.pair.rightType')).toBe('"tea"')
+    expect(localStorage.getItem('pairing.pair.left.chocoKind')).toBe('""')
+    expect(localStorage.getItem('pairing.pair.right.teaKind')).toBe('""')
+    // 種別ごとの保持分も消えている：左をお茶に戻しても煎茶は復元されない
+    fireEvent.click(switchOf(0))
+    expect(selVal('左：お茶')).toBe('')
+    expect(selVal('左：お茶の産地（任意）')).toBe('')
+    expect(selVal('左：お茶の品種（任意）')).toBe('')
+  })
+})
+
 // 実機フィードバック第11弾：組み合わせる画面の側見出しが「お／茶」「チョ／コレ／ート」の
 // ように縦に折り返す問題の修正。種別名は専用要素（.col-head-name）に入れ、CSS で
 // nowrap＋flex:none を保証し、収まらない場合はヒントを丸ごと次行へ落とす構造にする。
