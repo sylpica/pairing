@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, fireEvent, cleanup } from '@testing-library/react'
+import { render, screen, fireEvent, cleanup, within } from '@testing-library/react'
 import App from './App'
 import { compounds } from './data/compounds'
 import { teaItems } from './data/teas'
@@ -112,6 +112,33 @@ describe('画面の基本動作（§16相当のローカル検証）', () => {
     expect(card.parentElement!.lastElementChild).toBe(card)
     // 内容と出典リンクは不変
     expect(screen.getByText(/同一品種・同一地域の生葉を6茶類にモデル製造した研究では/)).toBeTruthy()
+  })
+  it('茶類・製法の比較では各パネルが3階層ホイールで、根拠バッジが凡例ボックス内にある（第23弾）', () => {
+    location.hash = '#/compare'; render(<App />)
+    const grid = document.querySelector('.compare-grid')!
+    const panels = [...grid.children] as HTMLElement[]
+    expect(panels.length).toBe(2)
+    for (const panel of panels) {
+      // 香り／味の切替タブがある（3階層ホイールの作法。旧フラットホイールには無い）
+      expect(within(panel).getByRole('tab', { name: '香り' })).toBeTruthy()
+      expect(within(panel).getByRole('tab', { name: '味' })).toBeTruthy()
+      // 凡例ボックスがあり、根拠レベルバッジがその中にある（アイテム詳細と同じ作法）
+      const legend = panel.querySelector('.combo-legend')
+      expect(legend).toBeTruthy()
+      const badge = legend!.querySelector('.badge')
+      expect(badge).toBeTruthy()
+      expect(['実測・官能評価あり', '一般的な知見', '探索的な予想', '情報不足']).toContain(badge!.textContent)
+    }
+    // ドリルダウン：パネル1で大分類を開くと中分類（具体名）に進み、戻れる
+    const panelA = panels[0]
+    const openers = within(panelA).getAllByLabelText(/を開く/)
+    expect(openers.length).toBeGreaterThan(0)
+    fireEvent.click(openers[0])
+    expect(within(panelA).getByRole('button', { name: '← 大分類に戻る' })).toBeTruthy()
+    fireEvent.click(within(panelA).getByRole('button', { name: '← 大分類に戻る' }))
+    // 味への切替：パネル1で「味」タブを押すと基本味のホイールになる
+    fireEvent.click(within(panelA).getByRole('tab', { name: '味' }))
+    expect(within(panelA).getByLabelText(/基本味を開く/)).toBeTruthy()
   })
   it('出典・論文一覧では方法論の解説3件が出典リストの下（ページ下部）にある（第22弾）', () => {
     location.hash = '#/sources'; render(<App />)

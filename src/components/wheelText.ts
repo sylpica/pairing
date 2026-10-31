@@ -1,4 +1,7 @@
-// ホイール内テキストのフィッティング共通処理（TieredWheel / FlavorWheel 共用）。
+// ホイール内テキストのフィッティング共通処理（TieredWheel 用）。
+// 旧 FlavorWheel.tsx の INT_LABEL は COMBO_INT_LABEL と同一内容だったため、
+// 第23弾で NoteDetail／TasteDetail の参照を COMBO_INT_LABEL へ一本化し、
+// 旧コンポーネントは参照ゼロとなって削除した。
 //
 // 方針（ユーザー指示・第6弾）: 全てのセグメントに必ずラベル（ノート名）を出す。
 // 入らない場合はフォントサイズを段階的に縮小し（下限 7px）、それでも無理なら

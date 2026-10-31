@@ -1,5 +1,5 @@
 import type { Compound, FlavorProfile } from '../types'
-import { INT_LABEL } from './FlavorWheel'
+import { COMBO_INT_LABEL as INT_LABEL } from './wheelText'
 import { BASIS_LABEL, SourceLinks } from './SourceLinks'
 import CompoundCard from './CompoundCard'
 import { noteById } from '../data/flavors'

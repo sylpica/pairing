@@ -4,7 +4,6 @@ import { teaItems, teaKinds, teaById } from './data/teas'
 import { chocolateItems, chocolateById } from './data/chocolates'
 import { sources } from './data/sources'
 import ProfileView, { LEVEL_LABEL, SourceLinks } from './components/ProfileView'
-import FlavorWheel from './components/FlavorWheel'
 import { recommend, TASTE_LABELS } from './engine/pairing'
 import { hasAnyInteraction } from './engine/interactions'
 import { CHARACTER_RULE_LABELS } from './engine/pairingCharacter'
@@ -14,8 +13,6 @@ import { categoryById } from './data/flavors'
 import { loadSaved, persistSaved, pairIdOf, parsePairId, comboFavId, parseComboFavId, parseLineageFavId, type SavedData } from './storage'
 import FavButton from './components/FavButton'
 import { go, scrollTop, trackRoute } from './nav'
-import NoteDetail from './components/NoteDetail'
-import { CollapsibleSheet } from './components/Sheet'
 import CompoundCard from './components/CompoundCard'
 import { PairNoteCompounds, PairCategoryCompounds, type PairCompoundSide } from './components/PairCompounds'
 import { compounds, compoundById } from './data/compounds'
@@ -954,10 +951,9 @@ function PairPage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'pair
 
 function ComparePage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'teas', id: string) => void }) {
   const [a, setA] = useState(teaItems[1].id); const [b, setB] = useState(teaItems[7].id)
-  const [sel, setSel] = useState<{ noteId: string; side: 'a' | 'b' } | null>(null)
   const ta = teaById(a)!; const tb = teaById(b)!
   // 第20弾: 見出し行のリセットで2つのプルダウンを開いた直後の既定に戻す。
-  const resetCompare = () => { setA(teaItems[1].id); setB(teaItems[7].id); setSel(null) }
+  const resetCompare = () => { setA(teaItems[1].id); setB(teaItems[7].id) }
   return (
     <div>
       <div className="page-head-row">
@@ -968,16 +964,15 @@ function ComparePage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 't
         <label>比べるお茶 1 <select value={a} onChange={(e) => setA(e.target.value)}>{teaItems.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
         <label>比べるお茶 2 <select value={b} onChange={(e) => setB(e.target.value)}>{teaItems.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
       </div>
+      {/* 第23弾（第22弾の提案P2をユーザーが承認）: 旧フラットホイール（FlavorWheel）を
+          アイテム詳細と同じ3階層ホイール（ProfileWheelPanel）に差し替え、香り／味切替・
+          ドリルダウン・凡例ボックスを他の画面と統一した。根拠レベルバッジは詳細ページと
+          同じ作法で凡例ボックス内（legendExtra）へ入れる。パネルは key でアイテムごとに
+          作り直し、プルダウン変更時に階層の状態を持ち越さない。 */}
       <div className="compare-grid">
-        <div><h3>{ta.name}</h3><p><FavButton fav={saved.favorites.teas.includes(ta.id)} onToggle={() => toggleFav('teas', ta.id)} /></p><FlavorWheel profile={ta.profile} onSelectNote={(id) => setSel({ noteId: id, side: 'a' })} /></div>
-        <div><h3>{tb.name}</h3><p><FavButton fav={saved.favorites.teas.includes(tb.id)} onToggle={() => toggleFav('teas', tb.id)} /></p><FlavorWheel profile={tb.profile} onSelectNote={(id) => setSel({ noteId: id, side: 'b' })} /></div>
+        <div><h3>{ta.name}</h3><p><FavButton fav={saved.favorites.teas.includes(ta.id)} onToggle={() => toggleFav('teas', ta.id)} /></p><ProfileWheelPanel key={ta.id} profile={ta.profile} context={{ side: 'tea', kindId: ta.kindId, itemName: ta.name, itemId: ta.id }} legendExtra={<p><span className="badge">{LEVEL_LABEL[ta.evidenceLevel]}</span></p>} /></div>
+        <div><h3>{tb.name}</h3><p><FavButton fav={saved.favorites.teas.includes(tb.id)} onToggle={() => toggleFav('teas', tb.id)} /></p><ProfileWheelPanel key={tb.id} profile={tb.profile} context={{ side: 'tea', kindId: tb.kindId, itemName: tb.name, itemId: tb.id }} legendExtra={<p><span className="badge">{LEVEL_LABEL[tb.evidenceLevel]}</span></p>} /></div>
       </div>
-      {sel && (
-        <CollapsibleSheet resetKey={`${sel.side}:${sel.noteId}`} title={noteById(sel.noteId)?.name ?? sel.noteId} onDismiss={() => setSel(null)}>
-          <NoteDetail noteId={sel.noteId} profile={sel.side === 'a' ? ta.profile : tb.profile}
-            context={{ side: 'tea', kindId: (sel.side === 'a' ? ta : tb).kindId, itemName: (sel.side === 'a' ? ta : tb).name, itemId: (sel.side === 'a' ? ta : tb).id }} />
-        </CollapsibleSheet>
-      )}
       <p className="note-small">各ホイールは総説に基づく茶類・製法レベルの一般的特徴です。異なる品種・条件の試料では、違いが製法だけによるものとは限りません。</p>
       {/* 第20弾で比較結果の下へ移した研究解説カードを、第21弾（2026-10-31 実機FB）で
           さらにページの一番下（注記よりも下の最後尾）へ移動した。
