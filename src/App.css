@@ -70,8 +70,9 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 .pair-character .chip { min-height: 44px; padding: 4px 10px; font-size: 0.9rem; }
 .pair-notes { margin-top: 20px; }
 .pair-notes summary { cursor: pointer; font-weight: 700; font-size: 0.9rem; min-height: 32px; }
-.pair-summary-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
-.pair-summary-head h3 { margin: 0; font-size: 1.05rem; }
+/* 第12弾: 結果エリア下部の注記群（根拠区分チップ・同種ペア注記・第2層の土台注記）。
+   本文と区切るため上に余白と細い罫を置く。 */
+.pair-summary-notes { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--line); }
 /* 「この組み合わせを保存」は結果の一番下に置く（2026-10-31 指示6） */
 .pair-save-row { display: flex; justify-content: center; margin: 16px 0 4px; }
 .pair-save-btn { font-size: 0.95rem; padding: 10px 20px; min-height: 44px; }

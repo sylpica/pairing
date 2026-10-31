@@ -30,15 +30,16 @@ describe('組み合わせ画面：自家ブレンド（種別切り替え）', (
     expect(screen.getByLabelText('左：お茶')).toBeTruthy()
     expect(screen.getByLabelText('右：お茶')).toBeTruthy()
     expect(screen.queryByLabelText('チョコレート')).toBeNull()
-    // 同種ブレンドの正直な注記が要約に出る
-    expect(summaryText()).toContain('お茶同士のブレンドを直接調べた官能研究は確認できていない')
-    expect(summaryText()).toContain('×')
+    // 同種ブレンドの正直な注記が要約下部の注記群に出る（第12弾で下部へ移動）
+    expect(document.querySelector('.pair-summary-notes')?.textContent).toContain('お茶同士のブレンドを直接調べた官能研究は確認できていない')
+    // 第12弾: 選択内容を繰り返す見出し（○○ × ○○）は結果エリアに出ない
+    expect(summaryText()).not.toContain('×')
     // タブはアイテム名で区別される（既定は両側とも烏龍茶）
     expect(screen.getAllByRole('tab', { name: '烏龍茶（青茶）' }).length).toBe(2)
-    // 左を煎茶に変えるとタブと見出しが追随する
+    // 左を煎茶に変えるとタブが追随する（結果見出しには出ない）
     fireEvent.change(screen.getByLabelText('左：お茶'), { target: { value: 'sencha' } })
     expect(screen.getByRole('tab', { name: '煎茶' })).toBeTruthy()
-    expect(summaryText()).toContain('煎茶 × 烏龍茶（青茶）')
+    expect(summaryText()).not.toContain('煎茶 × 烏龍茶（青茶）')
     // お茶タブ（煎茶側）を開くとホイールが出る
     fireEvent.click(screen.getByRole('tab', { name: '煎茶' }))
     expect(screen.getByLabelText(/フレーバーホイール/)).toBeTruthy()
@@ -49,14 +50,15 @@ describe('組み合わせ画面：自家ブレンド（種別切り替え）', (
     fireEvent.click(switchOf(1))
     expect(screen.getByLabelText('左：チョコレート')).toBeTruthy()
     expect(screen.getByLabelText('右：チョコレート')).toBeTruthy()
-    expect(summaryText()).toContain('チョコレート同士のブレンドを直接調べた官能研究は確認できていない')
-    expect(summaryText()).toContain('×')
+    expect(document.querySelector('.pair-summary-notes')?.textContent).toContain('チョコレート同士のブレンドを直接調べた官能研究は確認できていない')
+    // 第12弾: 選択内容を繰り返す見出し（○○ × ○○）は結果エリアに出ない
+    expect(summaryText()).not.toContain('×')
     // チョコ側のプルダウン（産地・系統）も両側に出る
     expect(screen.getByLabelText('左：カカオの産地（任意）')).toBeTruthy()
     expect(screen.getByLabelText('右：カカオの系統（任意）')).toBeTruthy()
     // 右をミルクチョコに変えて、タブ（アイテム名）からホイールが開ける
     fireEvent.change(screen.getByLabelText('右：チョコレート'), { target: { value: 'milk-chocolate' } })
-    expect(summaryText()).toContain('ダークチョコレート（焙煎） × ミルクチョコレート')
+    expect(summaryText()).not.toContain('ダークチョコレート（焙煎） × ミルクチョコレート')
     fireEvent.click(screen.getByRole('tab', { name: 'ミルクチョコレート' }))
     expect(screen.getByLabelText(/フレーバーホイール/)).toBeTruthy()
   })

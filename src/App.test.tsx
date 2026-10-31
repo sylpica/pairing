@@ -60,7 +60,10 @@ describe('組み合わせ画面のレイアウト（左チョコ・右お茶＋�
   it('両方を選んだ状態では選択エリア直下に結果要約が出る', () => {
     location.hash = '#/pair'; render(<App />)
     const summary = screen.getByLabelText('組み合わせの結果（要約）')
-    expect(summary.textContent).toContain('×')
+    // 第12弾: 要約の先頭は「組み合わせの味わい」で、選択内容を繰り返す見出し（○○ × ○○）は出ない
+    expect(summary.querySelector('.pair-character-head')?.textContent).toContain('組み合わせの味わい（推測）')
+    expect(summary.querySelector('h3')).toBeNull()
+    expect(summary.textContent).not.toContain('×')
     // 要約はタブ（詳細）より前に配置されている
     const tabs = document.querySelector('.tabs')
     expect(tabs).toBeTruthy()
@@ -71,6 +74,56 @@ describe('組み合わせ画面のレイアウト（左チョコ・右お茶＋�
     fireEvent.change(screen.getByLabelText('お茶'), { target: { value: '' } })
     expect(screen.getByText(/もう一方を選ぶと結果が出ます/)).toBeTruthy()
     expect(document.querySelector('.tabs')).toBeNull()
+  })
+})
+
+// 実機フィードバック第12弾（2026-10-31）: 結果エリアの並びの再構成。
+// 先頭は「組み合わせの味わい」（プルダウン／タブのすぐ下）、選択内容を繰り返す
+// 見出し（○○ × ○○）は出さず、根拠区分チップ・同種ペア注記・第2層の土台注記は
+// メタ情報として結果エリア下部の注記群（.pair-summary-notes）に置く。
+describe('実機フィードバック第12弾：結果エリアの並び（味わいが先頭・見出しなし・注記は下部）', () => {
+  beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
+  const isBefore = (a: Element, b: Element) =>
+    (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0
+
+  it('異種ペア：先頭が組み合わせの味わいで、注記群はその後ろにある', () => {
+    location.hash = '#/pair'; render(<App />)
+    // 軸を指定して第2層の土台注記を出す（第4弾の実績シナリオ）
+    fireEvent.change(screen.getByLabelText('お茶'), { target: { value: 'matcha' } })
+    fireEvent.change(screen.getByLabelText('お茶の品種（任意）'), { target: { value: 'harumidori' } })
+    fireEvent.change(screen.getByLabelText('お茶の産地（任意）'), { target: { value: 'region:murakami' } })
+    fireEvent.change(screen.getByLabelText('カカオの産地（任意）'), { target: { value: 'ecuador' } })
+    fireEvent.change(screen.getByLabelText('カカオの系統（任意）'), { target: { value: 'genetic:gen-amelonado' } })
+    const summary = screen.getByLabelText('組み合わせの結果（要約）')
+    const character = summary.querySelector('.pair-character')
+    expect(character).toBeTruthy()
+    // 結果エリアの先頭要素が味わいセクション（間に見出し・チップ・注記を挟まない）
+    expect(summary.firstElementChild).toBe(character)
+    expect(character!.querySelector('.pair-character-head')?.textContent).toContain('組み合わせの味わい（推測）')
+    // 選択内容を繰り返す見出しは無い
+    expect(summary.querySelector('h3')).toBeNull()
+    expect(summary.textContent).not.toContain('×')
+    // 下部の注記群：味わいより後ろにあり、根拠区分チップと第2層注記を含む
+    const notes = summary.querySelector('.pair-summary-notes')
+    expect(notes).toBeTruthy()
+    expect(isBefore(character!, notes!)).toBe(true)
+    expect(notes!.querySelector('.badge')).toBeTruthy()
+    expect(notes!.textContent).toContain('組み合わせの推測（第2層）としてこの結果の土台になっています')
+  })
+
+  it('同種ペア：味わいが先頭で、同種ペア注記も下部の注記群にある', () => {
+    location.hash = '#/pair'; render(<App />)
+    // 左をお茶に切り替えてお茶同士にする
+    fireEvent.click(screen.getByRole('button', { name: /左の種類を切り替える/ }))
+    const summary = screen.getByLabelText('組み合わせの結果（要約）')
+    const character = summary.querySelector('.pair-character')
+    expect(character).toBeTruthy()
+    expect(summary.firstElementChild).toBe(character)
+    expect(summary.querySelector('h3')).toBeNull()
+    const notes = summary.querySelector('.pair-summary-notes')
+    expect(notes).toBeTruthy()
+    expect(isBefore(character!, notes!)).toBe(true)
+    expect(notes!.textContent).toContain('お茶同士のブレンドを直接調べた官能研究は確認できていない')
   })
 })
 
@@ -292,7 +345,11 @@ describe('UI改善：絞り込みのメイン化・チョコ種類追加・系�
     expect(values).toContain('oolong-tea')
     fireEvent.change(sel, { target: { value: 'black' } })
     const summary = screen.getByLabelText('組み合わせの結果（要約）')
-    expect(summary.textContent).toContain('× 紅茶')
+    // 第12弾: 結果エリアに選択内容の見出し（○○ × ○○）は出ない。
+    // 分類の代表（紅茶）がペア対象になったことは、履歴の種別つきIDで確認する
+    expect(summary.textContent).not.toContain('×')
+    const raw = JSON.parse(localStorage.getItem('pairing-app:v1')!) as { history: { pairings: string[] } }
+    expect(raw.history.pairings.some((id) => id.includes('tea:black-tea'))).toBe(true)
   })
   it('調べると組み合わせるでプルダウンの選択肢が同じ（指示7）', () => {
     location.hash = '#/tea'; render(<App />)
@@ -401,7 +458,7 @@ describe('実機フィードバック第2弾：保存ボタン位置・タブ・
 describe('実機フィードバック第4弾：組み合わせる画面で軸が結果に効く（課題C）', () => {
   beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
 
-  it('結果タイトルに指定した産地・品種・系統まで出て、軸の反映セクションが出る', () => {
+  it('指定した産地・品種・系統が軸の反映セクションに出て、第2層の土台注記は要約下部に出る', () => {
     location.hash = '#/pair'; render(<App />)
     // お茶: 抹茶 × 村上 × はるみどり
     fireEvent.change(screen.getByLabelText('お茶'), { target: { value: 'matcha' } })
@@ -411,12 +468,15 @@ describe('実機フィードバック第4弾：組み合わせる画面で軸が
     fireEvent.change(screen.getByLabelText('カカオの産地（任意）'), { target: { value: 'ecuador' } })
     fireEvent.change(screen.getByLabelText('カカオの系統（任意）'), { target: { value: 'genetic:gen-amelonado' } })
     const summary = document.querySelector('.pair-summary')
-    expect(summary?.textContent).toContain('村上 × はるみどり × 抹茶')
-    expect(summary?.textContent).toContain('エクアドル')
-    expect(summary?.textContent).toContain('アメロナド')
-    expect(summary?.textContent).toContain('組み合わせの推測（第2層）としてこの結果の土台になっています')
-    // 軸の反映セクション（変わらない理由を含む）
+    // 第12弾: 選択内容を繰り返す見出しは結果エリアに出ない（指定内容はプルダウンと軸の反映で確認できる）
+    expect(summary?.textContent).not.toContain('村上 × はるみどり × 抹茶')
+    // 第2層の土台注記は要約下部の注記群に出る
+    expect(summary?.querySelector('.pair-summary-notes')?.textContent).toContain('組み合わせの推測（第2層）としてこの結果の土台になっています')
+    // 軸の反映セクション（変わらない理由を含む）に指定内容が出る
     expect(screen.getByText('指定した軸の反映（組み合わせの推測）')).toBeTruthy()
+    expect(document.body.textContent).toContain('村上 × はるみどり × 抹茶')
+    expect(document.body.textContent).toContain('エクアドル')
+    expect(document.body.textContent).toContain('アメロナド')
     expect(document.body.textContent).toContain('寄与を示すものではない')
   })
 

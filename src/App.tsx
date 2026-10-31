@@ -775,16 +775,10 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
       <section className="pair-summary" aria-live="polite" aria-label="組み合わせの結果（要約）">
         {bothSelected && result ? (
           <>
-            <div className="pair-summary-head">
-              <h3>{leftView.title} × {rightView.title}</h3>
-            </div>
-            <p className="pair-summary-line"><span className="badge">{LEVEL_LABEL[result.level]}</span></p>
-            {sameType && (
-              <p className="pair-summary-line note-small">{PAIR_TYPE_NAME[leftType]}同士のブレンドを直接調べた官能研究は確認できていないため、この結果は両者のプロファイルと一般的な味覚・嗅覚の機序からの推測です。</p>
-            )}
-            {(leftView.analysis || rightView.analysis) && (
-              <p className="pair-summary-line note-small">指定した産地・品種・系統は、組み合わせの推測（第2層）としてこの結果の土台になっています{[leftView, rightView].map((v) => v.analysis ? <span key={v.pos}>／{axisLabelOf(v)}：<span className="badge">{COMBO_LEVEL_LABEL[v.analysis.overallLevel]}</span></span> : null)}</p>
-            )}
+            {/* 第12弾（2026-10-31 実機FB）: 結果エリアの先頭は「組み合わせの味わい」を
+                プルダウン／タブのすぐ下に置く。選択内容を繰り返す大きな見出し
+                （○○ × ○○）はプルダウンで設定済みのため出さない。根拠区分チップ・
+                同種ペア注記・第2層の土台注記はメタ情報として下部の注記群へ移した。 */}
             {characters && (allCharacters.length > 0 ? (
               <div className="pair-character">
                 <p className="pair-character-head"><strong>組み合わせの味わい（推測）</strong> <span className="badge badge-inferred">推測（未検証）</span></p>
@@ -809,6 +803,15 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
             {result.sharedCategories.length > 0 && <p className="pair-summary-line">同じ分類の香り：{result.sharedCategories.slice(0, 3).map((s) => categoryById(s.categoryId)?.name ?? s.categoryId).join('、')}{result.sharedCategories.length > 3 ? ' ほか' : ''}</p>}
             {result.contrasts.length > 0 && <p className="pair-summary-line">対比する特徴：{[...new Set(result.contrasts.map((c) => c.label))].slice(0, 2).join('／')}</p>}
             {result.sharedNotes.length === 0 && result.sharedCategories.length === 0 && result.contrasts.length === 0 && <p className="pair-summary-line">{result.message}</p>}
+            <div className="pair-summary-notes">
+              <p className="pair-summary-line"><span className="badge">{LEVEL_LABEL[result.level]}</span></p>
+              {sameType && (
+                <p className="pair-summary-line note-small">{PAIR_TYPE_NAME[leftType]}同士のブレンドを直接調べた官能研究は確認できていないため、この結果は両者のプロファイルと一般的な味覚・嗅覚の機序からの推測です。</p>
+              )}
+              {(leftView.analysis || rightView.analysis) && (
+                <p className="pair-summary-line note-small">指定した産地・品種・系統は、組み合わせの推測（第2層）としてこの結果の土台になっています{[leftView, rightView].map((v) => v.analysis ? <span key={v.pos}>／{axisLabelOf(v)}：<span className="badge">{COMBO_LEVEL_LABEL[v.analysis.overallLevel]}</span></span> : null)}</p>
+              )}
+            </div>
           </>
         ) : (
           <p className="pair-summary-line">{leftView.item || rightView.item ? 'もう一方を選ぶと結果が出ます。' : '両方を選ぶと、ここに結果が出ます。'}</p>

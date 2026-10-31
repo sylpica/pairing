@@ -111,26 +111,33 @@ describe('調べる：部分指定（1〜2軸）でもホイール（プレビ�
 describe('組み合わせる：分類未指定＋産地のみでも結果が組み立てられる（第5弾・要件6の一般化）', () => {
   beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
 
-  it('お茶側：分類を外して産地（静岡）だけ指定しても、見出しに静岡が出て結果が出る', () => {
+  it('お茶側：分類を外して産地（静岡）だけ指定しても結果が出る（見出しの重複表示なし）', () => {
     location.hash = '#/pair'
     render(<App />)
     fireEvent.change(screen.getByLabelText('お茶'), { target: { value: '' } })
     fireEvent.change(screen.getByLabelText('お茶の産地（任意）'), { target: { value: 'region:shizuoka' } })
     const summary = document.querySelector('.pair-summary')
     expect(summary).toBeTruthy()
-    expect(summary!.textContent).toContain('静岡')
     expect(summary!.textContent).not.toContain('もう一方を選ぶと結果が出ます')
+    // 第12弾: 選択内容を繰り返す見出しは出ない。産地の指定はプルダウン自体と、
+    // 要約下部の第2層注記・軸の反映で確認できる
+    expect(summary!.querySelector('h3')).toBeNull()
+    expect(summary!.querySelector('.pair-summary-notes')?.textContent).toContain('組み合わせの推測（第2層）としてこの結果の土台になっています')
+    expect(document.body.textContent).toContain('静岡')
   })
 
-  it('チョコ側：分類を外して産地（エクアドル）だけ指定しても、見出しにエクアドルが出て結果が出る', () => {
+  it('チョコ側：分類を外して産地（エクアドル）だけ指定しても結果が出る（見出しの重複表示なし）', () => {
     location.hash = '#/pair'
     render(<App />)
     fireEvent.change(screen.getByLabelText('チョコレート'), { target: { value: '' } })
     fireEvent.change(screen.getByLabelText('カカオの産地（任意）'), { target: { value: 'ecuador' } })
     const summary = document.querySelector('.pair-summary')
     expect(summary).toBeTruthy()
-    expect(summary!.textContent).toContain('エクアドル')
     expect(summary!.textContent).not.toContain('もう一方を選ぶと結果が出ます')
+    // 第12弾: 見出しの重複表示なし。第2層注記は要約下部の注記群に出る
+    expect(summary!.querySelector('h3')).toBeNull()
+    expect(summary!.querySelector('.pair-summary-notes')?.textContent).toContain('組み合わせの推測（第2層）としてこの結果の土台になっています')
+    expect(document.body.textContent).toContain('エクアドル')
   })
 })
 
