@@ -397,3 +397,36 @@ describe('実機フィードバック第2弾：保存ボタン位置・タブ・
     expect(screen.getByRole('button', { name: '← 戻る' })).toBeTruthy()
   })
 })
+
+describe('実機フィードバック第4弾：組み合わせる画面で軸が結果に効く（課題C）', () => {
+  beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
+
+  it('結果タイトルに指定した産地・品種・系統まで出て、軸の反映セクションが出る', () => {
+    location.hash = '#/pair'; render(<App />)
+    // お茶: 抹茶 × 村上 × はるみどり
+    fireEvent.change(screen.getByLabelText('お茶'), { target: { value: 'matcha' } })
+    fireEvent.change(screen.getByLabelText('お茶の品種（任意）'), { target: { value: 'harumidori' } })
+    fireEvent.change(screen.getByLabelText('お茶の産地（任意）'), { target: { value: 'region:murakami' } })
+    // チョコ: ダーク（既定）× エクアドル × アメロナド
+    fireEvent.change(screen.getByLabelText('カカオの産地（任意）'), { target: { value: 'ecuador' } })
+    fireEvent.change(screen.getByLabelText('カカオの系統（任意）'), { target: { value: 'genetic:gen-amelonado' } })
+    const summary = document.querySelector('.pair-summary')
+    expect(summary?.textContent).toContain('村上 × はるみどり × 抹茶')
+    expect(summary?.textContent).toContain('エクアドル')
+    expect(summary?.textContent).toContain('アメロナド')
+    expect(summary?.textContent).toContain('組み合わせの推測（第2層）としてこの結果の土台になっています')
+    // 軸の反映セクション（変わらない理由を含む）
+    expect(screen.getByText('指定した軸の反映（組み合わせの推測）')).toBeTruthy()
+    expect(document.body.textContent).toContain('寄与を示すものではない')
+  })
+
+  it('軸指定時はお茶タブのホイールが組み合わせ側（軸効果込み）と一致する', () => {
+    location.hash = '#/pair'; render(<App />)
+    fireEvent.change(screen.getByLabelText('お茶'), { target: { value: 'oolong-tea' } })
+    fireEvent.change(screen.getByLabelText('お茶の品種（任意）'), { target: { value: 'fenghuang-dancong-group' } })
+    fireEvent.change(screen.getByLabelText('お茶の産地（任意）'), { target: { value: 'region:guangdong' } })
+    fireEvent.click(screen.getByRole('tab', { name: 'お茶' }))
+    // 組み合わせホイールには蘭のノートが出る（素のプロファイルには無い）
+    expect(document.body.textContent).toContain('蘭')
+  })
+})

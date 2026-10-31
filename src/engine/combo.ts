@@ -1,6 +1,6 @@
 import type {
   Basis, ComboBasis, ComboLevel, ComboNote, ComboStatement, ComboTaste, EntityFinding,
-  Intensity, TasteKey, TeaRegion,
+  FlavorProfile, Intensity, TasteKey, TeaRegion,
 } from '../types'
 import { FLAVOR_FINDING_KINDS } from '../types'
 import { teaKinds, teaById, teaItems } from '../data/teas'
@@ -13,7 +13,7 @@ import {
   traditionalGroupById, geneticGroupById, cacaoCloneById,
 } from '../data/cacao'
 import { teaProcessRules, chocoProcessRules } from '../data/processRules'
-import { teaAxisRules, chocoAxisRules } from '../data/axisEffects'
+import { teaAxisRules, chocoAxisRules, axisNoEffectFor } from '../data/axisEffects'
 import { noteById } from '../data/flavors'
 import type { CacaoLayer } from './pairingContext'
 import type { CompoundContext } from '../data/compounds'
@@ -472,6 +472,7 @@ function summarizeAxis(
   applied: Set<string>,
   meta: Map<string, EffectMeta>,
   statementsOnly: boolean,
+  noEffectText?: string,
 ): ComboAxisSummary {
   const noteNames: string[] = []
   const tasteLabels: string[] = []
@@ -492,6 +493,9 @@ function summarizeAxis(
       axis, entityName, reflected: true,
       text: `「${entityName}」については、製法の科学からの読み替えが「味わいの要約」に反映されています。ホイールのノートそのものは、分類プロファイルのままです。`,
     }
+  }
+  if (noEffectText) {
+    return { axis, entityName, reflected: false, text: noEffectText }
   }
   if (flavorFindingCount > 0) {
     return {
@@ -531,6 +535,33 @@ function finalize(
     title,
     overallLevel: hasInferred ? 'inferred' : hasMeasured ? 'measured' : 'general',
     notes, tastes, statements, groups, caveats, axisSummaries, sourceIds, context,
+  }
+}
+
+/**
+ * 組み合わせ分析（第2層）を FlavorProfile の形に戻す（第3層＝ペアリングの入力用）。
+ * 香りは分析のノート集合そのもの、味覚は土台を分析の味覚で上書きする。
+ * level → basis の写像: measured→measured、それ以外→general。
+ * inferred（推測）かどうかは basis では表せないため、呼び出し側は組み合わせ分析
+ * 自体の overallLevel / axisSummaries を併せて表示し、階層の正直さを保つこと。
+ */
+const COMBO_LEVEL_TO_BASIS: Record<ComboLevel, Basis> = {
+  measured: 'measured',
+  general: 'general',
+  inferred: 'general',
+}
+
+export function comboProfileOf(analysis: ComboAnalysis, base: FlavorProfile): FlavorProfile {
+  const tastes: FlavorProfile['tastes'] = { ...base.tastes }
+  for (const t of analysis.tastes) {
+    tastes[t.key] = { intensity: t.intensity, basis: COMBO_LEVEL_TO_BASIS[t.level], sourceIds: [...t.sourceIds] }
+  }
+  return {
+    aromas: analysis.notes.map((n) => ({
+      noteId: n.noteId, intensity: n.intensity, basis: COMBO_LEVEL_TO_BASIS[n.level], sourceIds: [...n.sourceIds],
+    })),
+    tastes,
+    temporal: base.temporal,
   }
 }
 
@@ -641,7 +672,8 @@ export function analyzeTeaCombo(sel: TeaComboSel): ComboAnalysis {
 
   const axisSummaries: ComboAxisSummary[] = []
   if (region) {
-    axisSummaries.push(summarizeAxis('region', region.name, flavorFindings(region.findings).length, applied, effectMeta, false))
+    axisSummaries.push(summarizeAxis('region', region.name, flavorFindings(region.findings).length, applied, effectMeta, false,
+      axisNoEffectFor('region', region.id, { kindCategory: category })?.text))
   } else if (regionCountry) {
     axisSummaries.push({
       axis: 'region', entityName: regionCountry, reflected: false,
@@ -651,7 +683,8 @@ export function analyzeTeaCombo(sel: TeaComboSel): ComboAnalysis {
   if (cultivar) {
     const cultivarOutcome = [...applied].some((id) => effectMeta.get(id)?.axis === 'cultivar')
     axisSummaries.push(summarizeAxis('cultivar', cultivar.name, flavorFindings(cultivar.findings).length, applied, effectMeta,
-      !cultivarOutcome && rules.some((r) => r.cultivarId === cultivar.id)))
+      !cultivarOutcome && rules.some((r) => r.cultivarId === cultivar.id),
+      axisNoEffectFor('cultivar', cultivar.id)?.text))
   }
   return finalize(teaComboTitle(sel), notes, tastes, statements, groups, caveats, axisSummaries,
     { side: 'tea', kindId: rep.kindId, itemName: rep.name, itemId: rep.id })
@@ -751,13 +784,15 @@ export function analyzeChocoCombo(sel: ChocoComboSel): ComboAnalysis {
 
   const axisSummaries: ComboAxisSummary[] = []
   if (origin) {
-    axisSummaries.push(summarizeAxis('origin', origin.name, flavorFindings(origin.findings).length, applied, effectMeta, false))
+    axisSummaries.push(summarizeAxis('origin', origin.name, flavorFindings(origin.findings).length, applied, effectMeta, false,
+      axisNoEffectFor('origin', origin.id)?.text))
   }
   if (entity && lineageRef) {
     const lineageName = allLineages().find((l) => l.layer === lineageRef.layer && l.id === lineageRef.id)?.name ?? lineageRef.id
     const lineageOutcome = [...applied].some((id) => effectMeta.get(id)?.axis === 'lineage')
     axisSummaries.push(summarizeAxis('lineage', lineageName, flavorFindings(entity.findings).length, applied, effectMeta,
-      !lineageOutcome && rules.length > 0))
+      !lineageOutcome && rules.length > 0,
+      axisNoEffectFor('lineage', entity.id, { lineageLayer: lineageRef.layer })?.text))
   }
   return finalize(chocoComboTitle(sel), notes, tastes, statements, groups, caveats, axisSummaries,
     { side: 'chocolate', kindId: rep.kind, itemName: rep.name, itemId: rep.id })

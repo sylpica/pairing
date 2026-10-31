@@ -5,8 +5,10 @@ import { teaKinds } from '../data/teas'
 
 // ペアリングで品種・系統が指定されたとき、「どの階層のデータに基づく参考情報か」を
 // 判定する（設計: docs/design/cultivar-data-model.md §9）。
-// ここでは相性や強度を一切計算しない。品種・系統の所見は「参考として併記」するだけで、
-// 組み合わせの見方そのものは従来どおり茶類・種類レベルのプロファイルで作る。
+// ここでは相性や強度を一切計算しない。階層の扱い（2026-10-31 課題Cで更新）:
+// 指定された軸は、組み合わせページと同じ組み合わせ分析（第2層）を通じて
+// ペアリングの入力に統合される（pairingCombo.ts）。このモジュールの文は、
+// その統合の土台になった所見の階層と範囲を示すためのものである。
 export const DATA_LEVEL_LABEL: Record<DataLevelUsed, string> = {
   'cultivar-measured': '品種・系統の実測に基づく参考情報',
   'cultivar-general': '品種固有の一般的傾向に基づく参考情報',
@@ -34,7 +36,7 @@ export function teaCultivarPairingNote(cultivar: TeaCultivar, kindId: string): P
   if (use?.status === 'studied' && findings.length > 0) {
     return {
       level: 'cultivar-measured',
-      text: `${cultivar.name}を${kn}に加工した研究で確認された所見があります。組み合わせの見方そのものは${kn}レベルの特徴で作り、品種の所見は下記の範囲で参考として併記します。条件付きの所見は条件を落とさずに示します。`,
+      text: `${cultivar.name}を${kn}に加工した研究で確認された所見があります。品種を指定した場合は、組み合わせページと同じ仕組みで、品種・産地・分類を統合した組み合わせの推測を土台にして見方を作ります（品種の所見のうち香味への寄与が示されたものは、ホイールや味わいの推測にも反映されます）。条件付きの所見は条件を落とさずに示します。`,
       findings,
       sourceIds: [...new Set(findings.flatMap((f) => f.sourceIds))],
     }
@@ -42,7 +44,7 @@ export function teaCultivarPairingNote(cultivar: TeaCultivar, kindId: string): P
   if (use && findings.length > 0) {
     return {
       level: 'cultivar-general',
-      text: `${cultivar.name}には品種固有の科学データがありますが、${kn}での実測として確認できる範囲は限られます（条件付きの知見を含みます）。組み合わせの見方は${kn}レベルの特徴で作り、品種の所見は一般的な傾向として参考に併記します。`,
+      text: `${cultivar.name}には品種固有の科学データがありますが、${kn}での実測として確認できる範囲は限られます（条件付きの知見を含みます）。品種を指定した場合は、組み合わせページと同じ仕組みで組み合わせの推測を土台にして見方を作ります（品種の所見のうち香味への寄与が示されたものだけが推測に反映され、それ以外は一般的な傾向として下記に併記します）。`,
       findings,
       sourceIds: [...new Set(findings.flatMap((f) => f.sourceIds))],
     }
@@ -50,7 +52,7 @@ export function teaCultivarPairingNote(cultivar: TeaCultivar, kindId: string): P
   if (use) {
     return {
       level: 'kind-general',
-      text: `${cultivar.name}を${kn}に加工することは確認されていますが、品種固有の香味データは未確認です。そのため組み合わせの見方は${kn}レベルの特徴だけで作っています。品種固有の相性があるかのような表示はしません。`,
+      text: `${cultivar.name}を${kn}に加工することは確認されていますが、品種固有の香味データは未確認です。そのため品種の情報は組み合わせの推測に使っておらず、見方は${kn}レベルの特徴だけで作っています。品種固有の相性があるかのような表示はしません。`,
       findings: [],
       sourceIds: [],
     }
@@ -82,8 +84,8 @@ export function cacaoPairingNote(layer: CacaoLayer, entity: CacaoEntityLike): Pa
     return {
       level: layer === 'clone' ? 'cultivar-measured' : 'group-general',
       text: layer === 'clone'
-        ? `${entity.name}（個別クローン）については実測の所見があります。ただし個別のチョコレートの味は発酵・焙煎・配合でも変わるため、組み合わせの見方はチョコレートの種類レベルの特徴で作り、クローンの所見は参考として併記します。`
-        : `${entity.name}（${CACAO_LAYER_LABEL[layer]}）としての実測・整理があります。ただしこれは分類・集団レベルの知見で、個別のチョコレートの味を決めるものではありません。組み合わせの見方はチョコレートの種類レベルの特徴で作り、所見は参考として併記します。`,
+        ? `${entity.name}（個別クローン）については実測の所見があります。系統を指定した場合は、組み合わせページと同じ仕組みで、系統・産地・種類を統合した組み合わせの推測を土台にして見方を作ります。ただし個別のチョコレートの味は発酵・焙煎・配合でも変わるため、クローンの所見は下記の範囲でも併記します。`
+        : `${entity.name}（${CACAO_LAYER_LABEL[layer]}）としての実測・整理があります。系統を指定した場合は、組み合わせページと同じ仕組みで組み合わせの推測を土台にして見方を作ります。ただしこれは分類・集団レベルの知見で、個別のチョコレートの味を決めるものではありません。`,
       findings,
       sourceIds: [...new Set(findings.flatMap((f) => f.sourceIds))],
     }
@@ -105,7 +107,7 @@ export function cacaoOriginPairingNote(origin: CacaoOrigin): PairingContextNote 
   if (origin.flavorEvidence === 'measured' && findings.length > 0) {
     return {
       level: 'origin-measured',
-      text: `${origin.name}産の試料については、香味の実測（官能・揮発性成分）があります。ただし実測が示すのは産地で一通りの味ではなく、発酵などの条件による変動を含む範囲です。組み合わせの見方はチョコレートの種類レベルの特徴で作り、産地の所見は参考として併記します。`,
+      text: `${origin.name}産の試料については、香味の実測（官能・揮発性成分）があります。ただし実測が示すのは産地で一通りの味ではなく、発酵などの条件による変動を含む範囲であり、産地の所見のうち香味への寄与が示されたものだけが組み合わせの推測に反映されます。産地を指定した場合は、その組み合わせの推測を土台にして見方を作ります。`,
       findings,
       sourceIds: [...new Set(findings.flatMap((f) => f.sourceIds))],
     }
@@ -113,7 +115,7 @@ export function cacaoOriginPairingNote(origin: CacaoOrigin): PairingContextNote 
   if (origin.flavorEvidence === 'general' && findings.length > 0) {
     return {
       level: 'group-general',
-      text: `${origin.name}については、組成の実測や、関連する遺伝集団レベルの知見はありますが、産地としての香味の官能実測は確認できていません。そのため所見は一般的な傾向として参考に併記するだけで、組み合わせの見方はチョコレートの種類レベルの特徴で作っています。産地名から味を断定することはしません。`,
+      text: `${origin.name}については、組成の実測や、関連する遺伝集団レベルの知見はありますが、産地としての香味の官能実測は確認できていません。そのため産地としての香味の方向は組み合わせの推測にも反映しておらず、所見は一般的な傾向として参考に併記するだけで、組み合わせの見方はチョコレートの種類レベルの特徴で作っています。産地名から味を断定することはしません。`,
       findings,
       sourceIds: [...new Set(findings.flatMap((f) => f.sourceIds))],
     }
@@ -146,7 +148,7 @@ export function teaOriginPairingNote(country: string, kindId: string): PairingCo
   if (findings.length > 0) {
     return {
       level: 'group-general',
-      text: `${country}の品種のうち、${kn}への利用が確認されている品種（${withFindings.map((c) => c.name).join('、')}）には品種レベルの科学データがあります。ただしこれは産地そのものの香味実測ではなく品種レベルの知見です。そのため所見は一般的な傾向として参考に併記するだけで、組み合わせの見方は${kn}レベルの特徴で作っています。産地名から味を断定することはしません。`,
+      text: `${country}の品種のうち、${kn}への利用が確認されている品種（${withFindings.map((c) => c.name).join('、')}）には品種レベルの科学データがあります。ただしこれは産地そのものの香味実測ではなく品種レベルの知見です。組み合わせの推測では国レベルの香味データは使わないため、見方は${kn}レベルの特徴を土台に作り、品種の所見は一般的な傾向として参考に併記します。産地名から味を断定することはしません。`,
       findings,
       sourceIds: [...new Set(findings.flatMap((f) => f.sourceIds))],
     }
@@ -179,7 +181,7 @@ export function teaRegionPairingNote(region: TeaRegion, kindId: string): Pairing
   if (region.applicableKindIds.includes(category) && region.flavorEvidence === 'measured' && findings.length > 0) {
     return {
       level: 'origin-measured',
-      text: `${region.name}（${region.country}）については、この茶類（${kn}）に関係する地域の実試料に基づくデータがあります。そのため地域の所見を参考として併記します。ただし実測が示すのは地域で一通りの味ではなく、組み合わせの見方自体は${kn}レベルの特徴で作っています。産地名から味を断定することはしません。`,
+      text: `${region.name}（${region.country}）については、この茶類（${kn}）に関係する地域の実試料に基づくデータがあります。地域を指定した場合は、組み合わせページと同じ仕組みで、地域・品種・分類を統合した組み合わせの推測を土台にして見方を作ります（地域の所見のうち香味への寄与が示されたものは、ホイールや味わいの推測にも反映されます）。ただし実測が示すのは地域で一通りの味ではありません。産地名から味を断定することはしません。`,
       findings,
       sourceIds: [...new Set(findings.flatMap((f) => f.sourceIds))],
     }
@@ -187,7 +189,7 @@ export function teaRegionPairingNote(region: TeaRegion, kindId: string): Pairing
   if (region.applicableKindIds.includes(category) && findings.length > 0) {
     return {
       level: 'group-general',
-      text: `${region.name}（${region.country}）については、この茶類（${kn}）に関係する地域の所見がありますが、香味の実測とまでは言えないため、一般的な傾向として参考に併記するだけにし、組み合わせの見方は${kn}レベルの特徴で作っています。`,
+      text: `${region.name}（${region.country}）については、この茶類（${kn}）に関係する地域の所見がありますが、香味の実測とまでは言えないため、地域を指定した場合は組み合わせの推測を土台にしつつ、地域の所見のうち香味への寄与が示されたものだけを反映し、それ以外は一般的な傾向として参考に併記します。`,
       findings,
       sourceIds: [...new Set(findings.flatMap((f) => f.sourceIds))],
     }

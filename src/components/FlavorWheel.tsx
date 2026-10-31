@@ -7,7 +7,7 @@ const rank = (i: string) => (i === 'strong' ? 3 : i === 'normal' ? 2 : i === 'we
 const INT_LABEL: Record<string, string> = { strong: '強い', normal: '普通', weak: '弱い', unknown: '不明' }
 
 const LABEL_FONT = 12
-const SUB_FONT = 8.5
+const SUB_FONT = 10
 const LABEL_R = 108
 
 function arcPath(cx: number, cy: number, r0: number, r1: number, a0: number, a1: number) {
@@ -122,7 +122,7 @@ export default function FlavorWheel({ profile, onSelectNote, context }: { profil
     }
     const lines = [
       ...labelLines.map((t, idx) => ({ text: s.kind === 'cat' && idx === labelLines.length - 1 ? `${t} ›` : t, cls: 'wheel-label', h: 12.5 })),
-      ...subLines.map((t) => ({ text: t, cls: 'wheel-sub', h: 10 })),
+      ...subLines.map((t) => ({ text: t, cls: 'wheel-sub', h: 12.5 })),
     ]
     const totalH = lines.reduce((a, l) => a + l.h, 0)
     let y = cy + LABEL_R * Math.sin(mid) - totalH / 2

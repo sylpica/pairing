@@ -5,9 +5,10 @@ import { chocolateItems, chocolateById } from './data/chocolates'
 import { sources } from './data/sources'
 import ProfileView, { LEVEL_LABEL, SourceLinks } from './components/ProfileView'
 import FlavorWheel from './components/FlavorWheel'
-import { analyzePairing, recommend, TASTE_LABELS } from './engine/pairing'
-import { analyzeInteractions, hasAnyInteraction } from './engine/interactions'
-import { analyzePairingCharacter, CHARACTER_RULE_LABELS } from './engine/pairingCharacter'
+import { recommend, TASTE_LABELS } from './engine/pairing'
+import { hasAnyInteraction } from './engine/interactions'
+import { CHARACTER_RULE_LABELS } from './engine/pairingCharacter'
+import { assemblePairing } from './engine/pairingCombo'
 import type { InteractionStatement, PairingCharacter } from './types'
 import { categoryById } from './data/flavors'
 import { loadSaved, persistSaved, pushHistory, validateSaved, type SavedData } from './storage'
@@ -558,9 +559,26 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
   }
   const tea = teaKindValue ? teaComboBaseItem(teaKindValue) : undefined
   const choco = chocoKindValue ? (chocolateById(chocoKindValue) ?? chocoRepresentativeItem(chocoKindValue)) : undefined
-  const result = tea && choco ? analyzePairing(tea.profile, choco.profile) : null
-  const interactions = tea && choco ? analyzeInteractions(tea, choco) : null
-  const characters = tea && choco ? analyzePairingCharacter(tea, choco) : null
+  // 課題C（2026-10-31）: 産地・品種・系統が指定された側は、素のプロファイルではなく
+  // 組み合わせ分析（第2層・軸効果適用後）のノート集合をペアリング（第3層）の入力にする。
+  const teaSel: TeaComboSel | null = tea && (teaOrigin || cultivarId)
+    ? { kindId: teaKindValue, regionId: teaOriginComboRegionIdOfValue(teaOrigin), cultivarId }
+    : null
+  const chocoSel: ChocoComboSel | null = choco && (originId || cacaoSel)
+    ? { kind: choco.kind, originId, lineage: cacaoSel }
+    : null
+  const assembly = tea && choco ? assemblePairing(tea, choco, teaSel, chocoSel) : null
+  const result = assembly?.result ?? null
+  const interactions = assembly?.interactions ?? null
+  const characters = assembly?.characters ?? null
+  const teaAnalysis = assembly?.teaAnalysis ?? null
+  const chocoAnalysis = assembly?.chocoAnalysis ?? null
+  const teaForPair = assembly?.teaItem ?? tea
+  const chocoForPair = assembly?.chocoItem ?? choco
+  const teaSideTitle = teaAnalysis ? teaAnalysis.title : (tea?.name ?? '')
+  const chocoSideTitle = chocoAnalysis ? chocoAnalysis.title : (choco?.name ?? '')
+  const activeAnalysis = tab === 'tea' ? teaAnalysis : tab === 'choco' ? chocoAnalysis : null
+  const comboNoteSel = activeAnalysis && selNote ? activeAnalysis.notes.find((n) => n.noteId === selNote) : undefined
   const allCharacters = characters ? [...characters.aroma, ...characters.tasteMouthfeel] : []
   const [charSel, setCharSel] = useState<string | null>(null)
   const selCharacter = allCharacters.find((c) => c.id === charSel) ?? null
@@ -608,9 +626,12 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
         {tea && choco && result ? (
           <>
             <div className="pair-summary-head">
-              <h3>{choco.name} × {tea.name}</h3>
+              <h3>{chocoSideTitle} × {teaSideTitle}</h3>
             </div>
             <p className="pair-summary-line"><span className="badge">{LEVEL_LABEL[result.level]}</span></p>
+            {(teaAnalysis || chocoAnalysis) && (
+              <p className="pair-summary-line note-small">指定した産地・品種・系統は、組み合わせの推測（第2層）としてこの結果の土台になっています{teaAnalysis && <>／お茶：<span className="badge">{COMBO_LEVEL_LABEL[teaAnalysis.overallLevel]}</span></>}{chocoAnalysis && <>／チョコ：<span className="badge">{COMBO_LEVEL_LABEL[chocoAnalysis.overallLevel]}</span></>}</p>
+            )}
             {characters && (allCharacters.length > 0 ? (
               <div className="pair-character">
                 <p className="pair-character-head"><strong>組み合わせの味わい（推測）</strong> <span className="badge badge-inferred">推測（未検証）</span></p>
@@ -646,14 +667,22 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
         <button role="tab" aria-selected={tab === 'choco'} onClick={() => setTab('choco')}>チョコ</button>
         <button role="tab" aria-selected={tab === 'pair'} onClick={() => setTab('pair')}>組み合わせの見方</button>
       </div>
-      {tab === 'tea' && <FlavorWheel profile={tea.profile} onSelectNote={setSelNote} context={{ side: 'tea', kindId: tea.kindId, itemName: tea.name, itemId: tea.id }} />}
-      {tab === 'choco' && <FlavorWheel profile={choco.profile} onSelectNote={setSelNote} context={{ side: 'chocolate', kindId: choco.kind, itemName: choco.name, itemId: choco.id }} />}
+      {tab === 'tea' && (teaAnalysis
+        ? <ComboWheel notes={teaAnalysis.notes} context={teaAnalysis.context} onSelectNote={setSelNote} selectedNoteId={selNote} />
+        : <FlavorWheel profile={tea.profile} onSelectNote={setSelNote} context={{ side: 'tea', kindId: tea.kindId, itemName: tea.name, itemId: tea.id }} />)}
+      {tab === 'choco' && (chocoAnalysis
+        ? <ComboWheel notes={chocoAnalysis.notes} context={chocoAnalysis.context} onSelectNote={setSelNote} selectedNoteId={selNote} />
+        : <FlavorWheel profile={choco.profile} onSelectNote={setSelNote} context={{ side: 'chocolate', kindId: choco.kind, itemName: choco.name, itemId: choco.id }} />)}
       {tab !== 'pair' && selNote && (
         <CollapsibleSheet resetKey={`${tab}:${selNote}`} title={noteById(selNote)?.name ?? selNote} onDismiss={() => setSelNote(null)}>
-          <NoteDetail noteId={selNote} profile={tab === 'tea' ? tea.profile : choco.profile}
-            context={tab === 'tea'
-              ? { side: 'tea', kindId: tea.kindId, itemName: tea.name, itemId: tea.id }
-              : { side: 'chocolate', kindId: choco.kind, itemName: choco.name, itemId: choco.id }} />
+          {comboNoteSel && activeAnalysis ? (
+            <ComboNoteDetail note={comboNoteSel} context={activeAnalysis.context} />
+          ) : (
+            <NoteDetail noteId={selNote} profile={tab === 'tea' ? (teaForPair ?? tea).profile : (chocoForPair ?? choco).profile}
+              context={tab === 'tea'
+                ? { side: 'tea', kindId: tea.kindId, itemName: tea.name, itemId: tea.id }
+                : { side: 'chocolate', kindId: choco.kind, itemName: choco.name, itemId: choco.id }} />
+          )}
         </CollapsibleSheet>
       )}
       {tab === 'pair' && (
@@ -677,7 +706,7 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
             </div>)}
           </>}
           {pairNote && <PairNoteCompounds noteId={pairNote} teaKindId={tea.kindId} chocoKindId={choco.kind} />}
-          {pairCat && <PairCategoryCompounds categoryId={pairCat} tea={tea.profile} choco={choco.profile} onPickNote={(id) => { setPairNote(id); setPairCat(null) }} />}
+          {pairCat && <PairCategoryCompounds categoryId={pairCat} tea={(teaForPair ?? tea).profile} choco={(chocoForPair ?? choco).profile} onPickNote={(id) => { setPairNote(id); setPairCat(null) }} />}
           {characters && allCharacters.length > 0 && <>
             <h3>組み合わせの味わいの性格（推測）</h3>
             <p className="note-small">両アイテムで確認されている成分・香味・味覚の顔ぶれと、下記の相互作用の発火状況から、組み合わせ全体がどのような味わいになるかを推測したものです。根拠のある性格だけを示し、根拠のない性格は出しません。推測の方法と限界は調査記録（docs/research/pairing-character-inference.md）にあります。</p>
@@ -699,6 +728,24 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
               <InteractionGroup title="口当たり・余韻の変化" items={interactions.mouthfeel} />
             </> : (
               <p className="unknown-box">相互作用の観点では、現在の収録データで示せる特記事項はありません。これは相性が悪いという意味ではなく、根拠のある相互作用の条件がデータ上で揃っていないという意味です。</p>
+            )}
+          </>}
+          {(teaAnalysis || chocoAnalysis) && <>
+            <h3>指定した軸の反映（組み合わせの推測）</h3>
+            <p className="note-small">産地・品種・系統の指定は、組み合わせページと同じ組み合わせ分析（第2層）を通じてこの結果の土台になっています。各軸がホイール・味覚にどう反映されたか（または反映されなかった理由）は以下のとおりです。お茶／チョコのタブのホイールも、この組み合わせの推測と一致しています。</p>
+            {teaAnalysis && (
+              <div className="temporal-card">
+                <h4>お茶：{teaAnalysis.title}</h4>
+                <p><span className="badge">{COMBO_LEVEL_LABEL[teaAnalysis.overallLevel]}</span></p>
+                {teaAnalysis.axisSummaries.map((s, i) => <p key={i}>{s.text}</p>)}
+              </div>
+            )}
+            {chocoAnalysis && (
+              <div className="temporal-card">
+                <h4>チョコ：{chocoAnalysis.title}</h4>
+                <p><span className="badge">{COMBO_LEVEL_LABEL[chocoAnalysis.overallLevel]}</span></p>
+                {chocoAnalysis.axisSummaries.map((s, i) => <p key={i}>{s.text}</p>)}
+              </div>
             )}
           </>}
           {(teaNote || cacaoNote || originNote || teaOriginNote) && <>

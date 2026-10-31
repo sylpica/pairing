@@ -16,7 +16,7 @@ const rank = (i: string) => (i === 'strong' ? 3 : i === 'normal' ? 2 : i === 'we
 export const COMBO_INT_LABEL: Record<string, string> = { strong: '強い', normal: '普通', weak: '弱い', unknown: '不明' }
 const LEVEL_OPACITY: Record<ComboLevel, number> = { measured: 0.95, general: 0.62, inferred: 0.38 }
 
-const SUB_FONT = 8.5
+const SUB_FONT = 10
 const LABEL_R = 104
 
 /** SVGテキストの概算幅（FlavorWheel と同じ概算：全角=1em、半角=0.55em、空白=0.3em） */
@@ -130,7 +130,7 @@ export default function ComboWheel({ notes, onSelectNote, selectedNoteId, contex
             {(a1 - a0) >= 0.42 && (<>
               <text x={lx} y={subLines.length > 0 ? ly - 7 : ly} textAnchor="middle" dominantBaseline="middle" className="wheel-label">{label}</text>
               {subLines.map((s, i) => (
-                <text key={i} x={lx} y={ly + 8 + i * 11} textAnchor="middle" dominantBaseline="middle" className="wheel-sub">{s}</text>
+                <text key={i} x={lx} y={ly + 9 + i * 12.5} textAnchor="middle" dominantBaseline="middle" className="wheel-sub">{s}</text>
               ))}
             </>)}
           </g>
