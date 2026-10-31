@@ -36,7 +36,7 @@ describe('組み合わせページ（産地×品種×分類）', () => {
     expect(cultivarTexts).not.toContain('青心烏龍')
     const regionSelect = screen.getByLabelText('組み合わせの産地') as HTMLSelectElement
     const regionTexts = [...regionSelect.options].map((o) => o.textContent ?? '')
-    expect(regionTexts).toContain('長崎（日本）')
+    expect(regionTexts).toContain('長崎')
     expect(regionTexts).not.toContain('中国')
   })
 

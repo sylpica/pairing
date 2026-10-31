@@ -93,12 +93,34 @@ describe('産地データと調べる画面の再設計（2026-10-30）', () => 
     expect(texts.some((t) => t.includes('紅茶'))).toBe(false)
     expect(texts.some((t) => t.includes('べにふうき'))).toBe(false)
   })
-  it('お茶一覧：分類×品種の組み合わせで合わない条件は空になる', () => {
+  it('お茶一覧：プルダウン連動で、両立しない品種は選択肢に出ない（2026-10-31 連動仕様）', () => {
     location.hash = '#/tea'; render(<App />)
-    fireEvent.change(screen.getByLabelText('分類（茶類）で絞り込み'), { target: { value: 'black' } })
+    // 品種を先に選んでも、分類側で両立しない茶類は disabled になる
     fireEvent.change(screen.getByLabelText('品種で絞り込み'), { target: { value: 'yabukita' } })
-    expect(screen.getByText(/見つかりませんでした/)).toBeTruthy()
-    expect(cardTexts().length).toBe(0)
+    const kindSel = screen.getByLabelText('分類（茶類）で絞り込み') as HTMLSelectElement
+    const blackOpt = [...kindSel.options].find((o) => o.value === 'black')
+    expect(blackOpt?.disabled).toBe(false) // やぶきたは紅茶（製法ルール）でも両立する
+    const darkOpt = [...kindSel.options].find((o) => o.value === 'dark')
+    expect(darkOpt?.disabled).toBe(true) // 黒茶とは両立しないので選べない
+    // 分類を先に選ぶと、両立しない品種はプルダウンから消える
+    cleanup(); localStorage.clear(); location.hash = '#/tea'; render(<App />)
+    fireEvent.change(screen.getByLabelText('分類（茶類）で絞り込み'), { target: { value: 'dark' } })
+    const cultivarSel = screen.getByLabelText('品種で絞り込み') as HTMLSelectElement
+    const cultivarValues = [...cultivarSel.options].map((o) => o.value)
+    expect(cultivarValues).not.toContain('yabukita')
+    // 結果は空にならず、行き止まりが無い
+    expect(screen.queryByText(/見つかりませんでした/)).toBeNull()
+    expect(cardTexts().length).toBeGreaterThan(0)
+  })
+  it('お茶一覧：産地プルダウンで長崎（地域）まで選べる', () => {
+    location.hash = '#/tea'; render(<App />)
+    const regionSel = screen.getByLabelText('産地で絞り込み') as HTMLSelectElement
+    const values = [...regionSel.options].map((o) => o.value)
+    expect(values).toContain('region:nagasaki')
+    expect(values).toContain('日本')
+    fireEvent.change(regionSel, { target: { value: 'region:nagasaki' } })
+    const texts = cardTexts()
+    expect(texts.some((t) => t.includes('長崎'))).toBe(true)
   })
   it('お茶一覧：産地プルダウンで日本のお茶と品種だけが出る', () => {
     location.hash = '#/tea'; render(<App />)
@@ -212,6 +234,32 @@ describe('UI改善：絞り込みのメイン化・チョコ種類追加・系�
     expect(screen.getByText('使えるデータがないため不使用')).toBeTruthy()
     fireEvent.change(screen.getByLabelText('お茶の産地（任意）'), { target: { value: '日本' } })
     expect(screen.getByText('お茶の産地：日本')).toBeTruthy()
+  })
+  it('組み合わせ画面：お茶の産地で長崎（地域）まで選べて、地域の注記カードが出る', () => {
+    location.hash = '#/pair'; render(<App />)
+    const originSel = screen.getByLabelText('お茶の産地（任意）') as HTMLSelectElement
+    const values = [...originSel.options].map((o) => o.value)
+    expect(values).toContain('region:nagasaki')
+    expect(values).toContain('region:zhejiang')
+    expect(values).toContain('日本')
+    fireEvent.change(originSel, { target: { value: 'region:nagasaki' } })
+    expect(screen.getByText('お茶の産地：長崎')).toBeTruthy()
+  })
+  it('組み合わせ画面：産地と品種が連動する（日本を選ぶと他国の品種は出ない）', () => {
+    location.hash = '#/pair'; render(<App />)
+    const cultivarSel = screen.getByLabelText('お茶の品種（任意）') as HTMLSelectElement
+    expect([...cultivarSel.options].map((o) => o.value)).toContain('qingxin-oolong')
+    fireEvent.change(screen.getByLabelText('お茶の産地（任意）'), { target: { value: '日本' } })
+    const after = [...(screen.getByLabelText('お茶の品種（任意）') as HTMLSelectElement).options].map((o) => o.value)
+    expect(after).not.toContain('qingxin-oolong')
+  })
+  it('組み合わせ画面：カカオの系統と産地が連動する（結びつかない産地は出ない）', () => {
+    location.hash = '#/pair'; render(<App />)
+    fireEvent.change(screen.getByLabelText('カカオの系統（任意）'), { target: { value: 'genetic:gen-criollo' } })
+    const originSel = screen.getByLabelText('カカオの産地（任意）') as HTMLSelectElement
+    const values = [...originSel.options].map((o) => o.value)
+    expect(values).toContain('venezuela')
+    expect(values).not.toContain('ghana')
   })
   it('組み合わせ画面：お茶の分類を選ぶと、その茶類のお茶だけが候補になる', () => {
     location.hash = '#/pair'; render(<App />)

@@ -52,14 +52,19 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 .temporal { display: grid; gap: 10px; } @media (min-width: 640px) { .temporal { grid-template-columns: repeat(3, 1fr); } .compare-grid { grid-template-columns: 1fr 1fr; } }
 .compare-grid { display: grid; gap: 16px; }
 .temporal-card h4 { margin: 4px 0; }
-.pair-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
-.pair-col { background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.pair-col h3 { margin: 0; font-size: 1rem; }
-.pair-col label { display: grid; gap: 4px; font-size: 0.9rem; }
-.pair-col select { width: 100%; max-width: 100%; font: inherit; padding: 8px; border-radius: 10px; border: 1.5px solid var(--line); min-height: 44px; }
+/* 組み合わせる画面は、セレクタと結果要約がファーストビュー（スクロールなし）に
+   収まるよう密度を上げている（2026-10-31 実機フィードバック）。 */
+.pair-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0; }
+.pair-col { background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.pair-col h3 { margin: 0; font-size: 0.95rem; }
+.pair-col label { display: grid; gap: 2px; font-size: 0.82rem; }
+.pair-col select { width: 100%; max-width: 100%; font: inherit; padding: 6px 8px; border-radius: 10px; border: 1.5px solid var(--line); min-height: 40px; }
 .pair-col .advanced { margin: 0; }
 .pair-col .advanced label { margin-top: 8px; }
-.pair-summary { background: var(--card); border: 2px solid #eec9a8; border-radius: 16px; padding: 10px 14px; margin: 10px 0 14px; }
+.pair-summary { background: var(--card); border: 2px solid #eec9a8; border-radius: 16px; padding: 8px 12px; margin: 8px 0 10px; }
+.pair-character .chip { min-height: 36px; padding: 4px 10px; font-size: 0.9rem; }
+.pair-notes { margin-top: 20px; }
+.pair-notes summary { cursor: pointer; font-weight: 700; font-size: 0.9rem; min-height: 32px; }
 .pair-summary-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .pair-summary-head h3 { margin: 0; font-size: 1.05rem; }
 .pair-summary-line { margin: 4px 0; }
@@ -67,8 +72,8 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
   border: 1.5px dashed #b5491f;
   border-radius: 12px;
   background: #fdf3ec;
-  padding: 10px 12px;
-  margin: 10px 0;
+  padding: 8px 10px;
+  margin: 8px 0;
 }
 .pair-character-head { margin: 2px 0 8px; }
 .pair-character-detail { margin-top: 10px; }
@@ -134,8 +139,22 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 /* 組み合わせ画面の見出しアイコン */
 .col-head { display: flex; align-items: center; gap: 8px; }
 .col-icon { width: 26px; height: 26px; flex: none; }
-.pair-col select { font-size: 1rem; padding: 10px; }
+.pair-col select { font-size: 0.95rem; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+/* 狭幅ではヘッダーと見出しを詰め、本文（特に組み合わせる画面の要約）を
+   ファーストビューに入りやすくする */
+.app main h2 { margin: 12px 0 8px; }
+@media (max-width: 639px) {
+  .app-header { padding: 8px 0; gap: 4px; }
+  .brand-icon { width: 28px; height: 28px; }
+  .brand { font-size: 0.95rem; }
+  .app-nav button { padding: 6px 10px; min-height: 38px; font-size: 0.88rem; }
+  .col-icon { width: 20px; height: 20px; }
+}
+
+/* 調べる画面の組み合わせプレビュー（プルダウン直下） */
+.combo-preview { background: var(--card); border: 2px solid #eec9a8; border-radius: 16px; padding: 12px 14px; margin: 10px 0 14px; }
+.combo-preview h3 { margin: 0 0 6px; }
 
 /* ===== 組み合わせページ（第2層） ===== */
 .combo-legend { background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 14px; margin: 10px 0; }

@@ -1,4 +1,4 @@
-import type { CacaoOrigin, DataLevelUsed, EntityFinding, TeaCultivar } from '../types'
+import type { CacaoOrigin, DataLevelUsed, EntityFinding, TeaCultivar, TeaRegion } from '../types'
 import { FLAVOR_FINDING_KINDS } from '../types'
 import { cultivarTeaUses, teaCultivars } from '../data/cultivars'
 import { teaKinds } from '../data/teas'
@@ -162,6 +162,39 @@ export function teaOriginPairingNote(country: string, kindId: string): PairingCo
   return {
     level: 'insufficient',
     text: `${country}の品種を${kn}に加工したことは、公的資料・研究では未確認で、産地としての香味データもありません。そのため産地の情報は組み合わせの見方に使っていません（${kn}レベルの特徴のみで見ています）。産地名から味を推定する表示はしません。`,
+    findings: [],
+    sourceIds: [],
+  }
+}
+
+/** お茶側: 産地（地域）が指定された場合の階層判定（2026-10-31 追加）。
+ * 地域エンティティに、その分類に適用できる地域の実試料データがあれば
+ * origin-measured（地域の所見を併記）。分類が適用範囲外なら、地域の所見は
+ * その分類には使わず insufficient と正直に示す。 */
+export function teaRegionPairingNote(region: TeaRegion, kindId: string): PairingContextNote {
+  const kn = kindName(kindId)
+  const k = teaKinds.find((x) => x.id === kindId)
+  const category = !k || k.category === 'form' ? 'green' : k.category
+  const findings = flavorFindings(region.findings)
+  if (region.applicableKindIds.includes(category) && region.flavorEvidence === 'measured' && findings.length > 0) {
+    return {
+      level: 'origin-measured',
+      text: `${region.name}（${region.country}）については、この茶類（${kn}）に関係する地域の実試料に基づくデータがあります。そのため地域の所見を参考として併記します。ただし実測が示すのは地域で一通りの味ではなく、組み合わせの見方自体は${kn}レベルの特徴で作っています。産地名から味を断定することはしません。`,
+      findings,
+      sourceIds: [...new Set(findings.flatMap((f) => f.sourceIds))],
+    }
+  }
+  if (region.applicableKindIds.includes(category) && findings.length > 0) {
+    return {
+      level: 'group-general',
+      text: `${region.name}（${region.country}）については、この茶類（${kn}）に関係する地域の所見がありますが、香味の実測とまでは言えないため、一般的な傾向として参考に併記するだけにし、組み合わせの見方は${kn}レベルの特徴で作っています。`,
+      findings,
+      sourceIds: [...new Set(findings.flatMap((f) => f.sourceIds))],
+    }
+  }
+  return {
+    level: 'insufficient',
+    text: `${region.name}（${region.country}）の地域としての所見は主に${region.applicableKindIds.map((id) => kindName(id)).join('・')}についてのもので、${kn}での地域の実測は確認できていません。そのため産地（地域）の情報は組み合わせの見方に使っていません（${kn}レベルの特徴のみで見ています）。産地名から味を推定する表示はしません。`,
     findings: [],
     sourceIds: [],
   }

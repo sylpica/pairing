@@ -1,43 +1,675 @@
 import type { TeaRegion } from '../types'
 
-// お茶の地域レベルの産地エンティティ（2026-10-31 追加。調査: docs/research/literature-expansion-d-combinations.md）。
-// 原則はカカオの CacaoOrigin と同じ：
-// - 産地は品種ではない。地域名から香味プロファイルを自動生成しない（本エンティティは
-//   FlavorProfile を持たず、出典つきの所見 findings までしか表示しない）。
-// - 文献で所見のある地域だけを登録する。データが無い地域は作らない。
-// - flavorEvidence で根拠レベルを明示する（'measured' = その地域の試料で成分・官能まで
-//   実測がある / 'general' = 組成の実測のみ等 / 'none' = 所見なし）。
+// ============================================================
+// お茶の生産地域（国より細かい単位）。2026-10-31 拡充（実機フィードバック対応）。
+// 登録するのは、docs/research の文献拡張（B・D・F・G・Jライン）で地域レベルの
+// 所見が一次確認できた地域だけ。所見のない地域は作らない（捏造で埋めない）。
+// 地域エンティティも品種・産地と同じ原則で、香味の所見は findings に出典つきで
+// 持ち、適用できる分類（applicableKindIds）を明記する。
+// ============================================================
 
 export const teaRegions: TeaRegion[] = [
+  // ---------------- 日本 ----------------
   {
     id: 'nagasaki',
     name: '長崎',
     country: '日本',
     parentName: '九州',
-    note: '彼杵茶（そのぎ茶、玉緑茶）で知られる県。県の研究機関が県産緑茶の成分分析を行っています。',
+    note: '日本の主要な蒸製玉緑茶の産地であり、和紅茶の生産も行われる地域である。',
     flavorEvidence: 'measured',
     verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
-    scienceNote: '県産「緑茶」については、県の公的研究機関による実試料の成分プロファイリングがあります（下記所見）。ただし対象は緑茶（荒茶）のみで、産地条件（農家・標高）と品種は分離されておらず、「長崎という産地そのものの効果」を測ったものではありません。長崎県産を紅茶にした成分・官能の研究は、調査範囲では見つかっていません。',
+    scienceNote: '地域としての香味の実測は、日本茶品評会に出品された長崎県産緑茶の試料を分析した研究（辻村ら 2024）があり、「甘み、旨味、苦みのバランスの良い」茶と評価された根拠がある。一方で、この地域の紅茶そのものの香味を官能・成分の両面で測った査読研究は確認できていない。そのため、紅茶としての組み合わせは、品種（やぶきた）の一般的知見と、その品種を紅茶に作った場合の作り分け実測（山口県・佐賀県の試験場研究）からの推測として扱う。',
     findings: [
       {
-        kind: 'composition',
-        statement: '令和4年度長崎県茶品評会・一般茶部門の緑茶17試料（さえみどり9点、やぶきた4点、あさつゆ・つゆひかり・おくゆたか・きらり31 各1点）を GC-MS/MS と LC-QTOF/MS で分析したところ、主成分分析で品種によるグルーピングが確認され、やぶきた は交配種の さえみどり・あさつゆ とも異なるグループを形成しました。報告は やぶきた を「甘み、旨味、苦みのバランスの良い」品種と記述しています。',
-        conditions: '長崎県内の緑茶（荒茶）のみのデータです。試料は農家・標高などの産地条件と分離できておらず、「長崎という産地そのものの効果」は測っていません。紅茶への適用はできません。',
+        kind: 'sensory',
+        statement: '2023年の日本茶品評会に出品された長崎県産緑茶17試料（うち「やぶきた」は4点）は、官能審査で「甘み、旨味、苦みのバランスの良い」茶とされた',
+        conditions: '品評会出品茶という高品質側に偏った試料であり、長崎県産緑茶全体の平均像ではない',
         sourceIds: ['tsujimura-2024-nagasaki-tea-foodomics'],
       },
       {
         kind: 'composition',
-        statement: '同じ分析で、品評会順位への寄与が大きい成分群（VIPスコア≧1）として、テアニン・グルタミン等のアミノ酸類、スクロース等の糖類、キナ酸等の有機酸類、カテキン類（エピカテキン、没食子酸等）が抽出されました。',
-        conditions: '品評会順位と成分の統計的な関連であり、個別成分の香味への寄与を証明するものではありません。',
+        statement: '同じ品評会試料の分析では、総合評価（VIPスコア上位）と結びつく成分群として、テアニン・グルタミン（アミノ酸）、スクロース、キナ酸、カテキン類が挙げられた',
+        conditions: '成分の「含有」と審査結果の統計的な結びつきであり、各成分が香味に寄与することの直接証明ではない',
         sourceIds: ['tsujimura-2024-nagasaki-tea-foodomics'],
       },
     ],
     sourceIds: ['tsujimura-2024-nagasaki-tea-foodomics'],
     applicableKindIds: ['green'],
   },
+  {
+    id: 'shizuoka',
+    name: '静岡',
+    country: '日本',
+    parentName: '中部',
+    note: '日本最大の茶産地。山間部（川根など）と平坦部（金谷など）で同じ品種でも香りの性格が変わることが研究されている。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '静岡市産煎茶と他産地の煎茶を比べた官能・成分の研究（日本官能評価学会誌 2003）と、県内の山間部と平坦部で同一品種の煎茶の特徴香を比べた研究（水上 2018）がある。地域内の標高差まで含めた所見がある地域である。',
+    findings: [
+      {
+        kind: 'sensory',
+        statement: '静岡市産煎茶2点は村上市産煎茶6点と、抽出水の違いによらず専門家5名の官能評価で産地別に分かれ、判別には香気と水色が最も寄与した',
+        conditions: '試料数が小さい（静岡2点・村上6点）比較である',
+        sourceIds: ['murakami-2003-sencha-origin-sensory'],
+      },
+      {
+        kind: 'composition',
+        statement: '同一品種やぶきたの煎茶では、山間部（川根本町）と平坦部（金谷）で香りの組成が異なり、山間部ではフラネオール、(Z)-ジャスモン酸メチル、インドール、バニリンが特徴香に寄与した。(Z)-ジャスモン酸メチルの添加で新鮮な香りが強まることも官能で確認された',
+        conditions: '知見は水上 2020 総説の要約経由で確認したものである',
+        sourceIds: ['mizukami-2018-mountain-sencha-aroma'],
+      },
+    ],
+    sourceIds: ['murakami-2003-sencha-origin-sensory', 'mizukami-2018-mountain-sencha-aroma'],
+    applicableKindIds: ['green'],
+  },
+  {
+    id: 'murakami',
+    name: '村上',
+    country: '日本',
+    parentName: '新潟県',
+    note: '日本海側の茶産地（村上市）。北限の茶産地の一つとして知られる。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '村上産煎茶と静岡産煎茶を、官能評価と化学成分の両面で比べた研究（日本官能評価学会誌 2003）がある。',
+    findings: [
+      {
+        kind: 'sensory',
+        statement: '村上市産煎茶6点は静岡市産煎茶2点と、抽出水の違いによらず官能評価で産地別に分かれ、化学成分による分類も概ね一致した。産地の差には遊離アミノ酸・遊離還元糖・タンニン含量の構成差が関与すると考察された',
+        conditions: '試料数が小さい（村上6点・静岡2点）比較である',
+        sourceIds: ['murakami-2003-sencha-origin-sensory'],
+      },
+    ],
+    sourceIds: ['murakami-2003-sencha-origin-sensory'],
+    applicableKindIds: ['green'],
+  },
+  {
+    id: 'yame',
+    name: '八女',
+    country: '日本',
+    parentName: '福岡県',
+    note: '玉露の名産地。伝統本玉露（自然仕立て・棚被覆）は地理的表示（GI）登録第5号。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '八女伝統本玉露の品質評価指標を公設試験場が実測で示し（テアニン・色相角度と価格・等級の相関）、GI登録資料にも覆い香の成分（ジメチルスルフィド）の含量比較が記録されている。',
+    findings: [
+      {
+        kind: 'composition',
+        statement: '八女伝統本玉露では、テアニン含量と色相角度（色調）が荒茶価格・品評会等級と最も相関し、地理的表示（GI）の目安としてテアニン3.5%以上・色相角度108以上が提示された',
+        conditions: '公設試験場の研究成果であり、査読論文ではない',
+        sourceIds: ['fukuoka-2020-yame-hon-gyokuro-indicators'],
+      },
+      {
+        kind: 'composition',
+        statement: '伝統本玉露の覆い香の代表成分ジメチルスルフィドは、同産地の煎茶の5倍以上、通常の玉露の約2倍の含量だった。アミノ酸は煎茶と比べて約4割多く、カテキン類は約3割少なかった',
+        conditions: '国のGI登録資料の記録であり、査読論文ではない',
+        sourceIds: ['maff-gi-yame-dentou-hon-gyokuro'],
+      },
+    ],
+    sourceIds: ['fukuoka-2020-yame-hon-gyokuro-indicators', 'maff-gi-yame-dentou-hon-gyokuro'],
+    applicableKindIds: ['green'],
+  },
+  {
+    id: 'saga',
+    name: '佐賀',
+    country: '日本',
+    parentName: '九州',
+    note: '嬉野を中心とする釜炒り茶・蒸製玉緑茶の産地。県茶業試験場が同一葉の作り分け比較を行っている。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '佐賀県茶業試験場が、同一のやぶきた葉（被覆処理）を釜炒り茶・煎茶・蒸製玉緑茶に作り分けた比較研究がある。味の数値は味覚センサーによる推定値であり、人の官能評価ではない。',
+    findings: [
+      {
+        kind: 'composition',
+        statement: '同一のやぶきた葉を3製法に作り分けた比較では、釜炒り茶は煎茶より渋味（味覚センサー推定値）が有意に低く、ガレート型カテキンの溶出も低かった。蒸製玉緑茶のうま味・渋味は煎茶と同等だった',
+        conditions: '味覚センサーによる推定値であり、官能評価ではない。被覆処理した茶葉での比較である',
+        sourceIds: ['yamaguchi-miyazaki-2018-kamairi-taste'],
+      },
+    ],
+    sourceIds: ['yamaguchi-miyazaki-2018-kamairi-taste'],
+    applicableKindIds: ['green'],
+  },
+  {
+    id: 'miyazaki',
+    name: '宮崎',
+    country: '日本',
+    parentName: '九州',
+    note: '五ヶ瀬など釜炒り茶の産地を含む県。釜炒り茶の成分溶出の研究対象地域である。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '九州の釜炒り茶生産地（五ヶ瀬を含む）を対象に、荒茶と浸出液のカテキン類・カフェインを比べた研究（谷口ら 2012）がある。試料は九州の釜炒り茶一般であり、宮崎県単独の数値ではない。',
+    findings: [
+      {
+        kind: 'composition',
+        statement: '釜炒り茶では、荒茶中のカテキン類・カフェイン含量は煎茶と差がないのに、浸出液中の含量は釜炒り茶の方が低かった。圧搾工程が短く葉の細胞組織の損傷が少ないためと考察された',
+        conditions: '試料は九州の釜炒り茶一般（五ヶ瀬を含む）であり、宮崎県単独の数値ではない',
+        sourceIds: ['taniguchi-2012-kamairi-tea-elution'],
+      },
+    ],
+    sourceIds: ['taniguchi-2012-kamairi-tea-elution'],
+    applicableKindIds: ['green'],
+  },
+  {
+    id: 'kagoshima',
+    name: '鹿児島',
+    country: '日本',
+    parentName: '九州',
+    note: '日本有数の茶産地。県の奨励品種を煎茶に作って官能評価した研究がある。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '鹿児島の奨励品種を煎茶の標準製法・一番茶で官能評価（35記述子、45名のパネル）し、品種ごとに有意な記述子が異なることを示した研究（木下ら 2015）がある。地域そのものより「県内で品種ごとに個性が分かれる」ことの根拠である。',
+    findings: [
+      {
+        kind: 'sensory',
+        statement: '鹿児島の奨励品種を煎茶の標準製法・一番茶で官能評価（35記述子、45名のパネル、やぶきたを対照）したところ、品種ごとに有意に結びつく記述子が異なり、同じ県内でも品種によって香りの個性が分かれた',
+        sourceIds: ['kinoshita-2015-kagoshima-cultivar-aroma'],
+      },
+    ],
+    sourceIds: ['kinoshita-2015-kagoshima-cultivar-aroma'],
+    applicableKindIds: ['green'],
+  },
+  {
+    id: 'uji',
+    name: '宇治',
+    country: '日本',
+    parentName: '京都府',
+    note: '碾茶（抹茶の原料）・玉露の名産地。被覆栽培の茶の「熟成」について公設試験場の研究がある。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '京都府農林水産技術センター茶業研究所が、覆い下茶（てん茶・玉露）の冷蔵保存による熟成を官能検査で確認した研究情報がある。査読論文ではなく公的機関の成果である。',
+    findings: [
+      {
+        kind: 'sensory',
+        statement: '覆い下茶（てん茶・玉露）は冷蔵保存（5℃）でおよそ6箇月で熟成し、うま味やまろやかさが増すことが官能検査で確認された。熟成までの期間は被覆の程度など栽培条件によって変動する',
+        conditions: '公設試験場の研究情報であり、査読論文ではない',
+        sourceIds: ['kyoto-2014-covered-tea-maturation'],
+      },
+    ],
+    sourceIds: ['kyoto-2014-covered-tea-maturation'],
+    applicableKindIds: ['green'],
+  },
+  {
+    id: 'kochi',
+    name: '高知',
+    country: '日本',
+    parentName: '四国',
+    note: '和紅茶の生産地の一つ。県産和紅茶が他銘柄との比較分析の試料になった研究がある。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '高知県産の和紅茶（やぶきた主体）を含むアールグレイ3銘柄の比較研究（沢村ら 2025）がある。比較対象は付香したアールグレイであり、カテゴリごとに1銘柄ずつの留保つきの知見である。',
+    findings: [
+      {
+        kind: 'composition',
+        statement: '高知県産の和紅茶（やぶきた主体）は、比較した輸入ブレンドのアールグレイ2銘柄よりテアフラビン・カフェインが最も低い水準だった',
+        conditions: '付香したアールグレイでの比較であり、カテゴリごとに1銘柄のみの結果である',
+        sourceIds: ['sawamura-2025-earlgrey-extraction'],
+      },
+    ],
+    sourceIds: ['sawamura-2025-earlgrey-extraction'],
+    applicableKindIds: ['black'],
+  },
+
+  // ---------------- 中国 ----------------
+  {
+    id: 'zhejiang',
+    name: '浙江',
+    country: '中国',
+    parentName: '華東',
+    note: '西湖龍井の産地。小さい産地単位（獅峰・雲棲・虎跑・梅家塢）まで化学的に分かれることが示されている。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '西湖龍井の核心産地を非揮発成分で比較した研究と、龍井の3産地（西湖・銭塘・越州）の代謝物を比較した研究がある。緑茶としての地域実測が厚い地域である。',
+    findings: [
+      {
+        kind: 'composition',
+        statement: '西湖龍井の核心4産地（獅峰・雲棲・虎跑・梅家塢）は、同一シーズン・同一製法・同一等級の中でも非揮発成分で化学的に分離できた。産地判別にはアミノ酸とその誘導体が支配的だった',
+        sourceIds: ['wang-2025-xihu-longjing-core-origins'],
+      },
+      {
+        kind: 'composition',
+        statement: '龍井の3産地（西湖・銭塘・越州）では一次代謝物が異なり、シキミ酸とキナ酸は西湖産で有意に高かった',
+        sourceIds: ['lin-2026-longjing-origin-metabolites'],
+      },
+    ],
+    sourceIds: ['wang-2025-xihu-longjing-core-origins', 'lin-2026-longjing-origin-metabolites'],
+    applicableKindIds: ['green'],
+  },
+  {
+    id: 'jiangsu',
+    name: '江蘇',
+    country: '中国',
+    parentName: '華東',
+    note: '洞庭碧螺春の産地。中国緑茶の銘茶同士を AEDA で比較した研究の試料に含まれる。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '碧螺春・龍井・毛峰の浸出液を GC-O/AEDA で比較した原著（Baba & Kumazawa 2014）がある。',
+    findings: [
+      {
+        kind: 'contribution',
+        statement: '洞庭碧螺春を含む中国緑茶3銘茶の浸出液を AEDA で比べると、フラネオール等7成分は全試料で高い FD 因子を示す「中国緑茶の基盤」であり、試料間で偏る成分（碧螺春ではクマリン）の含量差が各銘茶の個性を生んでいた',
+        sourceIds: ['baba-2014-chinese-green-tea-aeda'],
+      },
+    ],
+    sourceIds: ['baba-2014-chinese-green-tea-aeda'],
+    applicableKindIds: ['green'],
+  },
+  {
+    id: 'anhui',
+    name: '安徽',
+    country: '中国',
+    parentName: '華東',
+    note: '祁門紅茶と黄山毛峰の産地。紅茶・緑茶の両方で地域レベルの研究がある。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '祁門紅茶の等級を分けるキー揮発成分の研究と、黄山毛峰のキラル揮発成分による産地判別の研究がある。',
+    findings: [
+      {
+        kind: 'contribution',
+        statement: '祁門紅茶では、等級（蜜様・花様の強さ）を分けるキー揮発成分が、HS-SPME-GC-MS と官能評価・ケモメトリクスの組み合わせで示された',
+        sourceIds: ['su-2022-keemun-grade-key-volatiles'],
+      },
+      {
+        kind: 'composition',
+        statement: '黄山毛峰（安徽）と浙江の烘青緑茶では、リナロール等のキラル揮発成分のエナンチオマー分布が産地・品種の判別指標になった',
+        sourceIds: ['zhang-2025-huangshan-maofeng-chiral-volatiles'],
+      },
+    ],
+    sourceIds: ['su-2022-keemun-grade-key-volatiles', 'zhang-2025-huangshan-maofeng-chiral-volatiles'],
+    applicableKindIds: ['black', 'green'],
+  },
+  {
+    id: 'fujian',
+    name: '福建',
+    country: '中国',
+    parentName: '華南',
+    note: '白茶（福鼎・柘栄など）と烏龍茶（安渓鉄観音・武夷岩茶）の産地。白茶・烏龍茶の両方で地域研究がある。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '柘栄白茶の産地判別、安渓鉄観音の官能・成分、武夷岩茶・肉桂の香型研究がある。',
+    findings: [
+      {
+        kind: 'composition',
+        statement: '福建・柘栄の白茶は PTR-TOF-MS で分析され、リナロールとジメチルスルフィドにより福鼎等の他産地の白茶と判別できた',
+        sourceIds: ['wang-2026-zherong-white-tea-origin'],
+      },
+      {
+        kind: 'sensory',
+        statement: '安渓鉄観音の烏龍茶は、品種特定の試料で官能により甘い花様・果実様と評価され、金観音とは香気が有意に異なった',
+        sourceIds: ['zheng-2022-tieguanyin-aroma'],
+      },
+      {
+        kind: 'contribution',
+        statement: '武夷岩茶の肉桂では、香型（清香・花香・果香・火香等）ごとに揮発成分とキー香気成分が異なり、焙煎の程度が香型を分ける要因だった',
+        sourceIds: ['liang-2024-rougui-aroma-types'],
+      },
+    ],
+    sourceIds: ['wang-2026-zherong-white-tea-origin', 'zheng-2022-tieguanyin-aroma', 'liang-2024-rougui-aroma-types'],
+    applicableKindIds: ['white', 'oolong'],
+  },
+  {
+    id: 'yunnan',
+    name: '雲南',
+    country: '中国',
+    parentName: '西南',
+    note: 'プーアル茶（晒青緑茶・黒茶）と白茶の産地。省内の地域差まで測った研究がある。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '省内13地域の晒青緑茶の地域差（標高・土壌リン）と、緑春県産白茶の香気活性成分の研究がある。',
+    findings: [
+      {
+        kind: 'composition',
+        statement: '雲南省内13地域の晒青緑茶（プーアル茶の原料）では地域によって風味特性が分かれ、標高と土壌の有効態リンが地域差の鍵と解析された',
+        sourceIds: ['zhou-2025-yunnan-sundried-green-tea-regions'],
+      },
+      {
+        kind: 'contribution',
+        statement: '雲南・緑春県の白茶16種（製法違い）では香気活性成分が製法によって大きく変わり、福建白茶とは異なる香りの基盤を持つことが示された',
+        sourceIds: ['raza-2025-yunnan-white-tea'],
+      },
+    ],
+    sourceIds: ['zhou-2025-yunnan-sundried-green-tea-regions', 'raza-2025-yunnan-white-tea'],
+    applicableKindIds: ['green', 'dark', 'white'],
+  },
+  {
+    id: 'sichuan',
+    name: '四川',
+    country: '中国',
+    parentName: '西南',
+    note: '工夫紅茶の産地。在来品種（四川群体種）の寄与を再構成・欠落試験で検証した研究がある。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '四川工夫紅茶で、四川群体種と他品種を比べ、再構成・欠落・添加試験まで行ってキー成分を検証した研究がある。',
+    findings: [
+      {
+        kind: 'contribution',
+        statement: '四川工夫紅茶では、在来の四川群体種が花果香の基盤になることが、再構成・欠落・添加試験を含む検証で示された（キー成分としてゲラニオール、リナロール等）',
+        sourceIds: ['wang-2025-sichuan-gongfu-black-tea'],
+      },
+    ],
+    sourceIds: ['wang-2025-sichuan-gongfu-black-tea'],
+    applicableKindIds: ['black'],
+  },
+  {
+    id: 'guizhou',
+    name: '貴州',
+    country: '中国',
+    parentName: '西南',
+    note: '湄潭翠芽・都匀毛尖など緑茶の産地。省内の代表緑茶同士を比べた研究がある。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '貴州の代表緑茶3種の揮発成分・フェノール類を同定した比較研究がある。',
+    findings: [
+      {
+        kind: 'composition',
+        statement: '貴州の代表緑茶3種（湄潭翠芽・湄潭毛峰・都匀毛尖）では揮発成分57種・フェノール類159種が同定され、同じ省内でも産地・茶名によって成分プロファイルが分かれた',
+        sourceIds: ['zhong-2026-guizhou-green-teas'],
+      },
+    ],
+    sourceIds: ['zhong-2026-guizhou-green-teas'],
+    applicableKindIds: ['green'],
+  },
+  {
+    id: 'henan',
+    name: '河南',
+    country: '中国',
+    parentName: '華中',
+    note: '信陽毛尖と信陽紅茶の産地。緑茶・紅茶の両方でキー成分の研究がある。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '清香型信陽毛尖の AEDA 研究と、信陽紅茶の蜜糖様香気の研究がある。',
+    findings: [
+      {
+        kind: 'contribution',
+        statement: '清香型の信陽毛尖では AEDA でジヒドロアクチニジオリドの FD 値が最大となり、OAV>1 の成分が17種同定された。清香型の主体香は花香・果実香と結論された',
+        sourceIds: ['yin-2024-xinyang-maojian-qingxiang'],
+      },
+      {
+        kind: 'contribution',
+        statement: '信陽の紅茶では、蜜糖様の香りのキー成分としてフェニルアセトアルデヒドが示された',
+        sourceIds: ['yao-2023-xinyang-black-tea-honey-aroma'],
+      },
+    ],
+    sourceIds: ['yin-2024-xinyang-maojian-qingxiang', 'yao-2023-xinyang-black-tea-honey-aroma'],
+    applicableKindIds: ['green', 'black'],
+  },
+  {
+    id: 'shandong',
+    name: '山東',
+    country: '中国',
+    parentName: '華北',
+    note: '青島・嶗山の緑茶の産地。香気活性成分と茶園ごとの違いを測った研究がある。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '嶗山緑茶の香気活性成分を同定し、ジメチルスルフィドの高い OAV と茶園ごとの差を示した研究がある。',
+    findings: [
+      {
+        kind: 'contribution',
+        statement: '青島・嶗山の緑茶では香気活性成分24種が同定され、ジメチルスルフィドの OAV が126–146と突出した。同じ嶗山でも茶園（山系）ごとに香りが異なった',
+        sourceIds: ['zhu-2021-laoshan-green-tea-odorants'],
+      },
+    ],
+    sourceIds: ['zhu-2021-laoshan-green-tea-odorants'],
+    applicableKindIds: ['green'],
+  },
+  {
+    id: 'guangxi',
+    name: '広西',
+    country: '中国',
+    parentName: '華南',
+    note: '六堡茶（黒茶）と品種別紅茶の産地。紅茶の香型と六堡茶の工程研究がある。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '広西の品種別紅茶12試料の香型研究と、六堡茶の渥堆工程における香味変化の研究がある。',
+    findings: [
+      {
+        kind: 'sensory',
+        statement: '広西の異なる茶樹品種で作った紅茶12試料では、烏牛早が甘香型（官能評価が最高）、黄観音が花果香型と、品種によって香型が分かれた',
+        sourceIds: ['zhao-2025-guangxi-black-tea-cultivars'],
+      },
+      {
+        kind: 'composition',
+        statement: '六堡茶の渥堆工程では、カテキン類の減少と没食子酸等の増加に伴って香味が変化し、品質は上昇した後に低下する推移を示した',
+        sourceIds: ['huo-2024-liubao-wothei-process'],
+      },
+    ],
+    sourceIds: ['zhao-2025-guangxi-black-tea-cultivars', 'huo-2024-liubao-wothei-process'],
+    applicableKindIds: ['black', 'dark'],
+  },
+  {
+    id: 'hubei',
+    name: '湖北',
+    country: '中国',
+    parentName: '華中',
+    note: '恩施玉露（蒸青緑茶）の産地。加工工程を通じた揮発成分の追跡研究がある。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '恩施玉露の全加工工程で揮発成分242種を同定した研究がある。寄与の推定は相対含量と文献閾値に基づくもので、GC-O 実測ではない。',
+    findings: [
+      {
+        kind: 'composition',
+        statement: '恩施玉露（蒸青緑茶）の全加工工程で揮発成分242種が同定され、リナロールが最大成分だった。寄与が大きいと推定されたのはリナロール、(Z)-ジャスモン酸メチル、ジヒドロアクチニジオリド、イオノン類である',
+        conditions: '寄与は相対含量と文献閾値からの推定であり、GC-O 実測ではない',
+        sourceIds: ['gui-2024-enshi-yulu-processing'],
+      },
+    ],
+    sourceIds: ['gui-2024-enshi-yulu-processing'],
+    applicableKindIds: ['green'],
+  },
+  {
+    id: 'shaanxi',
+    name: '陝西',
+    country: '中国',
+    parentName: '西北',
+    note: '安康の富硒（セレン）緑茶の産地。小産地単位の判別まで行った研究がある。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '安康の富硒緑茶について、小産地4地域を非揮発成分89種の定量で判別した研究がある。セレンと香味の因果を示すものではない。',
+    findings: [
+      {
+        kind: 'composition',
+        statement: '安康の富硒緑茶では、小産地4地域が非揮発成分89種の絶対定量で判別でき、呈味に寄与する成分が DOT 解析で示された',
+        conditions: 'セレン含量と香味の因果を示す研究ではない',
+        sourceIds: ['feng-2026-ankang-selenium-green-tea'],
+      },
+    ],
+    sourceIds: ['feng-2026-ankang-selenium-green-tea'],
+    applicableKindIds: ['green'],
+  },
+  {
+    id: 'guangdong',
+    name: '広東',
+    country: '中国',
+    parentName: '華南',
+    note: '鳳凰単叢（潮州）と客家炒青緑茶の産地。烏龍茶・緑茶の両方で研究がある。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '客家炒青緑茶の品種別の香りの研究と、鳳凰単叢の主要10香型の揮発成分比較がある。',
+    findings: [
+      {
+        kind: 'contribution',
+        statement: '客家炒青緑茶では品種によって香りが分かれ、黄旦は花香、梅占は炒米香、在来品種はその中間だった',
+        sourceIds: ['qiu-2023-hakka-chaoqing-green-tea'],
+      },
+      {
+        kind: 'composition',
+        statement: '潮州・鳳凰単叢では主要10香型が揮発成分で比較され、インドール・ホトリエノール・ベンジルニトリル・ジャスミンラクトンが単叢で豊富な成分群とされた',
+        sourceIds: ['qin-2023-dancong-fragrance-types'],
+      },
+    ],
+    sourceIds: ['qiu-2023-hakka-chaoqing-green-tea', 'qin-2023-dancong-fragrance-types'],
+    applicableKindIds: ['green', 'oolong'],
+  },
+
+  // ---------------- 台湾 ----------------
+  {
+    id: 'wenshan',
+    name: '文山',
+    country: '台湾',
+    parentName: '台湾北部',
+    note: '文山包種茶の産地。等級による揮発成分の違いと、香気寄与成分の AEDA 研究がある。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '文山包種茶の等級比較（Chen et al. 2023）と、台湾茶の AEDA 比較（水上 2017）がある。',
+    findings: [
+      {
+        kind: 'contribution',
+        statement: '文山包種茶では等級間でカテキン含量に有意差はない一方、揮発成分の強度と構成比は異なり、花様のキー成分は高級茶で有意に強かった',
+        sourceIds: ['chen-2023-baozhong-grade-aroma'],
+      },
+      {
+        kind: 'contribution',
+        statement: '文山包種では、3-メルカプトヘキサノール、ジャスミンラクトン、(Z)-ジャスモン酸メチルが最高レベルの香気寄与を示した（AEDA）',
+        conditions: '知見は水上 2020 総説の要約経由で確認したものである',
+        sourceIds: ['mizukami-2017-taiwan-tea-aeda'],
+      },
+    ],
+    sourceIds: ['chen-2023-baozhong-grade-aroma', 'mizukami-2017-taiwan-tea-aeda'],
+    applicableKindIds: ['oolong'],
+  },
+  {
+    id: 'nantou',
+    name: '南投',
+    country: '台湾',
+    parentName: '台湾中部',
+    note: '凍頂烏龍茶（鹿谷）の産地。センソミクス研究の対象になった地域である。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '鹿谷・凍頂烏龍茶をセンソミクスで解析した研究（Wang et al. 2023）がある。',
+    findings: [
+      {
+        kind: 'contribution',
+        statement: '鹿谷・凍頂烏龍茶のセンソミクス研究では、スルカトン（6-メチル-5-ヘプテン-2-オン）が花様・果実様の主要香気成分の一つとされ、高級品で含量が高かった',
+        sourceIds: ['wang-2023-dongding-oolong-sensomics'],
+      },
+    ],
+    sourceIds: ['wang-2023-dongding-oolong-sensomics'],
+    applicableKindIds: ['oolong'],
+  },
+  {
+    id: 'alishan',
+    name: '阿里山',
+    country: '台湾',
+    parentName: '嘉義県',
+    note: '高山烏龍茶の産地。台湾茶の香気寄与成分を AEDA で比べた研究の試料に含まれる。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '文山包種・高山烏龍（阿里山）・東方美人を AEDA で比較した研究（水上 2017）がある。',
+    findings: [
+      {
+        kind: 'contribution',
+        statement: '阿里山の高山烏龍では、3-メルカプトヘキサノール、ジャスミンラクトン、(Z)-ジャスモン酸メチルが最高レベルの香気寄与を示した（AEDA）。発酵の進んだ東方美人では主役がフェニルアセトアルデヒドとβ-ダマセノンに替わった',
+        conditions: '知見は水上 2020 総説の要約経由で確認したものである',
+        sourceIds: ['mizukami-2017-taiwan-tea-aeda'],
+      },
+    ],
+    sourceIds: ['mizukami-2017-taiwan-tea-aeda'],
+    applicableKindIds: ['oolong'],
+  },
+
+  // ---------------- インド ----------------
+  {
+    id: 'darjeeling',
+    name: 'ダージリン',
+    country: 'インド',
+    parentName: '西ベンガル州',
+    note: 'ヒマラヤ山麓の高地紅茶の産地。茶園・摘採期レベルで代謝物を測った研究がある。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: 'Ging茶園のファーストフラッシュの製程代謝物（2024）と、2標高×3摘採期の代謝物比較（2025）の研究がある。後者は抄録レベルでの確認である。',
+    findings: [
+      {
+        kind: 'composition',
+        statement: 'Ging茶園のファーストフラッシュでは、製程を通じてアミノ酸が有意に増え、有機酸・脂肪酸が減った（GC/MS メタボロミクス）',
+        conditions: '単一茶園・単一シーズンの結果である',
+        sourceIds: ['de-2024-darjeeling-first-flush-metabolomics'],
+      },
+      {
+        kind: 'composition',
+        statement: '2つの標高の茶園と3つの摘採期の比較では、季節間の代謝物差が有意で、アスパラギン酸・プロリン・カテキン類・糖類が季節のバイオマーカー候補とされた。高標高園の方が抗酸化能が高かった',
+        conditions: '抄録レベルで確認した知見である',
+        sourceIds: ['de-2025-darjeeling-season-altitude-metabolomics'],
+      },
+    ],
+    sourceIds: ['de-2024-darjeeling-first-flush-metabolomics', 'de-2025-darjeeling-season-altitude-metabolomics'],
+    applicableKindIds: ['black'],
+  },
+  {
+    id: 'assam',
+    name: 'アッサム',
+    country: 'インド',
+    parentName: 'アッサム州',
+    note: 'ブラマプトラ川流域の低地紅茶の産地。上部アッサムとノースバンクの試料を測った研究がある。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '上部アッサムとノースバンクの紅茶32試料（オーソドックス製法とCTC製法）の生化学的品質パラメータを実測した研究（Sarmah et al. 2026）がある。成分の実測であり官能データではない。',
+    findings: [
+      {
+        kind: 'composition',
+        statement: '上部アッサムとノースバンクの紅茶32試料では、テアフラビン等の主要成分に産地内でも大きなばらつきがあった一方、水抽出物とテアニンはオーソドックス製法とCTC製法で同等で、CTCでも主要品質成分は保持されていた',
+        sourceIds: ['sarmah-2026-assam-orthodox-ctc-biochemical'],
+      },
+    ],
+    sourceIds: ['sarmah-2026-assam-orthodox-ctc-biochemical'],
+    applicableKindIds: ['black'],
+  },
+
+  // ---------------- スリランカ ----------------
+  {
+    id: 'uva',
+    name: 'ウバ',
+    country: 'スリランカ',
+    parentName: 'ウバ州',
+    note: 'フレーバーシーズン（7–9月）の香りで知られる高地産地。13産地の判別研究に含まれる。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: 'スリランカ紅茶13産地を化学的品質パラメータで判別分析した研究（Tropical Agricultural Research 2017）がある。',
+    findings: [
+      {
+        kind: 'composition',
+        statement: 'スリランカ紅茶13産地の判別分析では、ウバの揮発成分はフレーバーシーズン（7–9月）の時期に限って産地判別に重要になった。通常時の個性は主に不揮発性の指標側にある',
+        sourceIds: ['sri-lanka-2017-black-tea-origin-classification'],
+      },
+    ],
+    sourceIds: ['sri-lanka-2017-black-tea-origin-classification'],
+    applicableKindIds: ['black'],
+  },
+  {
+    id: 'dimbula',
+    name: 'ディンブラ',
+    country: 'スリランカ',
+    parentName: '中部州',
+    note: 'フレーバーシーズン（1–4月）を持つ高地産地。13産地の判別研究に含まれる。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: 'スリランカ紅茶13産地を化学的品質パラメータで判別分析した研究（Tropical Agricultural Research 2017）がある。',
+    findings: [
+      {
+        kind: 'composition',
+        statement: 'スリランカ紅茶13産地の判別分析では、ディンブラの揮発成分はフレーバーシーズン（1–4月）の時期に限って産地判別に重要になった',
+        sourceIds: ['sri-lanka-2017-black-tea-origin-classification'],
+      },
+    ],
+    sourceIds: ['sri-lanka-2017-black-tea-origin-classification'],
+    applicableKindIds: ['black'],
+  },
+  {
+    id: 'nuwara-eliya',
+    name: 'ヌワラエリヤ',
+    country: 'スリランカ',
+    parentName: '中部州',
+    note: 'スリランカで最も標高の高い産地の一つ。13産地の中で判別しやすさが際立っていた地域である。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: 'スリランカ紅茶13産地を化学的品質パラメータで判別分析した研究（Tropical Agricultural Research 2017）がある。',
+    findings: [
+      {
+        kind: 'composition',
+        statement: '13産地の中で正分類率が最も高く、「全色（total colour）」という指標だけで判別可能だった。テアルビジンは高地・中地・低地の判別に最も重要な指標だった',
+        sourceIds: ['sri-lanka-2017-black-tea-origin-classification'],
+      },
+    ],
+    sourceIds: ['sri-lanka-2017-black-tea-origin-classification'],
+    applicableKindIds: ['black'],
+  },
 ]
 
-export const teaRegionById = (id: string) => teaRegions.find((r) => r.id === id)
-
-/** 指定した国に属する地域エンティティ */
-export const teaRegionsForCountry = (country: string) => teaRegions.filter((r) => r.country === country)
+export const teaRegionById = (id: string): TeaRegion | undefined => teaRegions.find((r) => r.id === id)

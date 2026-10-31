@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { readPersisted, savePersisted } from '../hooks/usePersistedState'
 import type { ComboNote } from '../types'
 import ComboWheel, { COMBO_INT_LABEL } from './ComboWheel'
 import { FindingsList } from './EntityViews'
@@ -11,10 +12,11 @@ import {
   chocoKindOptions, chocoLineageOptions, chocoOriginOptions,
   parseChocoComboSub, parseTeaComboSub,
   teaComboPath, teaComboSiblings, teaComboViable,
-  teaCultivarOptions, teaKindOptions, teaRegionOptions,
+  teaCultivarOptions, teaItemOptions, teaKindOptions, teaRegionOptions, teaRegionOptionGroups,
   type ChocoComboSel, type ComboAnalysis, type TeaComboSel,
 } from '../engine/combo'
 import { teaKinds } from '../data/teas'
+import { teaRegionById } from '../data/teaRegions'
 import { cacaoOrigins } from '../data/origins'
 import type { CacaoLayer } from '../engine/pairingContext'
 
@@ -122,14 +124,22 @@ const replaceHash = (path: string) => { history.replaceState(null, '', `#/${path
 export function TeaComboPage({ sub }: { sub?: string }) {
   const initial = useMemo<TeaComboSel>(() => {
     const parsed = parseTeaComboSub(sub)
-    if (!parsed.kindId) return { kindId: 'green', regionId: 'nagasaki', cultivarId: 'yabukita' }
+    // URL で組み合わせが指定されていないときは、前回の選択を復元する
+    if (!parsed.kindId) {
+      const saved = readPersisted<TeaComboSel | null>('pairing.teaCombo.sel', null)
+      if (saved?.kindId) return saved
+      return { kindId: 'green', regionId: 'nagasaki', cultivarId: 'yabukita' }
+    }
     return parsed
   }, [sub])
-  const [sel, setSel] = useState<TeaComboSel>(initial)
+  const [sel, setSelState] = useState<TeaComboSel>(initial)
+  const setSel = (next: TeaComboSel) => { setSelState(next); savePersisted('pairing.teaCombo.sel', next) }
   useEffect(() => { setSel(initial) }, [initial])
 
   const kindOptions = teaKindOptions(sel)
+  const itemOptions = teaItemOptions(sel)
   const regionOptions = teaRegionOptions(sel)
+  const regionGroups = teaRegionOptionGroups(sel)
   const cultivarOptions = teaCultivarOptions(sel)
   // 選択が無効になったら自動で「指定なし」に戻す（存在しない組み合わせを選ばせない）
   useEffect(() => {
@@ -139,7 +149,7 @@ export function TeaComboPage({ sub }: { sub?: string }) {
     } else if (sel.regionId && !regionOptions.some((o) => o.id === sel.regionId)) {
       const next = { ...sel, regionId: '' }
       setSel(next); replaceHash(teaComboPath(next))
-    } else if (sel.kindId && !kindOptions.includes(sel.kindId)) {
+    } else if (sel.kindId && !kindOptions.includes(sel.kindId) && !itemOptions.some((t) => t.id === sel.kindId)) {
       const next = { ...sel, kindId: kindOptions[0] ?? 'green' }
       setSel(next); replaceHash(teaComboPath(next))
     }
@@ -154,23 +164,34 @@ export function TeaComboPage({ sub }: { sub?: string }) {
   return (
     <div>
       <h2>組み合わせで調べる（お茶）</h2>
-      <p>「長崎の紅茶のやぶきた」と「長崎の緑茶のやぶきた」のように、<strong>産地×品種×分類の具体的な組み合わせ</strong>ごとに味わいがどう違うかを見るページです。分類のプロファイル、品種の所見、産地の所見、製法の科学を重ねて推測し、実測のある部分と推測の部分を区別して表示します。根拠の無い組み合わせは選択肢に出ません。</p>
+      <p>「長崎の紅茶のやぶきた」と「長崎の緑茶のやぶきた」のように、<strong>産地×品種×分類の具体的な組み合わせ</strong>ごとに味わいがどう違うかを見るページです。分類のプロファイル、品種の所見、産地の所見、製法の科学を重ねて推測し、実測のある部分と推測の部分を区別して表示します。品種は、その分類で確認済みのものと、製法の科学から推測が成立するものだけが選択肢に出ます。</p>
       <section className="filter-hero" role="group" aria-label="組み合わせの選択">
         <h3 className="filter-hero-title">組み合わせを選ぶ</h3>
         <div className="filter-grid cols-3">
           <label className="filter-field">
             <span className="filter-label">分類（茶類）</span>
             <select className="big-select" value={sel.kindId} onChange={(e) => update({ ...sel, kindId: e.target.value })} aria-label="組み合わせの分類（茶類）">
-              {teaKinds.filter((k) => k.category !== 'form').map((k) => (
-                <option key={k.id} value={k.id} disabled={!kindOptions.includes(k.id)}>{k.name}</option>
-              ))}
+              <optgroup label="茶類（大分類）">
+                {teaKinds.filter((k) => k.category !== 'form').map((k) => (
+                  <option key={k.id} value={k.id} disabled={!kindOptions.includes(k.id)}>{k.name}</option>
+                ))}
+              </optgroup>
+              <optgroup label="具体的なお茶">
+                {itemOptions.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </optgroup>
             </select>
           </label>
           <label className="filter-field">
             <span className="filter-label">産地</span>
             <select className="big-select" value={sel.regionId} onChange={(e) => update({ ...sel, regionId: e.target.value })} aria-label="組み合わせの産地">
               <option value="">指定しない</option>
-              {regionOptions.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+              {regionGroups.map((g) => (
+                <optgroup key={g.country} label={g.country}>
+                  {g.options.map((o) => (
+                    <option key={o.id} value={o.id}>{o.id.startsWith('country:') ? '国全体' : (teaRegionById(o.id)?.name ?? o.label)}</option>
+                  ))}
+                </optgroup>
+              ))}
             </select>
           </label>
           <label className="filter-field">
@@ -181,7 +202,6 @@ export function TeaComboPage({ sub }: { sub?: string }) {
             </select>
           </label>
         </div>
-        <p className="note-small">選択肢は連動します：他の軸と両立しない選択肢は出ません。産地は、文献で所見のある地域（例：長崎）は地域レベルで、国レベルでも選べます。</p>
       </section>
       {analysis ? (
         <AnalysisView analysis={analysis}>
@@ -190,6 +210,7 @@ export function TeaComboPage({ sub }: { sub?: string }) {
       ) : (
         <p className="unknown-box">その組み合わせには、表示できる根拠がありません。選択肢の中から選んでください。</p>
       )}
+      <p className="note-small">選択肢は連動します：他の軸と両立しない品種・産地は出ません。産地は、文献で所見のある地域（例：長崎）は地域レベルで、国レベルでも選べます。分類×産地の組み合わせは常に開けますが、その産地・品種での実測があるかどうかは、ページ内の注記と「根拠の内訳」で正直に示します。</p>
       <p className="note-small">チョコレートの組み合わせは <button className="linklike" onClick={() => go('combo/choco')}>組み合わせで調べる（チョコ）</button> から。お茶とチョコのペアリングは「組み合わせる」画面です。</p>
     </div>
   )
@@ -198,10 +219,16 @@ export function TeaComboPage({ sub }: { sub?: string }) {
 export function ChocoComboPage({ sub }: { sub?: string }) {
   const initial = useMemo<ChocoComboSel>(() => {
     const parsed = parseChocoComboSub(sub)
-    if (!parsed.kind) return { kind: 'dark', originId: 'ecuador', lineage: { layer: 'genetic', id: 'gen-nacional' } }
+    // URL で組み合わせが指定されていないときは、前回の選択を復元する
+    if (!parsed.kind) {
+      const saved = readPersisted<ChocoComboSel | null>('pairing.chocoCombo.sel', null)
+      if (saved?.kind) return saved
+      return { kind: 'dark', originId: 'ecuador', lineage: { layer: 'genetic', id: 'gen-nacional' } }
+    }
     return parsed
   }, [sub])
-  const [sel, setSel] = useState<ChocoComboSel>(initial)
+  const [sel, setSelState] = useState<ChocoComboSel>(initial)
+  const setSel = (next: ChocoComboSel) => { setSelState(next); savePersisted('pairing.chocoCombo.sel', next) }
   useEffect(() => { setSel(initial) }, [initial])
 
   const kindOptions = chocoKindOptions(sel)
@@ -263,7 +290,6 @@ export function ChocoComboPage({ sub }: { sub?: string }) {
             </select>
           </label>
         </div>
-        <p className="note-small">選択肢は連動します：産地と結びつきの無い系統は出ません。系統名はカタカナを主表記にしています。ルビーは種類の軸にのみあり、系統には入りません。</p>
       </section>
       {analysis ? (
         <AnalysisView analysis={analysis}>
@@ -272,6 +298,7 @@ export function ChocoComboPage({ sub }: { sub?: string }) {
       ) : (
         <p className="unknown-box">その組み合わせには、表示できる根拠がありません。選択肢の中から選んでください。</p>
       )}
+      <p className="note-small">選択肢は連動します：産地と結びつきの無い系統は出ません。系統名はカタカナを主表記にしています。ルビーは種類の軸にのみあり、系統には入りません。</p>
       <p className="note-small">お茶の組み合わせは <button className="linklike" onClick={() => go('combo/tea')}>組み合わせで調べる（お茶）</button> から。</p>
     </div>
   )

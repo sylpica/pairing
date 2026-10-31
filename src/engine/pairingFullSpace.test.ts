@@ -3,9 +3,10 @@ import { analyzePairing } from './pairing'
 import { analyzeInteractions } from './interactions'
 import {
   teaCultivarPairingNote, cacaoPairingNote, cacaoOriginPairingNote, teaOriginPairingNote,
-  teaOriginCountries, type PairingContextNote,
+  teaRegionPairingNote, teaOriginCountries, type PairingContextNote,
 } from './pairingContext'
 import { teaItems, teaKinds } from '../data/teas'
+import { teaRegions } from '../data/teaRegions'
 import { chocolateItems } from '../data/chocolates'
 import { teaCultivars, teaCultivarById, cultivarTeaUses, cultivarsForKind } from '../data/cultivars'
 import { cacaoTraditionalGroups, cacaoGeneticGroups, cacaoClones } from '../data/cacao'
@@ -16,21 +17,24 @@ import { FLAVOR_FINDING_KINDS } from '../types'
 import type { DataLevelUsed, EntityFinding } from '../types'
 
 // ============================================================
-// 指定ありを含む全組み合わせの検証（2026-10-30 追加）
+// 指定ありを含む全組み合わせの検証（2026-10-30 追加、2026-10-31 地域対応で拡張）
 //
 // PairPage（src/App.tsx）の生成経路は次の関数群で構成される:
 //   analyzePairing(tea.profile, choco.profile)        … お茶×チョコのペアのみに依存
 //   analyzeInteractions(teaItem, chocoItem)           … お茶×チョコのペアのみに依存
 //   teaCultivarPairingNote(cultivar, tea.kindId)      … 品種×茶類に依存
-//   teaOriginPairingNote(country, tea.kindId)         … お茶の産地×茶類に依存
+//   teaOriginPairingNote(country, tea.kindId)         … お茶の産地（国）×茶類に依存
+//   teaRegionPairingNote(region, tea.kindId)          … お茶の産地（地域）×茶類に依存
 //   cacaoPairingNote(layer, entity)                   … カカオ系統エンティティに依存
 //   cacaoOriginPairingNote(origin)                    … カカオ産地に依存
-// したがって選択空間（お茶側 1,134 通り × チョコ側 1,224 通り = 1,388,016 通り）は、
-// 相異なる引数の組み合わせ（ペア112 + 品種39 + お茶産地30 + 系統16 + 産地8 = 191通り）
+// お茶の産地は国→地域の階層で選べる（国5＋地域30）。品種を指定した場合は、
+// その品種の国の産地（国全体＋その国の地域）だけが選択肢になる（PairPage の連動）。
+// 選択空間は、相異なる引数の組み合わせ
+// （ペア112 + 品種39 + お茶産地（国）30 + お茶産地（地域）180 + 系統16 + 産地8 = 385通り）
 // への実呼び出しで過不足なく覆われる。本ファイルでは:
-//   (1) 相異なる引数の全191通り＋112ペアを実際に関数へ通し、不変条件を深掘り検査する
+//   (1) 相異なる引数の全385通りを実際に関数へ通し、不変条件を深掘り検査する
 //       （あわせて同じ引数で2回呼んでも結果が一致すること＝決定性も確認する）。
-//   (2) 選択空間 1,388,016 通りを全件列挙し、PairPage と同じ組み立てで、
+//   (2) 選択空間を全件列挙し、PairPage と同じ組み立てで、
 //       階層バッジ（DataLevelUsed）が指定内容と矛盾しないことを、
 //       エンジン出力ではなくデータの原始情報から独立に再導出した期待値と突き合わせる。
 // 香味ノート名・味覚名への言及の裏付け検査は interactions.test.ts が同じ112ペアで
@@ -83,6 +87,19 @@ function teaOriginHasFindings(country: string, kindId: string): boolean {
 function expectedTeaOriginLevel(country: string, kindId: string): DataLevelUsed {
   return teaOriginHasFindings(country, kindId) ? 'group-general' : 'insufficient'
 }
+const categoryOfKind = (kindId: string): string => {
+  const k = teaKinds.find((x) => x.id === kindId)
+  return !k || k.category === 'form' ? 'green' : k.category
+}
+function expectedTeaRegionLevel(region: (typeof teaRegions)[number], kindId: string): DataLevelUsed {
+  const hasFindings = flavorFindingsOf(region.findings).length > 0
+  if (region.applicableKindIds.includes(categoryOfKind(kindId)) && hasFindings) {
+    return region.flavorEvidence === 'measured' ? 'origin-measured' : 'group-general'
+  }
+  return 'insufficient'
+}
+const regionsByCountry = new Map<string, (typeof teaRegions)[number][]>()
+for (const r of teaRegions) regionsByCountry.set(r.country, [...(regionsByCountry.get(r.country) ?? []), r])
 
 /** 文脈ノート共通の不変条件。問題があれば文字列で返す（呼び出し側で集約）。 */
 function checkContextNote(note: PairingContextNote, pool: EntityFinding[], ctx: string): string[] {
@@ -200,6 +217,25 @@ describe('全組み合わせ検証：相異なる引数空間（実呼び出し�
     }
   })
 
+  it('お茶の地域×茶類の全180通りで、階層が適用分類・実測区分・所見の有無と一致する', () => {
+    const kindIds = [...new Set(teaItems.map((t) => t.kindId))]
+    expect(teaRegions.length).toBe(30)
+    expect(teaRegions.length * kindIds.length).toBe(180)
+    for (const region of teaRegions) {
+      for (const kindId of kindIds) {
+        const ctx = `region:${region.id}@${kindId}`
+        const note = teaRegionPairingNote(region, kindId)
+        expect(JSON.stringify(teaRegionPairingNote(region, kindId)), ctx).toBe(JSON.stringify(note))
+        expect(note.level, ctx).toBe(expectedTeaRegionLevel(region, kindId))
+        expect(checkContextNote(note, flavorFindingsOf(region.findings), ctx)).toEqual([])
+        // 適用分類では地域の全香味所見が載り、適用外では一切載らない
+        const applicable = region.applicableKindIds.includes(categoryOfKind(kindId))
+        expect(note.findings.length, ctx).toBe(applicable ? flavorFindingsOf(region.findings).length : 0)
+        expect(note.text, ctx).toContain(region.name)
+      }
+    }
+  })
+
   it('カカオ系統の全16エンティティで、階層が所見の有無と層と一致する', () => {
     expect(cacaoEntities.length).toBe(16)
     for (const e of cacaoEntities) {
@@ -226,11 +262,12 @@ describe('全組み合わせ検証：相異なる引数空間（実呼び出し�
 })
 
 describe('全組み合わせ検証：選択空間の全件組み立て', () => {
-  it('お茶側1,134通り × チョコ側1,224通り = 1,388,016通りで、階層バッジが指定内容と矛盾しない', () => {
+  it('お茶側 × チョコ側1,224通りの全件で、階層バッジが指定内容と矛盾しない', () => {
     // データ形状のアンカー（収録データが増えたら、この数字も更新すること）
     expect(teaItems.length).toBe(14)
     expect(chocolateItems.length).toBe(8)
     expect(teaCountries.length).toBe(5)
+    expect(teaRegions.length).toBe(30)
     expect(cacaoOrigins.length).toBe(8)
     expect(cacaoEntities.length).toBe(16)
 
@@ -258,6 +295,12 @@ describe('全組み合わせ検証：選択空間の全件組み立て', () => {
         teaOriginLevel.set(`${country}@${kindId}`, teaOriginPairingNote(country, kindId).level)
       }
     }
+    const teaRegionLevel = new Map<string, DataLevelUsed>()
+    for (const region of teaRegions) {
+      for (const kindId of new Set(teaItems.map((t) => t.kindId))) {
+        teaRegionLevel.set(`${region.id}@${kindId}`, teaRegionPairingNote(region, kindId).level)
+      }
+    }
     const cacaoEntityLevel = new Map(cacaoEntities.map((e) => [`${e.layer}:${e.id}`, cacaoPairingNote(e.layer, { name: e.displayName, findings: e.findings }).level]))
     const cacaoOriginLevel = new Map(cacaoOrigins.map((o) => [o.id, cacaoOriginPairingNote(o).level]))
     // 期待値も原始情報から事前に引いておく（組み合わせごとに再導出すると全件走査が重いため）
@@ -269,6 +312,10 @@ describe('全組み合わせ検証：選択空間の全件組み立て', () => {
       const [country, kindId] = k.split('@')
       return [k, expectedTeaOriginLevel(country, kindId)] as const
     }))
+    const expectedTeaRegion = new Map([...teaRegionLevel.keys()].map((k) => {
+      const [regionId, kindId] = k.split('@')
+      return [k, expectedTeaRegionLevel(teaRegions.find((r) => r.id === regionId)!, kindId)] as const
+    }))
     const expectedCacaoEntity: Map<string, DataLevelUsed> = new Map(cacaoEntities.map((e) => [`${e.layer}:${e.id}`, expectedCacaoEntityLevel(e.layer, e.findings)] as const))
     const entityHasFindings: Map<string, boolean> = new Map(cacaoEntities.map((e) => [`${e.layer}:${e.id}`, flavorFindingsOf(e.findings).length > 0] as const))
     const expectedCacaoOrigin = new Map(cacaoOrigins.map((o) => [o.id, expectedCacaoOriginLevel(o)] as const))
@@ -277,6 +324,17 @@ describe('全組み合わせ検証：選択空間の全件組み立て', () => {
     let violationCount = 0
     let count = 0
 
+    // PairPage の産地選択肢: 品種なしでは国5＋地域30の全て、品種ありではその品種の国（国全体＋その国の地域）のみ
+    type TeaOriginChoice = { type: 'country'; country: string } | { type: 'region'; region: (typeof teaRegions)[number] } | null
+    const allOriginChoices: TeaOriginChoice[] = [null,
+      ...teaCountries.map((country): TeaOriginChoice => ({ type: 'country', country })),
+      ...teaRegions.map((region): TeaOriginChoice => ({ type: 'region', region }))]
+    const originChoicesFor = (cultivarId: string | null): TeaOriginChoice[] => {
+      if (!cultivarId) return allOriginChoices
+      const country = teaCultivarById(cultivarId)!.country
+      return [null, { type: 'country', country }, ...(regionsByCountry.get(country) ?? []).map((region): TeaOriginChoice => ({ type: 'region', region }))]
+    }
+
     for (const tea of teaItems) {
       const cultivarChoices: (string | null)[] = [null, ...new Set(cultivarsForKind(tea.kindId))]
       for (const choco of chocolateItems) {
@@ -284,8 +342,10 @@ describe('全組み合わせ検証：選択空間の全件組み立て', () => {
         const thisPairOk = pairOk.get(pairKey)
         for (const cultivarId of cultivarChoices) {
           const cultivarKey = cultivarId ? `${cultivarId}@${tea.kindId}` : null
-          for (const teaCountry of [null, ...teaCountries] as (string | null)[]) {
-            const teaOriginKey = teaCountry ? `${teaCountry}@${tea.kindId}` : null
+          for (const teaOriginChoice of originChoicesFor(cultivarId)) {
+            const teaOriginKey = teaOriginChoice?.type === 'country' ? `${teaOriginChoice.country}@${tea.kindId}` : null
+            const teaRegionKey = teaOriginChoice?.type === 'region' ? `${teaOriginChoice.region.id}@${tea.kindId}` : null
+            const teaOriginDesc = teaOriginChoice == null ? '' : teaOriginChoice.type === 'country' ? `+${teaOriginChoice.country}` : `+region:${teaOriginChoice.region.id}`
             for (const entity of [null, ...cacaoEntities] as (typeof cacaoEntities[number] | null)[]) {
               const entityKey = entity ? `${entity.layer}:${entity.id}` : null
               for (const origin of [null, ...cacaoOrigins] as (typeof cacaoOrigins[number] | null)[]) {
@@ -294,7 +354,7 @@ describe('全組み合わせ検証：選択空間の全件組み立て', () => {
                 const bad = (msg: string) => {
                   violationCount++
                   if (violations.length < 30) {
-                    violations.push(`${tea.id}${cultivarId ? `+${cultivarId}` : ''}${teaCountry ? `+${teaCountry}` : ''} × ${choco.id}${entity ? `+${entity.layer}:${entity.id}` : ''}${origin ? `+${origin.id}` : ''}: ${msg}`)
+                    violations.push(`${tea.id}${cultivarId ? `+${cultivarId}` : ''}${teaOriginDesc} × ${choco.id}${entity ? `+${entity.layer}:${entity.id}` : ''}${origin ? `+${origin.id}` : ''}: ${msg}`)
                   }
                 }
                 // 組み立て（PairPage と同じ対応関係）自体が例外なく成立すること
@@ -305,11 +365,20 @@ describe('全組み合わせ検証：選択空間の全件組み立て', () => {
                   if (lvl !== expectedTeaCultivar.get(cultivarKey)) bad(`品種の階層 ${lvl} が期待 ${expectedTeaCultivar.get(cultivarKey)} と不一致`)
                   if ((cultivarFlavorCount.get(cultivarId!) ?? 0) === 0 && lvl === 'cultivar-measured') bad('所見のない品種が実測扱い')
                 }
-                // お茶の産地指定: 実測・品種レベルの階層には絶対にならない
+                // お茶の産地（国）指定: 実測・品種レベルの階層には絶対にならない
                 if (teaOriginKey) {
                   const lvl = teaOriginLevel.get(teaOriginKey)
                   if (lvl !== expectedTeaOrigin.get(teaOriginKey)) bad(`お茶産地の階層 ${lvl} が期待と不一致`)
                   if (lvl !== 'group-general' && lvl !== 'insufficient') bad(`お茶産地が ${lvl} 扱いになっている`)
+                }
+                // お茶の産地（地域）指定: origin-measured は適用分類かつ実測区分のときだけ
+                if (teaRegionKey && teaOriginChoice?.type === 'region') {
+                  const lvl = teaRegionLevel.get(teaRegionKey)
+                  if (lvl !== expectedTeaRegion.get(teaRegionKey)) bad(`お茶地域の階層 ${lvl} が期待と不一致`)
+                  const region = teaOriginChoice.region
+                  if (lvl === 'origin-measured' && !(region.applicableKindIds.includes(categoryOfKind(tea.kindId)) && region.flavorEvidence === 'measured')) {
+                    bad('適用外または実測でない地域が origin-measured 扱い')
+                  }
                 }
                 // 系統指定: 所見のない系統が measured / general 扱いにならない
                 if (entityKey) {
@@ -330,12 +399,17 @@ describe('全組み合わせ検証：選択空間の全件組み立て', () => {
       }
     }
 
-    const teaSide = teaItems.reduce((sum, t) => sum + (1 + new Set(cultivarsForKind(t.kindId)).size) * (1 + teaCountries.length), 0)
+    const teaSide = teaItems.reduce((sum, t) => {
+      const cids = [...new Set(cultivarsForKind(t.kindId))]
+      const noCultivar = 1 + teaCountries.length + teaRegions.length
+      const withCultivar = cids.reduce((s, cid) => s + 2 + (regionsByCountry.get(teaCultivarById(cid)!.country)?.length ?? 0), 0)
+      return sum + noCultivar + withCultivar
+    }, 0)
     const chocoSide = chocolateItems.length * (1 + cacaoEntities.length) * (1 + cacaoOrigins.length)
-    expect(teaSide).toBe(1134)
+    expect(teaSide).toBe(2266)
     expect(chocoSide).toBe(1224)
     expect(count).toBe(teaSide * chocoSide)
-    expect(count).toBe(1388016)
+    expect(count).toBe(2773584)
     expect(violationCount, violations.join('\n')).toBe(0)
   }, 600000)
 })

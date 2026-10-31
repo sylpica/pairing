@@ -19,7 +19,11 @@ const LEVELS = ['measured', 'general', 'inferred']
 
 // 選択空間のアンカー（2026-10-31 時点）。収録データが増えたら、
 // 件数の内訳を確認した上でこの数字を更新すること（pairingFullSpace.test.ts と同じ運用）。
-const TEA_VIABLE_COUNT = 127
+// お茶 564 の内訳：品種なし＝分類6 × 産地36（指定なし＋国5＋地域30）＝216、
+// 品種あり＝348（品種×分類の確認があるもの×その国の産地選択肢）。
+// 2026-10-31 の成立条件修正（分類×産地は常時成立）と地域30件への拡充で
+// 127 から増えた。
+const TEA_VIABLE_COUNT = 564
 const CHOCO_VIABLE_COUNT = 190
 
 function* teaSpace(): Generator<TeaComboSel> {
@@ -96,6 +100,47 @@ describe('組み合わせページ：選択空間の全数検査（チョコ）'
   })
   it('全ての成立組み合わせで例外なく分析でき、全ノート・味覚に根拠と実在する出典がある', () => {
     for (const sel of viable) checkAnalysis(analyzeChocoCombo(sel))
+  })
+})
+
+describe('成立条件（2026-10-31 修正：分類×産地は常時成立）', () => {
+  it('品種を指定しなければ、分類×産地（国・地域）は全通り成立する', () => {
+    const regions = ['', ...allTeaRegionOptions().map((o) => o.id)]
+    expect(regions.length).toBe(36) // 指定なし＋国5＋地域30
+    for (const kindId of TEA_COMBO_KINDS) {
+      for (const regionId of regions) {
+        expect(teaComboViable({ kindId, regionId, cultivarId: '' }), `${kindId}×${regionId}`).toBe(true)
+      }
+    }
+  })
+  it('中国 × 緑茶（品種指定なし）が通常の組み合わせとして開ける', () => {
+    const sel: TeaComboSel = { kindId: 'green', regionId: 'country:中国', cultivarId: '' }
+    expect(teaComboViable(sel)).toBe(true)
+    const a = analyzeTeaCombo(sel)
+    expect(a.title).toBe('中国 × 緑茶')
+    checkAnalysis(a)
+  })
+  it('浙江 × 緑茶（品種指定なし）では、地域の実測の足場が measured として出る', () => {
+    const sel: TeaComboSel = { kindId: 'green', regionId: 'zhejiang', cultivarId: '' }
+    expect(teaComboViable(sel)).toBe(true)
+    const a = analyzeTeaCombo(sel)
+    expect(a.title).toBe('浙江 × 緑茶')
+    expect(a.statements.some((s) => s.level === 'measured')).toBe(true)
+    const regionGroup = a.groups.find((g) => g.label === '産地の所見')
+    expect(regionGroup?.findings.length).toBe(2)
+  })
+  it('地域の全所見に出典があり、出典は全て実在する', async () => {
+    const { teaRegions } = await import('../data/teaRegions')
+    expect(teaRegions.length).toBe(30)
+    for (const r of teaRegions) {
+      expect(r.findings.length, r.id).toBeGreaterThan(0)
+      for (const f of r.findings) {
+        expect(f.sourceIds.length, `${r.id}: ${f.statement.slice(0, 20)}`).toBeGreaterThan(0)
+        for (const sid of f.sourceIds) expect(sourceIds.has(sid), `${r.id}: ${sid}`).toBe(true)
+      }
+      for (const sid of r.sourceIds) expect(sourceIds.has(sid), `${r.id}: ${sid}`).toBe(true)
+      for (const k of r.applicableKindIds) expect(TEA_COMBO_KINDS, `${r.id}: ${k}`).toContain(k)
+    }
   })
 })
 

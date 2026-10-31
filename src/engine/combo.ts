@@ -3,7 +3,7 @@ import type {
   Intensity, TasteKey, TeaRegion,
 } from '../types'
 import { FLAVOR_FINDING_KINDS } from '../types'
-import { teaKinds, teaById } from '../data/teas'
+import { teaKinds, teaById, teaItems } from '../data/teas'
 import { chocolateItems } from '../data/chocolates'
 import { teaCultivars, teaCultivarById, cultivarTeaUses } from '../data/cultivars'
 import { teaRegions, teaRegionById } from '../data/teaRegions'
@@ -64,22 +64,24 @@ export const teaRepresentativeItem = (kindId: string) => {
   const id = TEA_REPRESENTATIVE[kindId]
   return id ? teaById(id) : undefined
 }
+/**
+ * 組み合わせの土台になるアイテム。kindId は茶類（大分類）のIDのほか、
+ * 具体的なお茶のアイテムID（煎茶・抹茶など）も受け付ける（2026-10-31 追加要望）。
+ * アイテムを直接選んだ場合は、そのアイテムのプロファイルを土台にする。
+ */
+export const teaComboBaseItem = (kindId: string) => teaRepresentativeItem(kindId) ?? teaById(kindId)
+/** kindId（茶類IDでもアイテムIDでもよい）から大分類を引く。 */
+export const teaComboCategoryOf = (kindId: string): string =>
+  TEA_COMBO_KINDS.includes(kindId) ? kindId : kindCategoryOf(teaById(kindId)?.kindId ?? kindId)
 export const teaKindName = (kindId: string) => teaKinds.find((k) => k.id === kindId)?.name ?? kindId
 const kindCategoryOf = (kindId: string) => {
   const k = teaKinds.find((x) => x.id === kindId)
   return !k || k.category === 'form' ? 'green' : k.category
 }
 
-/** 分類と国の結びつきの根拠（teas.ts の収録アイテムの産地・呼称に基づく）。
- * 国レベルの産地指定がその分類で意味を持つのは、この根拠がある場合に限る。 */
-const KIND_COUNTRY_EVIDENCE: Record<string, string[]> = {
-  green: ['日本', '中国'],
-  white: ['中国'],
-  yellow: ['中国'],
-  oolong: ['中国', '台湾'],
-  black: ['中国', 'インド', 'スリランカ'],
-  dark: ['中国'],
-}
+// （旧 KIND_COUNTRY_EVIDENCE による国レベルの成立ゲートは、2026-10-31 の
+// 成立条件修正で廃止した。分類×産地は常時成立とし、根拠の有無は
+// analyzeTeaCombo の注記・根拠の内訳で正直に示す。）
 
 export interface TeaRegionOption { id: string; label: string; country: string }
 export function allTeaRegionOptions(): TeaRegionOption[] {
@@ -104,35 +106,83 @@ export const teaRegionLabelOf = (regionId: string): string => {
   return opt ? opt.label : regionId
 }
 
+/** 国でグループ化した産地の選択肢（国全体→その国の地域、の順）。階層式プルダウン用。 */
+export interface TeaRegionGroup { country: string; options: TeaRegionOption[] }
+export function teaRegionOptionGroups(sel: TeaComboSel): TeaRegionGroup[] {
+  const viable = teaRegionOptions(sel)
+  const order: string[] = []
+  for (const o of allTeaRegionOptions()) if (!order.includes(o.country)) order.push(o.country)
+  return order
+    .map((country) => ({
+      country,
+      options: [
+        ...viable.filter((o) => o.id === `country:${country}`),
+        ...viable.filter((o) => o.country === country && !o.id.startsWith('country:')),
+      ],
+    }))
+    .filter((g) => g.options.length > 0)
+}
+
+// ===== 他画面（組み合わせる／調べる）の産地セレクトの値の約束 =====
+// 値: '' = 指定なし / '<国名>' = 国レベル / 'region:<TeaRegion.id>' = 地域レベル。
+export const teaOriginValueOfRegion = (regionId: string) => `region:${regionId}`
+export const teaOriginCountryOfValue = (value: string): string | undefined => {
+  if (!value) return undefined
+  if (value.startsWith('region:')) return teaRegionById(value.slice('region:'.length))?.country
+  return value
+}
+export const teaOriginLabelOfValue = (value: string): string => {
+  if (!value) return ''
+  if (value.startsWith('region:')) {
+    const r = teaRegionById(value.slice('region:'.length))
+    return r ? r.name : value
+  }
+  return value
+}
+/** 画面の産地の値を、組み合わせエンジンの regionId（'' / 'country:<国>' / 地域id）に変換する。 */
+export const teaOriginComboRegionIdOfValue = (value: string): string => {
+  if (!value) return ''
+  if (value.startsWith('region:')) return value.slice('region:'.length)
+  return `country:${value}`
+}
+
 const teaRuleMatches = (cultivarId: string, kindId: string) =>
   teaProcessRules.some((r) => r.kindCategory === kindCategoryOf(kindId) && (r.cultivarId === undefined || r.cultivarId === cultivarId))
 
-/** その組み合わせに「言うべきことの根拠」が存在するか（選択肢に出してよいか）。 */
+/**
+ * その組み合わせが成立するか（ページとして開けるか／選択肢に出してよいか）。
+ * 2026-10-31 実機フィードバックで修正：分類×産地（国・地域）は常時成立とする。
+ * 中国×緑茶のような当然存在する組み合わせを「成立しない」扱いにするのは誤りで、
+ * ページの土台は分類プロファイルであり、産地に所見があるかどうかで内容が
+ * 変わる（所見の有無はページ内の正直な注記で明示する）。
+ * 品種を指定する場合のみ確認を要求する：その分類で確認済み（uses）か、
+ * 製法ルールで推測ページが成立すること。品種の国と、選んだ国・地域の国が
+ * 一致すること。選べない品種は選択肢に出さない（「存在しない」とは言わない）。
+ */
 export function teaComboViable(sel: TeaComboSel): boolean {
-  if (!sel.kindId || !teaRepresentativeItem(sel.kindId)) return false
+  const base = sel.kindId ? teaComboBaseItem(sel.kindId) : undefined
+  if (!sel.kindId || !base) return false
   const cultivar = sel.cultivarId ? teaCultivarById(sel.cultivarId) : undefined
   if (sel.cultivarId && !cultivar) return false
   const regionCountry = teaRegionCountryOf(sel.regionId)
   if (sel.regionId && !regionCountry) return false
-  const region = teaRegionEntityOf(sel.regionId)
-  if (cultivar) {
-    const use = cultivarTeaUses.some((u) => u.cultivarId === cultivar.id && u.kindId === sel.kindId)
-    if (!use && !teaRuleMatches(cultivar.id, sel.kindId)) return false
-    if (regionCountry && cultivar.country !== regionCountry) return false
-    return true
-  }
-  if (sel.regionId) {
-    if (region && region.applicableKindIds.includes(sel.kindId)) return true
-    if ((KIND_COUNTRY_EVIDENCE[sel.kindId] ?? []).includes(regionCountry!)) return true
-    return teaCultivars.some((c) =>
-      c.country === regionCountry
-      && (cultivarTeaUses.some((u) => u.cultivarId === c.id && u.kindId === sel.kindId) || teaRuleMatches(c.id, sel.kindId)))
-  }
+  if (!cultivar) return true
+  // 品種の確認は、選んだ分類そのもの・その大分類・アイテムの茶類IDの
+  // いずれかで利用が確認されていればよい（アイテム直接選択に対応）。
+  const category = teaComboCategoryOf(sel.kindId)
+  const use = cultivarTeaUses.some((u) => u.cultivarId === cultivar.id
+    && (u.kindId === sel.kindId || u.kindId === category || u.kindId === base.kindId))
+  if (!use && !teaRuleMatches(cultivar.id, category)) return false
+  if (regionCountry && cultivar.country !== regionCountry) return false
   return true
 }
 
 export function teaKindOptions(sel: TeaComboSel): string[] {
   return TEA_COMBO_KINDS.filter((k) => teaComboViable({ ...sel, kindId: k }))
+}
+/** 分類プルダウンの「具体的なお茶」の選択肢（アイテムを直接選べる画面用）。 */
+export function teaItemOptions(sel: TeaComboSel) {
+  return teaItems.filter((t) => teaComboViable({ ...sel, kindId: t.id }))
 }
 export function teaRegionOptions(sel: TeaComboSel): TeaRegionOption[] {
   return allTeaRegionOptions().filter((o) => teaComboViable({ ...sel, regionId: o.id }))
@@ -145,7 +195,7 @@ export function teaComboTitle(sel: TeaComboSel): string {
   const parts: string[] = []
   if (sel.regionId) parts.push(teaRegionLabelOf(sel.regionId).replace(/（.+）$/, ''))
   if (sel.cultivarId) parts.push(teaCultivarById(sel.cultivarId)?.name ?? sel.cultivarId)
-  parts.push(teaKindName(sel.kindId))
+  parts.push(TEA_COMBO_KINDS.includes(sel.kindId) ? teaKindName(sel.kindId) : (teaById(sel.kindId)?.name ?? sel.kindId))
   return parts.join(' × ')
 }
 
@@ -176,7 +226,8 @@ export function allLineages(): LineageRef[] {
 export const lineageEntityOf = (ref: { layer: CacaoLayer; id: string }) =>
   ref.layer === 'traditional' ? traditionalGroupById(ref.id) : ref.layer === 'genetic' ? geneticGroupById(ref.id) : cacaoCloneById(ref.id)
 
-const lineageOriginLinked = (lineage: { layer: CacaoLayer; id: string }, originId: string): boolean => {
+/** 系統と産地が文献・データ上で結びつくか（組み合わせる画面の連動にも使う）。 */
+export const lineageOriginLinked = (lineage: { layer: CacaoLayer; id: string }, originId: string): boolean => {
   if (originsForLineage(lineage.layer, lineage.id).some((o) => o.id === originId)) return true
   // クローンの作出地が産地名と一致する場合も結びつきとみなす（例：IMC-67 とペルー）
   if (lineage.layer === 'clone') {
@@ -335,28 +386,32 @@ function finalize(
 }
 
 export function analyzeTeaCombo(sel: TeaComboSel): ComboAnalysis {
-  const rep = teaRepresentativeItem(sel.kindId)!
-  const kindName = teaKindName(sel.kindId)
+  const rep = teaComboBaseItem(sel.kindId)!
+  const itemSelected = !TEA_COMBO_KINDS.includes(sel.kindId)
+  const category = teaComboCategoryOf(sel.kindId)
+  const kindName = itemSelected ? rep.name : teaKindName(sel.kindId)
   const cultivar = sel.cultivarId ? teaCultivarById(sel.cultivarId) : undefined
   const region = teaRegionEntityOf(sel.regionId)
   const regionCountry = teaRegionCountryOf(sel.regionId)
   const rules = teaProcessRules.filter((r) =>
-    r.kindCategory === kindCategoryOf(sel.kindId) && (r.cultivarId === undefined || r.cultivarId === sel.cultivarId))
-  const baseDesc = `${kindName}の代表プロファイル（${rep.name}）に記録された香りです。個別の産地・品種での実測ではありません。`
+    r.kindCategory === category && (r.cultivarId === undefined || r.cultivarId === sel.cultivarId))
+  const baseDesc = itemSelected
+    ? `${rep.name}のプロファイル（茶類・製法レベル）に記録された香りです。個別の産地・品種での実測ではありません。`
+    : `${kindName}の代表プロファイル（${rep.name}）に記録された香りです。個別の産地・品種での実測ではありません。`
   const notes = buildNotes(rep.profile.aromas, baseDesc, rules.flatMap((r) => r.noteEffects))
   const extraStatements: ComboStatement[] = []
-  const tastes = buildTastes(rep.profile.tastes, `${kindName}の代表プロファイル（${rep.name}）に記録された味覚です。`, rules.flatMap((r) => r.tasteEffects), extraStatements)
+  const tastes = buildTastes(rep.profile.tastes, itemSelected ? `${rep.name}のプロファイル（茶類・製法レベル）に記録された味覚です。` : `${kindName}の代表プロファイル（${rep.name}）に記録された味覚です。`, rules.flatMap((r) => r.tasteEffects), extraStatements)
 
   const statements: ComboStatement[] = []
   for (const r of rules) statements.push(...r.statements)
   statements.push(...extraStatements)
-  if (region && !region.applicableKindIds.includes(sel.kindId)) {
+  if (region && !region.applicableKindIds.includes(category)) {
     statements.push({
       text: `${region.name}の地域としての所見は主に${region.applicableKindIds.map(teaKindName).join('・')}についてのもので、この分類（${kindName}）での${region.name}産の実測は確認できていません。${region.name}については、地域の所見を文脈として併記するに留め、味わいの中心は品種と製法の科学からの推測です。`,
       level: 'inferred', sourceIds: region.sourceIds,
     })
   }
-  if (region && region.applicableKindIds.includes(sel.kindId)) {
+  if (region && region.applicableKindIds.includes(category)) {
     statements.push({
       text: `${region.name}の${kindName}については、地域の実試料に基づく成分データがあります（詳細は下の「根拠の内訳：産地の所見」）。地域の実測の足場がある点で、他の多くの組み合わせより根拠が強い組み合わせです。`,
       level: 'measured', sourceIds: region.sourceIds,
@@ -393,7 +448,7 @@ export function analyzeTeaCombo(sel: TeaComboSel): ComboAnalysis {
   }
 
   const caveats: ComboStatement[] = []
-  const use = cultivar ? cultivarTeaUses.find((u) => u.cultivarId === cultivar.id && u.kindId === sel.kindId) : undefined
+  const use = cultivar ? cultivarTeaUses.find((u) => u.cultivarId === cultivar.id && (u.kindId === sel.kindId || u.kindId === category || u.kindId === rep.kindId)) : undefined
   if (cultivar && !use) {
     caveats.push({
       text: `${cultivar.name}を${kindName}に加工したことは、公的資料・研究では未確認です。このページは、品種の所見と製法の科学から「作ればどうなるか」を推測したもので、実在の製品の実測ではありません。`,
