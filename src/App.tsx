@@ -755,7 +755,7 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
                 <button type="button" className="col-head-switch" onClick={() => cfg.setType(cfg.type === 'tea' ? 'chocolate' : 'tea')}
                   aria-label={`${cfg.posJa}の種類を切り替える（現在：${typeName}）`} title="タップでお茶とチョコレートを切り替え">
                   {cfg.type === 'tea' ? <TeaCupIcon className="col-icon tea" /> : <ChocoBarIcon className="col-icon choco" />}
-                  <span>{typeName}</span>
+                  <span className="col-head-name">{typeName}</span>
                   <span className="col-head-switch-hint">⇄ {otherName}に切替</span>
                 </button>
               </h3>

@@ -98,3 +98,70 @@ describe('組み合わせ画面：自家ブレンド（種別切り替え）', (
     expect(raw.favorites.pairings).toContain('tea:sencha+chocolate:dark-roasted')
   })
 })
+
+// 実機フィードバック第11弾：組み合わせる画面の側見出しが「お／茶」「チョ／コレ／ート」の
+// ように縦に折り返す問題の修正。種別名は専用要素（.col-head-name）に入れ、CSS で
+// nowrap＋flex:none を保証し、収まらない場合はヒントを丸ごと次行へ落とす構造にする。
+describe('組み合わせ画面：見出しの横書き一列（第11弾）', () => {
+  beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
+
+  const cols = () => document.querySelectorAll('.pair-col')
+  const switchOf = (colIdx: number) => within(cols()[colIdx] as HTMLElement).getByRole('button', { name: /種類を切り替える/ })
+
+  it('種別名は .col-head-name の単独要素に入り、ヒントとは別要素になっている（両側・切替後も）', () => {
+    location.hash = '#/pair'; render(<App />)
+    const nameOf = (i: number) => switchOf(i).querySelector('.col-head-name')
+    const hintOf = (i: number) => switchOf(i).querySelector('.col-head-switch-hint')
+    expect(nameOf(0)?.textContent).toBe('チョコレート')
+    expect(nameOf(1)?.textContent).toBe('お茶')
+    expect(hintOf(0)?.textContent).toContain('お茶に切替')
+    expect(hintOf(1)?.textContent).toContain('チョコレートに切替')
+    // 切り替えた後も同じ構造で、名前とヒントが入れ替わる
+    fireEvent.click(switchOf(0))
+    expect(nameOf(0)?.textContent).toBe('お茶')
+    expect(hintOf(0)?.textContent).toContain('チョコレートに切替')
+    fireEvent.click(switchOf(1))
+    expect(nameOf(1)?.textContent).toBe('チョコレート')
+    expect(hintOf(1)?.textContent).toContain('お茶に切替')
+  })
+
+  it('CSS が「名前は折り返さない・ヒントは丸ごと次行へ」の構造を保証している', async () => {
+    const { readFileSync } = await import('node:fs')
+    const css = readFileSync('src/App.css', 'utf-8')
+    const ruleOf = (selector: string) => {
+      const i = css.indexOf(selector)
+      expect(i).toBeGreaterThanOrEqual(0)
+      return css.slice(i, css.indexOf('}', i))
+    }
+    // 種別名：折り返し禁止＋縮み禁止
+    const nameRule = ruleOf('.col-head-name')
+    expect(nameRule).toContain('white-space: nowrap')
+    expect(nameRule).toContain('flex: none')
+    // ボタン：要素単位で次行へ落とせる（名前が文字単位で潰れない）
+    expect(ruleOf('.col-head-switch {')).toContain('flex-wrap: wrap')
+    // ヒントも丸ごと1行を保つ
+    expect(ruleOf('.col-head-switch-hint')).toContain('white-space: nowrap')
+    // 極狭幅では組み合わせ列を1列に落とす
+    const narrow = css.slice(css.indexOf('@media (max-width: 340px)'))
+    expect(narrow.slice(0, 200)).toContain('.pair-layout')
+    expect(narrow.slice(0, 200)).toContain('grid-template-columns: 1fr')
+  })
+
+  it('視認性の構造ガード（第11弾の全体監査で追加した CSS が残っている）', async () => {
+    const { readFileSync } = await import('node:fs')
+    const css = readFileSync('src/App.css', 'utf-8')
+    // 狭幅でナビが画面外にはみ出さないよう、折り返しを許可する
+    const navStart = css.indexOf('.app-nav { width: 100%')
+    expect(navStart).toBeGreaterThanOrEqual(0)
+    expect(css.slice(navStart, css.indexOf('}', navStart))).toContain('flex-wrap: wrap')
+    // 一覧カードのグリッド列が内容に引っ張られて広がらない
+    expect(css).toContain('grid-template-columns: minmax(0, 1fr)')
+    // 出典の DOI リンクが狭幅ではみ出さない
+    expect(css).toContain('.temporal-card a { overflow-wrap: anywhere; }')
+    // バッジは狭幅で内部折り返しを許可する
+    const badgeMq = css.slice(css.indexOf('@media (max-width: 400px)'))
+    expect(badgeMq.slice(0, 160)).toContain('.badge { white-space: normal; }')
+    // 性格チップのタップ高さはアプリ標準の44pxに揃える
+    expect(css).toContain('.pair-character .chip { min-height: 44px;')
+  })
+})
