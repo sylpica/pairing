@@ -3,6 +3,8 @@ import { teaCultivars, teaCultivarById, usesForCultivar, cultivarsForKind } from
 import { cacaoTraditionalGroups, cacaoGeneticGroups, cacaoClones, traditionalGroupById, geneticGroupById, cacaoCloneById } from '../data/cacao'
 import { teaKinds } from '../data/teas'
 import { go } from '../nav'
+import FavButton from './FavButton'
+import type { SavedData } from '../storage'
 import { FindingsList, ScienceNote, VerificationBadges } from './EntityViews'
 import { SourceLinks } from './SourceLinks'
 import { kindNameOf } from './CultivarPages'
@@ -12,13 +14,14 @@ import type { CacaoLayer } from '../engine/pairingContext'
 // 単純な大小関係として表示しない。科学データが無い項目は「不明」と正直に示す。
 type Mode = 'same-kind' | 'same-cultivar' | 'cacao'
 
-function CultivarPanel({ id, kindId }: { id: string; kindId?: string }) {
+function CultivarPanel({ id, kindId, saved, toggleFav }: { id: string; kindId?: string; saved?: SavedData; toggleFav?: (k: 'cultivars', id: string) => void }) {
   const c = teaCultivarById(id)
   if (!c) return null
   const use = kindId ? usesForCultivar(id).find((u) => u.kindId === kindId) : undefined
   return (
     <div>
       <h3><button className="linklike" onClick={() => go(`cultivar/${c.id}`)}>{c.name}</button></h3>
+      {saved && toggleFav && <p><FavButton fav={saved.favorites.cultivars.includes(c.id)} onToggle={() => toggleFav('cultivars', c.id)} /></p>}
       <VerificationBadges v={c.verification} />
       {kindId && (use
         ? <p>{kindNameOf(kindId)}：{use.status === 'studied' ? '研究で供試された組み合わせです' : '公的資料で利用が確認できる組み合わせです'}<SourceLinks ids={use.sourceIds} /></p>
@@ -30,7 +33,7 @@ function CultivarPanel({ id, kindId }: { id: string; kindId?: string }) {
   )
 }
 
-function SameKindCompare() {
+function SameKindCompare({ saved, toggleFav }: { saved?: SavedData; toggleFav?: (k: 'cultivars', id: string) => void }) {
   const kindOptions = useMemo(() => teaKinds.filter((k) => cultivarsForKind(k.id).length > 0), [])
   const [kindId, setKindId] = useState('green')
   const ids = useMemo(() => [...new Set(cultivarsForKind(kindId))], [kindId])
@@ -47,14 +50,14 @@ function SameKindCompare() {
       </div>
       <p className="note-small">所見は研究ごとに試料・条件が異なります。条件の異なる数値を単純な大小関係として比べることはしません。各所見の条件を併せて確認してください。</p>
       <div className="compare-grid">
-        <CultivarPanel id={selA} kindId={kindId} />
-        <CultivarPanel id={selB} kindId={kindId} />
+        <CultivarPanel id={selA} kindId={kindId} saved={saved} toggleFav={toggleFav} />
+        <CultivarPanel id={selB} kindId={kindId} saved={saved} toggleFav={toggleFav} />
       </div>
     </section>
   )
 }
 
-function SameCultivarCompare() {
+function SameCultivarCompare({ saved, toggleFav }: { saved?: SavedData; toggleFav?: (k: 'cultivars', id: string) => void }) {
   const withUses = useMemo(() => teaCultivars.filter((c) => usesForCultivar(c.id).length > 0), [])
   const [id, setId] = useState('benifuuki')
   const c = teaCultivarById(withUses.some((x) => x.id === id) ? id : withUses[0].id)!
@@ -76,6 +79,7 @@ function SameCultivarCompare() {
         <button className="linklike" onClick={() => go(`cultivar/${c.id}`)}>{c.name}の詳細を見る</button>{' '}
         <button className="linklike" onClick={() => go('compare')}>茶類・製法の比較へ</button>
       </p>
+      {saved && toggleFav && <p><FavButton fav={saved.favorites.cultivars.includes(c.id)} onToggle={() => toggleFav('cultivars', c.id)} /></p>}
     </section>
   )
 }
@@ -89,12 +93,14 @@ const CACAO_OPTIONS: CacaoOption[] = [
 const cacaoEntity = (o: CacaoOption) =>
   o.layer === 'traditional' ? traditionalGroupById(o.id) : o.layer === 'genetic' ? geneticGroupById(o.id) : cacaoCloneById(o.id)
 
-function CacaoPanel({ opt }: { opt: CacaoOption }) {
+function CacaoPanel({ opt, saved, toggleFav }: { opt: CacaoOption; saved?: SavedData; toggleFav?: (k: 'lineages', id: string) => void }) {
   const e = cacaoEntity(opt)
   if (!e) return null
+  const favId = `${opt.layer}:${opt.id}`
   return (
     <div>
       <h3><button className="linklike" onClick={() => go(`cacao/${opt.layer}/${opt.id}`)}>{opt.label}</button></h3>
+      {saved && toggleFav && <p><FavButton fav={saved.favorites.lineages.includes(favId)} onToggle={() => toggleFav('lineages', favId)} /></p>}
       <VerificationBadges v={e.verification} />
       <ScienceNote science={e.verification.science} note={e.scienceNote} />
       <FindingsList findings={e.findings} />
@@ -103,7 +109,7 @@ function CacaoPanel({ opt }: { opt: CacaoOption }) {
   )
 }
 
-function CacaoCompare() {
+function CacaoCompare({ saved, toggleFav }: { saved?: SavedData; toggleFav?: (k: 'lineages', id: string) => void }) {
   const [a, setA] = useState(0)
   const [b, setB] = useState(3)
   return (
@@ -114,14 +120,14 @@ function CacaoCompare() {
       </div>
       <p className="note-small">伝統的分類・遺伝集団・個別クローンは階層の異なる概念です。並べて所見を確認できますが、異なる体系の数値を単純な大小関係として比べることはしません。遺伝的分類だけから味の違いを断定することもできません。</p>
       <div className="compare-grid">
-        <CacaoPanel opt={CACAO_OPTIONS[a]} />
-        <CacaoPanel opt={CACAO_OPTIONS[b]} />
+        <CacaoPanel opt={CACAO_OPTIONS[a]} saved={saved} toggleFav={toggleFav} />
+        <CacaoPanel opt={CACAO_OPTIONS[b]} saved={saved} toggleFav={toggleFav} />
       </div>
     </section>
   )
 }
 
-export default function CultivarComparePage() {
+export default function CultivarComparePage({ saved, toggleFav }: { saved?: SavedData; toggleFav?: (k: 'cultivars' | 'lineages', id: string) => void } = {}) {
   const [mode, setMode] = useState<Mode>('same-kind')
   return (
     <div>
@@ -131,9 +137,9 @@ export default function CultivarComparePage() {
         <button className={mode === 'same-cultivar' ? 'chip active' : 'chip'} onClick={() => setMode('same-cultivar')}>同じ品種・異なる茶類</button>
         <button className={mode === 'cacao' ? 'chip active' : 'chip'} onClick={() => setMode('cacao')}>カカオ系統の比較</button>
       </div>
-      {mode === 'same-kind' && <SameKindCompare />}
-      {mode === 'same-cultivar' && <SameCultivarCompare />}
-      {mode === 'cacao' && <CacaoCompare />}
+      {mode === 'same-kind' && <SameKindCompare saved={saved} toggleFav={toggleFav} />}
+      {mode === 'same-cultivar' && <SameCultivarCompare saved={saved} toggleFav={toggleFav} />}
+      {mode === 'cacao' && <CacaoCompare saved={saved} toggleFav={toggleFav} />}
     </div>
   )
 }

@@ -77,12 +77,13 @@ describe('組み合わせ画面：自家ブレンド（種別切り替え）', (
     location.hash = '#/pair'; render(<App />)
     fireEvent.click(switchOf(0)) // 左をお茶に
     fireEvent.change(screen.getByLabelText('左：お茶'), { target: { value: 'sencha' } })
-    fireEvent.click(screen.getByRole('button', { name: /この組み合わせを保存/ }))
+    fireEvent.click(screen.getByRole('button', { name: '☆ お気に入り' }))
     const raw = localStorage.getItem('pairing-app:v1')
     expect(raw).toBeTruthy()
     const savedData = JSON.parse(raw!) as { favorites: { pairings: string[] } }
     expect(savedData.favorites.pairings).toContain('tea:sencha+tea:oolong-tea')
-    // お気に入り・履歴画面では名前と種別つきで表示される（お気に入りと履歴の両方に出る）
+    // お気に入り・履歴画面では名前と種別つきで表示される（お気に入りの組み合わせに出る。
+    // 第15弾でペアリングの履歴記録は廃止したため、履歴側には出ない）
     cleanup(); location.hash = '#/saved'; render(<App />)
     expect(screen.getAllByText(/煎茶（お茶） × 烏龍茶（青茶）（お茶）/).length).toBeGreaterThan(0)
   })

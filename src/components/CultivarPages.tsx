@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import type { ComboNote, ComboTaste, TeaCultivar, TeaCultivarRank } from '../types'
 import { FLAVOR_FINDING_KINDS } from '../types'
 import ComboWheelPanel from './ComboWheelPanel'
+import FavButton from './FavButton'
 import BackButton from './BackButton'
 import type { CompoundContext } from '../data/compounds'
 import { COMBO_LEVEL_LABEL } from '../engine/combo'
@@ -183,7 +184,7 @@ function CultivarWheelSection({ cultivarId, cultivarName }: { cultivarId: string
   )
 }
 
-export function TeaCultivarDetail({ id }: { id: string }) {
+export function TeaCultivarDetail({ id, fav, onToggleFav }: { id: string; fav?: boolean; onToggleFav?: () => void }) {
   const c = teaCultivarById(id)
   if (!c) return <p className="unknown-box">その品種・系統は収録されていません。</p>
   const uses = usesForCultivar(c.id)
@@ -191,7 +192,7 @@ export function TeaCultivarDetail({ id }: { id: string }) {
   return (
     <div>
       <BackButton fallback="cultivars" />
-      <h2>{c.name}{c.originalName && c.originalName !== c.name ? `（${c.originalName}）` : ''}</h2>
+      <h2>{c.name}{c.originalName && c.originalName !== c.name ? `（${c.originalName}）` : ''} {onToggleFav && <FavButton fav={!!fav} onToggle={onToggleFav} />}</h2>
       <p>
         <span className="badge">{RANK_LABEL[c.rank]}</span> <span className="badge">{c.country}</span>
         {c.aliases.length > 0 && <span className="note-small"> 別名：{c.aliases.join('、')}</span>}
@@ -224,7 +225,7 @@ export function TeaCultivarDetail({ id }: { id: string }) {
   )
 }
 
-export function CacaoDetail({ layer, id }: { layer: CacaoLayer; id: string }) {
+export function CacaoDetail({ layer, id, fav, onToggleFav }: { layer: CacaoLayer; id: string; fav?: boolean; onToggleFav?: () => void }) {
   const trad = layer === 'traditional' ? traditionalGroupById(id) : undefined
   const gen = layer === 'genetic' ? geneticGroupById(id) : undefined
   const clone = layer === 'clone' ? cacaoCloneById(id) : undefined
@@ -234,7 +235,7 @@ export function CacaoDetail({ layer, id }: { layer: CacaoLayer; id: string }) {
   return (
     <div>
       <BackButton fallback="cultivars" />
-      <h2>{title}</h2>
+      <h2>{title} {onToggleFav && <FavButton fav={!!fav} onToggle={onToggleFav} />}</h2>
       <p>
         <span className="badge">{CACAO_LAYER_LABEL[layer]}</span>
         {entity.aliases.length > 0 && <span className="note-small"> 別名：{entity.aliases.join('、')}</span>}
@@ -309,7 +310,7 @@ const EVIDENCE_LABEL: Record<string, string> = {
   none: '香味データ未確認',
 }
 
-export function OriginDetail({ id }: { id: string }) {
+export function OriginDetail({ id, fav, onToggleFav }: { id: string; fav?: boolean; onToggleFav?: () => void }) {
   const o = cacaoOriginById(id)
   if (!o) return <p className="unknown-box">その産地は収録されていません。</p>
   const trads = o.relatedTraditionalIds.map((x) => traditionalGroupById(x)).filter((g) => !!g)
@@ -318,7 +319,7 @@ export function OriginDetail({ id }: { id: string }) {
   return (
     <div>
       <BackButton fallback="cultivars" />
-      <h2>{o.name}</h2>
+      <h2>{o.name} {onToggleFav && <FavButton fav={!!fav} onToggle={onToggleFav} />}</h2>
       <p>
         <span className="badge">産地</span> <span className="badge">{EVIDENCE_LABEL[o.flavorEvidence]}</span>
       </p>

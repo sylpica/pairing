@@ -346,10 +346,13 @@ describe('UI改善：絞り込みのメイン化・チョコ種類追加・系�
     fireEvent.change(sel, { target: { value: 'black' } })
     const summary = screen.getByLabelText('組み合わせの結果（要約）')
     // 第12弾: 結果エリアに選択内容の見出し（○○ × ○○）は出ない。
-    // 分類の代表（紅茶）がペア対象になったことは、履歴の種別つきIDで確認する
+    // 分類の代表（紅茶）がペア対象になったことは、お気に入りに保存される種別つきIDで確認する
+    // （第15弾でペアリングの履歴記録は廃止したため、履歴では確認しない）
     expect(summary.textContent).not.toContain('×')
-    const raw = JSON.parse(localStorage.getItem('pairing-app:v1')!) as { history: { pairings: string[] } }
-    expect(raw.history.pairings.some((id) => id.includes('tea:black-tea'))).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: '☆ お気に入り' }))
+    const raw = JSON.parse(localStorage.getItem('pairing-app:v1')!) as { favorites: { pairings: string[] }; history: Record<string, unknown> }
+    expect(raw.favorites.pairings.some((id) => id.includes('tea:black-tea'))).toBe(true)
+    expect('history' in raw).toBe(false)
   })
   it('調べると組み合わせるでプルダウンの選択肢が同じ（指示7）', () => {
     location.hash = '#/tea'; render(<App />)
@@ -374,10 +377,12 @@ describe('UI改善：絞り込みのメイン化・チョコ種類追加・系�
 describe('実機フィードバック第2弾：保存ボタン位置・タブ・ナビ・戻るボタン', () => {
   beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
 
-  it('「この組み合わせを保存」は見出し「組み合わせる」の行の右側にある（第13弾・下部に重複なし）', () => {
+  it('お気に入りボタンは見出し「組み合わせる」の行の右側にある（第13弾・第15弾で文言統一）', () => {
     location.hash = '#/pair'; render(<App />)
+    // 第15弾: 文言は「お気に入り」に統一され、旧文言のボタンは無い
+    expect(screen.queryByRole('button', { name: /この組み合わせを保存/ })).toBeNull()
     // 重複していない（ページ内に1つだけ）
-    const saveBtns = screen.getAllByRole('button', { name: /この組み合わせを保存/ })
+    const saveBtns = screen.getAllByRole('button', { name: '☆ お気に入り' })
     expect(saveBtns).toHaveLength(1)
     const saveBtn = saveBtns[0]
     // 見出し行（.page-head-row）の中にあり、見出し「組み合わせる」と同じ行で、その後（右側）
@@ -396,12 +401,12 @@ describe('実機フィードバック第2弾：保存ボタン位置・タブ・
     expect((tabs as Node).compareDocumentPosition(saveBtn) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
     // 押すと従来どおり保存済みになり、お気に入りに種別つきIDで記録される
     fireEvent.click(saveBtn)
-    expect(screen.getByRole('button', { name: /保存済み/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '★ お気に入り済み' })).toBeTruthy()
     const savedData = JSON.parse(localStorage.getItem('pairing-app:v1')!) as { favorites: { pairings: string[] } }
     expect(savedData.favorites.pairings).toHaveLength(1)
     expect(savedData.favorites.pairings[0]).toMatch(/^(tea|chocolate):[^+]+\+(tea|chocolate):/)
     // もう一度押すと保存が取り消される（従来どおりのトグル動作）
-    fireEvent.click(screen.getByRole('button', { name: /保存済み/ }))
+    fireEvent.click(screen.getByRole('button', { name: '★ お気に入り済み' }))
     const after = JSON.parse(localStorage.getItem('pairing-app:v1')!) as { favorites: { pairings: string[] } }
     expect(after.favorites.pairings).toHaveLength(0)
   })
@@ -439,31 +444,28 @@ describe('実機フィードバック第2弾：保存ボタン位置・タブ・
     spy.mockRestore()
   })
 
-  it('上部ナビは1行構成で、お気に入り・履歴はアイコンボタン（指示10）', async () => {
+  it('上部ナビは1行構成で、お気に入りは文字ボタン・履歴ボタンは無い（第15弾）', async () => {
     const { readFileSync } = await import('node:fs')
     const cssText = readFileSync('src/App.css', 'utf-8')
     render(<App />)
     const nav = screen.getByLabelText('主なメニュー')
-    // テキスト項目は従来どおり
-    for (const t of ['お茶', 'チョコ', '品種・系統', '組み合わせる']) {
+    // テキスト項目（お気に入りは⭐︎アイコンでなく文字のボタン）
+    for (const t of ['お茶', 'チョコ', '品種・系統', '組み合わせる', 'お気に入り']) {
       expect([...nav.querySelectorAll('button')].some((b) => b.textContent === t)).toBe(true)
     }
-    // 「お気に入り・履歴」のテキストボタンは無い
+    // 「お気に入り・履歴」という複合テキストのボタンは無い
     expect([...nav.querySelectorAll('button')].some((b) => b.textContent?.includes('お気に入り・履歴'))).toBe(false)
-    // 星と履歴のアイコンボタン（アクセシブルな名前つき・テキストなし・SVG入り）
-    for (const label of ['お気に入り', '履歴']) {
-      const btn = screen.getByLabelText(label)
-      expect(btn.tagName).toBe('BUTTON')
-      expect(btn.textContent).toBe('')
-      expect(btn.querySelector('svg')).toBeTruthy()
-      expect(btn.classList.contains('nav-icon')).toBe(true)
-    }
-    // CSS で1行（nowrap）が指定されている
+    // 履歴ボタンは廃止（お気に入りと同じページに行くため）。アイコンボタン様式も残っていない
+    expect([...nav.querySelectorAll('button')].some((b) => b.textContent === '履歴')).toBe(false)
+    expect(screen.queryByLabelText('履歴')).toBeNull()
+    expect(nav.querySelector('.nav-icon')).toBeNull()
+    expect(nav.querySelector('svg')).toBeNull()
+    // CSS で1行（nowrap）が指定され、アイコンボタンの規則は残っていない
     expect(cssText).toMatch(/\.app-nav\s*\{[^}]*flex-wrap:\s*nowrap/)
-    expect(cssText).toMatch(/\.nav-icon/)
-    // アイコンから保存ページへ遷移できる
-    fireEvent.click(screen.getByLabelText('お気に入り'))
-    expect(await screen.findByText('お気に入り・履歴')).toBeTruthy()
+    expect(cssText).not.toContain('.nav-icon')
+    // 「お気に入り」ボタンから保存ページへ遷移できる（ページ見出しも「お気に入り」）
+    fireEvent.click(screen.getByRole('button', { name: 'お気に入り' }))
+    expect(await screen.findByRole('heading', { name: 'お気に入り' })).toBeTruthy()
   })
 
   it('詳細ページの戻るボタンで前の画面に戻れる（指示4）', async () => {
@@ -570,7 +572,7 @@ describe('実機フィードバック第9弾・追加指示A：カカオ含有�
 })
 
 // 実機フィードバック第13弾（追加指示）: お茶を調べる／チョコを調べる画面でも、
-// 見出しの横の「この組み合わせを保存」で選択中の単体組み合わせを保存でき、
+// 見出しの横のお気に入りボタン（第15弾で文言統一）で選択中の単体組み合わせを保存でき、
 // お気に入りから開くとその画面で同じ選択とプレビューが復元される。
 describe('実機フィードバック第13弾（追加）：調べる画面の単体組み合わせ保存と復元', () => {
   beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
@@ -578,9 +580,9 @@ describe('実機フィードバック第13弾（追加）：調べる画面の�
   it('お茶: 未選択では保存ボタンが無く、軸を選ぶと見出し行に出て保存できる', () => {
     location.hash = '#/tea'; render(<App />)
     // プレビューが組み立たない状態（全軸未指定）ではボタンは出ない
-    expect(screen.queryByRole('button', { name: /この組み合わせを保存/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: '☆ お気に入り' })).toBeNull()
     fireEvent.change(screen.getByLabelText('分類（茶類）で絞り込み'), { target: { value: 'black-tea' } })
-    const btn = screen.getByRole('button', { name: /この組み合わせを保存/ })
+    const btn = screen.getByRole('button', { name: '☆ お気に入り' })
     // 見出し「お茶を調べる」の行（.page-head-row）の中にある
     const headRow = document.querySelector('.page-head-row')
     expect(headRow).toBeTruthy()
@@ -588,7 +590,7 @@ describe('実機フィードバック第13弾（追加）：調べる画面の�
     expect(headRow!.querySelector('h2')?.textContent).toBe('お茶を調べる')
     expect(screen.getByLabelText('選択中の組み合わせのフレーバー')).toBeTruthy()
     fireEvent.click(btn)
-    expect(screen.getByRole('button', { name: /保存済み/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '★ お気に入り済み' })).toBeTruthy()
     const savedData = JSON.parse(localStorage.getItem('pairing-app:v1')!) as { favorites: { combos: string[] } }
     expect(savedData.favorites.combos).toEqual(['tea-combo:black-tea|-|-'])
   })
@@ -602,7 +604,9 @@ describe('実機フィードバック第13弾（追加）：調べる画面の�
     location.hash = '#/saved'; render(<App />)
     expect(screen.getByText('お気に入りの単体組み合わせ')).toBeTruthy()
     expect(screen.getAllByText(/紅茶/).length).toBeGreaterThan(0) // 組み合わせ名が表示される
-    fireEvent.click(screen.getByRole('button', { name: 'お茶を調べるで開く' }))
+    // 第15弾（追加指示）: 「お茶を調べるで開く」ボタンは名称タップと重複するため廃止
+    expect(screen.queryByRole('button', { name: /を調べるで開く/ })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '紅茶' }))
     // 遷移し、調べる画面のプルダウン保存値へ選択が書き戻されている
     expect(location.hash).toBe('#/tea')
     expect(JSON.parse(localStorage.getItem('pairing.teaList.kind')!)).toBe('black-tea')
@@ -610,17 +614,17 @@ describe('実機フィードバック第13弾（追加）：調べる画面の�
     expect((screen.getByLabelText('分類（茶類）で絞り込み') as HTMLSelectElement).value).toBe('black-tea')
     expect(screen.getByLabelText('選択中の組み合わせのフレーバー')).toBeTruthy()
     // 復元された組み合わせは保存済みとして表示される
-    expect(screen.getByRole('button', { name: /保存済み/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '★ お気に入り済み' })).toBeTruthy()
   })
 
   it('チョコ: 産地を選んで保存し、お気に入りから開くと復元される（往復）', () => {
     location.hash = '#/choco'; render(<App />)
-    expect(screen.queryByRole('button', { name: /この組み合わせを保存/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: '☆ お気に入り' })).toBeNull()
     const originSel = screen.getByLabelText('産地で絞り込み') as HTMLSelectElement
     const originValue = [...originSel.options].map((o) => o.value).find((v) => v !== '')!
     expect(originValue).toBeTruthy()
     fireEvent.change(originSel, { target: { value: originValue } })
-    const btn = screen.getByRole('button', { name: /この組み合わせを保存/ })
+    const btn = screen.getByRole('button', { name: '☆ お気に入り' })
     const headRow = document.querySelector('.page-head-row')
     expect(headRow).toBeTruthy()
     expect(headRow!.contains(btn)).toBe(true)
@@ -629,13 +633,18 @@ describe('実機フィードバック第13弾（追加）：調べる画面の�
     const savedData = JSON.parse(localStorage.getItem('pairing-app:v1')!) as { favorites: { combos: string[] } }
     expect(savedData.favorites.combos).toEqual([`choco-combo:-|${originValue}|-`])
     cleanup(); location.hash = '#/saved'; render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'チョコを調べるで開く' }))
+    // 第15弾（追加指示）: 「チョコを調べるで開く」ボタンは無く、名称タップで開く
+    expect(screen.queryByRole('button', { name: /を調べるで開く/ })).toBeNull()
+    const combosSection = [...document.querySelectorAll('section')].find((s) => s.querySelector('h3')?.textContent === 'お気に入りの単体組み合わせ')
+    const nameLink = combosSection?.querySelector('button.saved-entry-link')
+    expect(nameLink).toBeTruthy()
+    fireEvent.click(nameLink!)
     expect(location.hash).toBe('#/choco')
     expect(JSON.parse(localStorage.getItem('pairing.chocoList.originId')!)).toBe(originValue)
     cleanup(); location.hash = '#/choco'; render(<App />)
     expect((screen.getByLabelText('産地で絞り込み') as HTMLSelectElement).value).toBe(originValue)
     expect(screen.getByLabelText('選択中の組み合わせのフレーバー')).toBeTruthy()
-    expect(screen.getByRole('button', { name: /保存済み/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '★ お気に入り済み' })).toBeTruthy()
   })
 
   it('旧データ（combos 無し・ペア保存あり）でもお気に入り画面が開ける（後方互換）', () => {
@@ -661,45 +670,36 @@ describe('実機フィードバック第14弾：お気に入り・履歴エン�
     localStorage.setItem('pairing-app:v1', JSON.stringify({ version: 1, favorites, history }))
   const persisted = (key: string) => JSON.parse(localStorage.getItem(key)!)
 
-  it('最近試した組み合わせ（異種）: 文字タップで組み合わせる画面に復元される', () => {
-    seed(emptyFav, { ...emptyHist, pairings: ['tea:oolong-tea+chocolate:dark-roasted'] })
+  it('旧データに履歴が残っていても壊れず、履歴セクションは一切出ない（第15弾で履歴全廃）', () => {
+    // 第14弾時点のデータ（history あり）を読み込んでも画面が壊れない
+    seed(emptyFav, { teas: ['sencha'], chocolates: ['milk-chocolate'], pairings: ['tea:oolong-tea+chocolate:dark-roasted'] })
     location.hash = '#/saved'; render(<App />)
-    const entry = screen.getByRole('button', { name: '烏龍茶（青茶） × ダークチョコレート（焙煎）' })
+    expect(screen.getByRole('heading', { name: 'お気に入り' })).toBeTruthy()
+    expect(screen.queryByText('最近試した組み合わせ')).toBeNull()
+    expect(screen.queryByText('最近調べたお茶')).toBeNull()
+    expect(screen.queryByText('最近調べたチョコ')).toBeNull()
+    // 読み込み後の保存データから履歴は落ちている（無視される）
+    const raw = JSON.parse(localStorage.getItem('pairing-app:v1')!) as Record<string, unknown>
+    expect('history' in raw).toBe(false)
+  })
+
+  it('お気に入りの組み合わせ（同種・お茶同士）: 種別つきIDから両側ともお茶で復元される', () => {
+    seed({ ...emptyFav, pairings: ['tea:oolong-tea+tea:sencha'] }, emptyHist)
+    location.hash = '#/saved'; render(<App />)
+    const entry = screen.getByRole('button', { name: '烏龍茶（青茶）（お茶） × 煎茶（お茶）' })
     // タップできることが分かるリンク様式になっている
     expect(entry.classList.contains('linklike')).toBe(true)
     expect(entry.classList.contains('saved-entry-link')).toBe(true)
     fireEvent.click(entry)
-    expect(location.hash).toBe('#/pair')
-    // 組み合わせる画面のプルダウン保存値へ種別とアイテムが書き戻される。
-    // ペアIDに軸の指定は含まれないため、軸は未指定に戻る（保存されている範囲で正確に復元）。
-    expect(persisted('pairing.pair.leftType')).toBe('tea')
-    expect(persisted('pairing.pair.rightType')).toBe('chocolate')
-    expect(persisted('pairing.pair.left.teaKind')).toBe('oolong-tea')
-    expect(persisted('pairing.pair.right.chocoKind')).toBe('dark-roasted')
-    expect(persisted('pairing.pair.left.teaOrigin')).toBe('')
-    expect(persisted('pairing.pair.left.cultivarId')).toBe('')
-    expect(persisted('pairing.pair.right.originId')).toBe('')
-    expect(persisted('pairing.pair.right.cacaoSel')).toBe(null)
-    // 実際に組み合わせる画面を開くと、両アイテムが選ばれた状態で結果が出る
-    cleanup(); location.hash = '#/pair'; render(<App />)
-    expect((screen.getByLabelText('お茶') as HTMLSelectElement).value).toBe('oolong-tea')
-    expect((screen.getByLabelText('チョコレート') as HTMLSelectElement).value).toBe('dark-roasted')
-    expect(screen.getByRole('button', { name: /この組み合わせを保存/ })).toBeTruthy()
-    expect(screen.getByText('組み合わせの味わい（推測）')).toBeTruthy()
-  })
-
-  it('最近試した組み合わせ（同種・お茶同士）: 種別つきIDから両側ともお茶で復元される', () => {
-    seed(emptyFav, { ...emptyHist, pairings: ['tea:oolong-tea+tea:sencha'] })
-    location.hash = '#/saved'; render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: '烏龍茶（青茶）（お茶） × 煎茶（お茶）' }))
     expect(location.hash).toBe('#/pair')
     expect(persisted('pairing.pair.leftType')).toBe('tea')
     expect(persisted('pairing.pair.rightType')).toBe('tea')
     expect(persisted('pairing.pair.left.teaKind')).toBe('oolong-tea')
     expect(persisted('pairing.pair.right.teaKind')).toBe('sencha')
     cleanup(); location.hash = '#/pair'; render(<App />)
-    // 同種ペアとして結果が組み立ち、同種ペアの注記が要約に出る
-    expect(screen.getByRole('button', { name: /この組み合わせを保存/ })).toBeTruthy()
+    // 同種ペアとして結果が組み立ち、同種ペアの注記が要約に出る。
+    // このペアは保存済みなので、お気に入りボタンは「★ お気に入り済み」表示。
+    expect(screen.getByRole('button', { name: '★ お気に入り済み' })).toBeTruthy()
     expect(screen.getByText(/お茶同士のブレンドを直接調べた官能研究は確認できていない/)).toBeTruthy()
   })
 
@@ -713,22 +713,8 @@ describe('実機フィードバック第14弾：お気に入り・履歴エン�
     cleanup(); location.hash = '#/pair'; render(<App />)
     expect((screen.getByLabelText('お茶') as HTMLSelectElement).value).toBe('sencha')
     expect((screen.getByLabelText('チョコレート') as HTMLSelectElement).value).toBe('milk-chocolate')
-    // お気に入り登録済みのペアなので、保存ボタンは「保存済み」表示になる
-    expect(screen.getByRole('button', { name: /保存済み/ })).toBeTruthy()
-  })
-
-  it('最近調べたお茶・チョコ: 文字タップで各アイテムの詳細ページへ飛ぶ', () => {
-    seed(emptyFav, { ...emptyHist, teas: ['sencha'], chocolates: ['milk-chocolate'] })
-    location.hash = '#/saved'; render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: '煎茶' }))
-    expect(location.hash).toBe('#/tea/sencha')
-    cleanup(); location.hash = '#/tea/sencha'; render(<App />)
-    expect(screen.getByRole('heading', { name: /煎茶/ })).toBeTruthy()
-    cleanup(); location.hash = '#/saved'; render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'ミルクチョコレート' }))
-    expect(location.hash).toBe('#/choco/milk-chocolate')
-    cleanup(); location.hash = '#/choco/milk-chocolate'; render(<App />)
-    expect(screen.getByRole('heading', { name: /ミルクチョコレート/ })).toBeTruthy()
+    // お気に入り登録済みのペアなので、ボタンは「お気に入り済み」表示になる
+    expect(screen.getByRole('button', { name: '★ お気に入り済み' })).toBeTruthy()
   })
 
   it('お気に入りのお茶・チョコ: 文字タップで各アイテムの詳細ページへ飛ぶ', () => {
@@ -741,12 +727,12 @@ describe('実機フィードバック第14弾：お気に入り・履歴エン�
     expect(location.hash).toBe('#/choco/ruby-chocolate')
   })
 
-  it('お気に入りの単体組み合わせ: 名称のタップでも開け、「開く」ボタンも維持される', () => {
+  it('お気に入りの単体組み合わせ: 名称タップで開ける（「開く」ボタンは第15弾で廃止し一本化）', () => {
     seed({ ...emptyFav, combos: ['tea-combo:black-tea|-|-'] }, emptyHist)
     location.hash = '#/saved'; render(<App />)
-    // 既存の導線（ボタン）は残っている
-    expect(screen.getByRole('button', { name: 'お茶を調べるで開く' })).toBeTruthy()
-    // 名称そのものもタップで開ける
+    // 名称タップと同じ遷移をする「開く」ボタンは重複のため無い（第15弾・追加指示）
+    expect(screen.queryByRole('button', { name: /を調べるで開く/ })).toBeNull()
+    // 名称そのものをタップで開ける
     fireEvent.click(screen.getByRole('button', { name: '紅茶' }))
     expect(location.hash).toBe('#/tea')
     expect(persisted('pairing.teaList.kind')).toBe('black-tea')
@@ -756,11 +742,140 @@ describe('実機フィードバック第14弾：お気に入り・履歴エン�
   })
 
   it('解決できないエントリはテキストのままでボタンにならない', () => {
-    seed({ ...emptyFav, pairings: ['tea:no-such-item+chocolate:dark-roasted'] }, { ...emptyHist, teas: ['no-such-tea'] })
+    seed({ ...emptyFav, teas: ['no-such-tea'], pairings: ['tea:no-such-item+chocolate:dark-roasted'] }, emptyHist)
     location.hash = '#/saved'; render(<App />)
     expect(screen.getByText(/no-such-item × ダークチョコレート（焙煎）/)).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /no-such-item/ })).toBeNull()
+    // 遷移用のエントリボタンにはならない（「外す」ボタンは付くが、それは遷移ではない）
+    const entryLinks = [...document.querySelectorAll('button.saved-entry-link')]
+    expect(entryLinks.some((b) => b.textContent?.includes('no-such-item'))).toBe(false)
     expect(screen.getByText('no-such-tea')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'no-such-tea' })).toBeNull()
+    expect(entryLinks.some((b) => b.textContent === 'no-such-tea')).toBe(false)
+  })
+})
+
+// 実機フィードバック第15弾（2026-10-31）: お気に入り機能の使い勝手一新。
+// - ボタンが無いページにも全部入れる（品種・系統・産地・組み合わせページ・比較ページ）
+// - 文言は「お気に入り」に統一（「この組み合わせを保存」は廃止）
+// - お気に入り画面で直接外せる
+// - 履歴機能は全廃（最近試した組み合わせ／最近調べたお茶・チョコとも削除し、記録も停止）
+// - JSON書き出し・復元は削除
+describe('実機フィードバック第15弾：お気に入り機能の一新', () => {
+  beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
+  const savedData = () => JSON.parse(localStorage.getItem('pairing-app:v1')!) as { favorites: Record<string, string[]>; history: Record<string, string[]> }
+  const seedFav = (favorites: Record<string, string[]>, history: Record<string, string[]> = {}) =>
+    localStorage.setItem('pairing-app:v1', JSON.stringify({
+      version: 1,
+      favorites: { teas: [], chocolates: [], pairings: [], combos: [], cultivars: [], lineages: [], origins: [], ...favorites },
+      history: { teas: [], chocolates: [], ...history },
+    }))
+
+  it('品種ページ（おくみどり）: 名前の横のボタンで品種そのものを保存できる', () => {
+    location.hash = '#/cultivar/okumidori'; render(<App />)
+    const btn = screen.getByRole('button', { name: '☆ お気に入り' })
+    // 見出し（品種名）の中にボタンがある
+    expect(screen.getByRole('heading', { name: /おくみどり/ }).contains(btn)).toBe(true)
+    fireEvent.click(btn)
+    expect(screen.getByRole('button', { name: '★ お気に入り済み' })).toBeTruthy()
+    expect(savedData().favorites.cultivars).toEqual(['okumidori'])
+  })
+
+  it('系統ページ（遺伝集団 Nacional）と産地ページ（マダガスカル）にもボタンがある', () => {
+    location.hash = '#/cacao/genetic/gen-nacional'; render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '☆ お気に入り' }))
+    expect(savedData().favorites.lineages).toEqual(['genetic:gen-nacional'])
+    cleanup(); location.hash = '#/origin/madagascar'; render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '☆ お気に入り' }))
+    expect(savedData().favorites.origins).toEqual(['madagascar'])
+    cleanup(); location.hash = '#/cacao/traditional/trad-criollo'; render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '☆ お気に入り' }))
+    expect(savedData().favorites.lineages).toContain('traditional:trad-criollo')
+    cleanup(); location.hash = '#/cacao/clone/ccn-51'; render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '☆ お気に入り' }))
+    expect(savedData().favorites.lineages).toContain('clone:ccn-51')
+  })
+
+  it('お気に入り画面に品種・系統・産地のセクションがあり、名称タップで各ページへ戻れる', () => {
+    seedFav({ cultivars: ['okumidori'], lineages: ['genetic:gen-nacional'], origins: ['madagascar'] })
+    location.hash = '#/saved'; render(<App />)
+    expect(screen.getByText('お気に入りの品種')).toBeTruthy()
+    expect(screen.getByText('お気に入りの系統')).toBeTruthy()
+    expect(screen.getByText('お気に入りの産地')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'おくみどり' }))
+    expect(location.hash).toBe('#/cultivar/okumidori')
+    cleanup(); location.hash = '#/saved'; render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Nacional' }))
+    expect(location.hash).toBe('#/cacao/genetic/gen-nacional')
+    cleanup(); location.hash = '#/saved'; render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'マダガスカル' }))
+    expect(location.hash).toBe('#/origin/madagascar')
+  })
+
+  it('お気に入り画面の「外す」ボタンで、その場で解除できる（各ページへ行かなくてよい）', () => {
+    seedFav({ teas: ['sencha'], cultivars: ['okumidori'] })
+    location.hash = '#/saved'; render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '煎茶をお気に入りから外す' }))
+    expect(savedData().favorites.teas).toEqual([])
+    expect(screen.queryByRole('button', { name: '煎茶' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'おくみどりをお気に入りから外す' }))
+    expect(savedData().favorites.cultivars).toEqual([])
+  })
+
+  it('組み合わせページ（お茶）: その組み合わせを単体組み合わせとして保存でき、調べる画面で復元される', () => {
+    location.hash = '#/combo/tea/green.nagasaki.yabukita'; render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '☆ お気に入り' }))
+    expect(savedData().favorites.combos).toEqual(['tea-combo:green|region:nagasaki|yabukita'])
+    cleanup(); location.hash = '#/saved'; render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '長崎 × やぶきた × 緑茶' }))
+    expect(location.hash).toBe('#/tea')
+    expect(JSON.parse(localStorage.getItem('pairing.teaList.kind')!)).toBe('green')
+    expect(JSON.parse(localStorage.getItem('pairing.teaList.region')!)).toBe('region:nagasaki')
+    expect(JSON.parse(localStorage.getItem('pairing.teaList.cultivarId')!)).toBe('yabukita')
+  })
+
+  it('組み合わせページ（チョコ）からも保存できる', () => {
+    location.hash = '#/combo/choco/dark.ecuador.genetic:gen-nacional'; render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: '☆ お気に入り' }))
+    expect(savedData().favorites.combos).toEqual(['choco-combo:dark|ecuador|genetic:gen-nacional'])
+  })
+
+  it('品種の比較ページのパネルからも保存できる', () => {
+    location.hash = '#/compare-cultivars'; render(<App />)
+    const btns = screen.getAllByRole('button', { name: '☆ お気に入り' })
+    expect(btns.length).toBe(2) // 品種1・品種2のパネルに1つずつ
+    fireEvent.click(btns[0])
+    expect(savedData().favorites.cultivars).toEqual(['yabukita'])
+  })
+
+  it('文言統一: アイテム詳細でも「お気に入り」で、旧文言のボタンは無い', () => {
+    location.hash = '#/tea/sencha'; render(<App />)
+    expect(screen.queryByRole('button', { name: /この組み合わせを保存/ })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '☆ お気に入り' }))
+    expect(screen.getByRole('button', { name: '★ お気に入り済み' })).toBeTruthy()
+    expect(savedData().favorites.teas).toEqual(['sencha'])
+  })
+
+  it('履歴セクションと書き出し・復元は無く、ページ見出しは「お気に入り」だけ', () => {
+    // 旧データに履歴が入っていても、履歴は表示されない
+    seedFav({}, { teas: ['sencha'], chocolates: ['milk-chocolate'] })
+    location.hash = '#/saved'; render(<App />)
+    expect(screen.getByRole('heading', { name: 'お気に入り' })).toBeTruthy()
+    expect(screen.queryByText('最近試した組み合わせ')).toBeNull()
+    expect(screen.queryByText('最近調べたお茶')).toBeNull()
+    expect(screen.queryByText('最近調べたチョコ')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'この履歴を消す' })).toBeNull()
+    expect(screen.queryByText('データの書き出し・復元')).toBeNull()
+    expect(screen.queryByText('JSONで書き出す')).toBeNull()
+    expect(screen.queryByText('JSONを読み込む')).toBeNull()
+    // 履歴にあったアイテムがお気に入りとして復活したりもしない
+    expect(screen.queryByRole('button', { name: '煎茶' })).toBeNull()
+  })
+
+  it('組み合わせる画面や詳細ページを使っても、履歴は記録されない', () => {
+    location.hash = '#/pair'; render(<App />)
+    expect(screen.getByText('組み合わせの味わい（推測）')).toBeTruthy()
+    cleanup(); location.hash = '#/tea/sencha'; render(<App />)
+    expect(screen.getByRole('heading', { name: /煎茶/ })).toBeTruthy()
+    const raw = JSON.parse(localStorage.getItem('pairing-app:v1')!) as Record<string, unknown>
+    expect('history' in raw).toBe(false)
   })
 })

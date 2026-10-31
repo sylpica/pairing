@@ -2,13 +2,14 @@
 export interface SavedData {
   version: 1
   // combos は第13弾で追加した「単体組み合わせ（調べる画面の3軸選択）」のお気に入り。
-  // 旧データには無いため、読み込み時は空配列で補う（後方互換）。
-  favorites: { teas: string[]; chocolates: string[]; pairings: string[]; combos: string[] }
-  history: { teas: string[]; chocolates: string[]; pairings: string[] }
+  // cultivars / lineages / origins は第15弾で追加した、品種・カカオ系統・カカオ産地
+  // そのもののお気に入り。いずれも旧データには無いため、読み込み時は空配列で補う（後方互換）。
+  favorites: { teas: string[]; chocolates: string[]; pairings: string[]; combos: string[]; cultivars: string[]; lineages: string[]; origins: string[] }
+  // 履歴機能は第15弾で全廃した（最近試した組み合わせ／最近調べたお茶・チョコとも削除し、
+  // 記録自体も止めた）。旧データに history が残っていても読み込み時に無視する（後方互換）。
 }
 const KEY = 'pairing-app:v1'
-export const HISTORY_LIMIT = 50
-export const emptySaved = (): SavedData => ({ version: 1, favorites: { teas: [], chocolates: [], pairings: [], combos: [] }, history: { teas: [], chocolates: [], pairings: [] } })
+export const emptySaved = (): SavedData => ({ version: 1, favorites: { teas: [], chocolates: [], pairings: [], combos: [], cultivars: [], lineages: [], origins: [] } })
 
 export function loadSaved(): SavedData {
   try {
@@ -27,8 +28,8 @@ export function validateSaved(v: unknown): SavedData {
   const pairings = (xs: string[]) => uniq(xs.map(migratePairId))
   return {
     version: 1,
-    favorites: { teas: uniq(arr(d.favorites?.teas ?? [])), chocolates: uniq(arr(d.favorites?.chocolates ?? [])), pairings: pairings(arr(d.favorites?.pairings ?? [])), combos: uniq(arr(d.favorites?.combos ?? [])) },
-    history: { teas: uniq(arr(d.history?.teas ?? [])).slice(0, HISTORY_LIMIT), chocolates: uniq(arr(d.history?.chocolates ?? [])).slice(0, HISTORY_LIMIT), pairings: pairings(arr(d.history?.pairings ?? [])).slice(0, HISTORY_LIMIT) },
+    favorites: { teas: uniq(arr(d.favorites?.teas ?? [])), chocolates: uniq(arr(d.favorites?.chocolates ?? [])), pairings: pairings(arr(d.favorites?.pairings ?? [])), combos: uniq(arr(d.favorites?.combos ?? [])), cultivars: uniq(arr(d.favorites?.cultivars ?? [])), lineages: uniq(arr(d.favorites?.lineages ?? [])), origins: uniq(arr(d.favorites?.origins ?? [])) },
+    // 旧データの history は読まない（履歴機能は第15弾で全廃。値の形が壊れていても例外にしない）。
   }
 }
 
@@ -93,5 +94,23 @@ export function parseComboFavId(id: string): ComboFavRef | null {
   if (parts.length !== 3 || parts.some((p) => p === '')) return null
   return { side: m[1] === 'tea-combo' ? 'tea' : 'chocolate', kind: decAxis(parts[0]), origin: decAxis(parts[1]), third: decAxis(parts[2]) }
 }
+// ===== カカオ系統（伝統的分類・遺伝集団・クローン）の保存ID（第15弾で追加） =====
+// 形式は組み合わせの系統軸と同じ '<layer>:<id>'（layer は traditional / genetic / clone）。
+// favorites.lineages に格納し、系統ページ（#/cacao/<layer>/<id>）と一対一に対応する。
+export type CacaoLayerId = 'traditional' | 'genetic' | 'clone'
+export interface LineageFavRef { layer: CacaoLayerId; id: string }
+
+export function lineageFavId(layer: string, id: string): string {
+  return `${layer}:${id}`
+}
+
+export function parseLineageFavId(id: string): LineageFavRef | null {
+  const i = id.indexOf(':')
+  if (i < 0) return null
+  const layer = id.slice(0, i)
+  const rest = id.slice(i + 1)
+  if ((layer !== 'traditional' && layer !== 'genetic' && layer !== 'clone') || !rest) return null
+  return { layer, id: rest }
+}
+
 export function persistSaved(d: SavedData) { try { localStorage.setItem(KEY, JSON.stringify(d)) } catch { /* 保存領域の不足等では黙って失敗し、画面操作は継続する */ } }
-export function pushHistory(list: string[], id: string, max = 20) { return [id, ...list.filter((x) => x !== id)].slice(0, max) }

@@ -11,7 +11,8 @@ import { CHARACTER_RULE_LABELS } from './engine/pairingCharacter'
 import { assembleBlend, type BlendSideResult } from './engine/pairingCombo'
 import type { ChocolateItem, InteractionStatement, PairingCharacter, TeaItem } from './types'
 import { categoryById } from './data/flavors'
-import { loadSaved, persistSaved, pushHistory, validateSaved, pairIdOf, parsePairId, comboFavId, parseComboFavId, type SavedData } from './storage'
+import { loadSaved, persistSaved, pairIdOf, parsePairId, comboFavId, parseComboFavId, parseLineageFavId, type SavedData } from './storage'
+import FavButton from './components/FavButton'
 import { go, scrollTop, trackRoute } from './nav'
 import NoteDetail from './components/NoteDetail'
 import { CollapsibleSheet } from './components/Sheet'
@@ -38,12 +39,14 @@ import { COMBO_INT_LABEL } from './components/ComboWheel'
 import ComboWheelPanel from './components/ComboWheelPanel'
 import ProfileWheelPanel from './components/ProfileWheelPanel'
 import { FindingsList, SCIENCE_LABEL } from './components/EntityViews'
-import { TeaLeafIcon, TeaCupIcon, MapPinIcon, SproutIcon, CacaoPodIcon, ChocoBarIcon, LineageIcon, StarIcon, HistoryIcon } from './components/icons'
+import { TeaLeafIcon, TeaCupIcon, MapPinIcon, SproutIcon, CacaoPodIcon, ChocoBarIcon, LineageIcon } from './components/icons'
 import BackButton from './components/BackButton'
 import { TeaComboSelects, ChocoComboSelects, type TeaSelectsState, type ChocoSelectsState } from './components/ComboSelectors'
 import type { ChocolateKind } from './types'
 
 type Route = { name: string; id?: string; sub?: string }
+/** お気に入りのカテゴリ（storage の favorites のキーと一致させる） */
+type FavKind = 'teas' | 'chocolates' | 'pairings' | 'combos' | 'cultivars' | 'lineages' | 'origins'
 const KNOWN_ROUTES = ['home', 'tea', 'choco', 'pair', 'compare', 'saved', 'sources', 'compounds', 'cultivars', 'cultivar', 'cacao', 'compare-cultivars', 'origin', 'combo']
 function parseRoute(): Route {
   const h = location.hash.replace(/^#\/?/, '')
@@ -68,11 +71,8 @@ export default function App() {
   useEffect(() => { trackRoute(routePath) }, [routePath])
   useEffect(() => { persistSaved(saved) }, [saved])
 
-  const toggleFav = (kind: 'teas' | 'chocolates' | 'pairings' | 'combos', id: string) =>
+  const toggleFav = (kind: FavKind, id: string) =>
     setSaved((s) => ({ ...s, favorites: { ...s.favorites, [kind]: s.favorites[kind].includes(id) ? s.favorites[kind].filter((x) => x !== id) : [...s.favorites[kind], id] } }))
-  const addHistory = (kind: 'teas' | 'chocolates' | 'pairings', id: string) =>
-    setSaved((s) => ({ ...s, history: { ...s.history, [kind]: pushHistory(s.history[kind], id) } }))
-
   return (
     <div className="app">
       <header className="app-header">
@@ -85,28 +85,29 @@ export default function App() {
           <button onClick={() => go('choco')}>チョコ</button>
           <button onClick={() => go('cultivars')}>品種・系統</button>
           <button onClick={() => go('pair')}>組み合わせる</button>
-          <button className="nav-icon" onClick={() => go('saved')} aria-label="お気に入り"><StarIcon /></button>
-          <button className="nav-icon" onClick={() => go('saved')} aria-label="履歴"><HistoryIcon /></button>
+          {/* 第15弾: 履歴ボタンは廃止（お気に入りと同じページに行くため。後に履歴機能
+              自体も全廃した）。お気に入りは⭐︎アイコンでなく文字のボタンにする。 */}
+          <button onClick={() => go('saved')}>お気に入り</button>
         </nav>
       </header>
       <main>
         {route.name === 'home' && <Home />}
         {route.name === 'tea' && !route.id && <TeaList saved={saved} toggleFav={toggleFav} />}
-        {route.name === 'tea' && route.id && <TeaDetail id={route.id} saved={saved} toggleFav={toggleFav} addHistory={addHistory} />}
+        {route.name === 'tea' && route.id && <TeaDetail id={route.id} saved={saved} toggleFav={toggleFav} />}
         {route.name === 'choco' && !route.id && <ChocoList saved={saved} toggleFav={toggleFav} />}
-        {route.name === 'choco' && route.id && <ChocoDetail id={route.id} saved={saved} toggleFav={toggleFav} addHistory={addHistory} />}
-        {route.name === 'pair' && <PairPage saved={saved} toggleFav={toggleFav} addHistory={addHistory} />}
-        {route.name === 'compare' && <ComparePage />}
+        {route.name === 'choco' && route.id && <ChocoDetail id={route.id} saved={saved} toggleFav={toggleFav} />}
+        {route.name === 'pair' && <PairPage saved={saved} toggleFav={toggleFav} />}
+        {route.name === 'compare' && <ComparePage saved={saved} toggleFav={toggleFav} />}
         {route.name === 'saved' && <SavedPage saved={saved} setSaved={setSaved} />}
         {route.name === 'sources' && <SourcesPage />}
         {route.name === 'compounds' && <CompoundsPage highlightId={route.id} />}
         {route.name === 'cultivars' && <CultivarsPage />}
-        {route.name === 'cultivar' && route.id && <TeaCultivarDetail id={route.id} />}
-        {route.name === 'origin' && route.id && <OriginDetail id={route.id} />}
-        {route.name === 'cacao' && route.id && route.sub && <CacaoDetail layer={route.id as CacaoLayer} id={route.sub} />}
-        {route.name === 'compare-cultivars' && <CultivarComparePage />}
-        {route.name === 'combo' && route.id === 'choco' && <ChocoComboPage sub={route.sub} />}
-        {route.name === 'combo' && route.id !== 'choco' && <TeaComboPage sub={route.sub} />}
+        {route.name === 'cultivar' && route.id && <TeaCultivarDetail id={route.id} fav={saved.favorites.cultivars.includes(route.id)} onToggleFav={() => toggleFav('cultivars', route.id!)} />}
+        {route.name === 'origin' && route.id && <OriginDetail id={route.id} fav={saved.favorites.origins.includes(route.id)} onToggleFav={() => toggleFav('origins', route.id!)} />}
+        {route.name === 'cacao' && route.id && route.sub && <CacaoDetail layer={route.id as CacaoLayer} id={route.sub} fav={saved.favorites.lineages.includes(`${route.id}:${route.sub}`)} onToggleFav={() => toggleFav('lineages', `${route.id}:${route.sub}`)} />}
+        {route.name === 'compare-cultivars' && <CultivarComparePage saved={saved} toggleFav={toggleFav} />}
+        {route.name === 'combo' && route.id === 'choco' && <ChocoComboPage sub={route.sub} saved={saved} toggleFav={toggleFav} />}
+        {route.name === 'combo' && route.id !== 'choco' && <TeaComboPage sub={route.sub} saved={saved} toggleFav={toggleFav} />}
       </main>
       <footer className="app-footer">
         <button className="linklike" onClick={() => go('combo/tea')}>組み合わせで調べる（お茶）</button>
@@ -252,7 +253,7 @@ function TeaList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combo
       <div className="page-head-row">
         <h2>お茶を調べる</h2>
         {comboId && (
-          <button className="fav-btn pair-save-btn" aria-pressed={comboFav} onClick={() => toggleFav('combos', comboId)}>{comboFav ? '★ 保存済み' : '☆ この組み合わせを保存'}</button>
+          <FavButton className="pair-save-btn" fav={comboFav} onToggle={() => toggleFav('combos', comboId)} />
         )}
       </div>
       <input className="search" type="search" placeholder="名前・別名・産地で探す（例：烏龍茶、煎茶）" value={q} onChange={(e) => setQ(e.target.value)} aria-label="お茶を検索" />
@@ -314,9 +315,8 @@ function TeaList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combo
   )
 }
 
-function TeaDetail({ id, saved, toggleFav, addHistory }: { id: string; saved: SavedData; toggleFav: (k: 'teas', id: string) => void; addHistory: (k: 'teas', id: string) => void }) {
+function TeaDetail({ id, saved, toggleFav }: { id: string; saved: SavedData; toggleFav: (k: 'teas', id: string) => void }) {
   const tea = teaById(id)
-  useEffect(() => { if (tea) addHistory('teas', tea.id) }, [id])
   if (!tea) return <p className="unknown-box">そのお茶は収録されていません。</p>
   const fav = saved.favorites.teas.includes(tea.id)
   const harmony = recommend(tea.profile, chocolateItems, 'harmony')
@@ -326,7 +326,7 @@ function TeaDetail({ id, saved, toggleFav, addHistory }: { id: string; saved: Sa
   return (
     <div>
       <BackButton fallback="tea" />
-      <h2>{tea.name} <button className="fav-btn" aria-pressed={fav} onClick={() => toggleFav('teas', tea.id)}>{fav ? '★ お気に入り' : '☆ お気に入り'}</button></h2>
+      <h2>{tea.name} <FavButton fav={fav} onToggle={() => toggleFav('teas', tea.id)} /></h2>
       <p><span className="badge">{LEVEL_LABEL[tea.evidenceLevel]}</span></p>
       <ProfileView profile={tea.profile} scopeNote={tea.scopeNote} sourceIds={tea.sourceIds} context={{ side: 'tea', kindId: tea.kindId, itemName: tea.name, itemId: tea.id }} />
       {kindCultivars.length > 0 && <>
@@ -418,7 +418,7 @@ function ChocoList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'com
       <div className="page-head-row">
         <h2>チョコを調べる</h2>
         {comboId && (
-          <button className="fav-btn pair-save-btn" aria-pressed={comboFav} onClick={() => toggleFav('combos', comboId)}>{comboFav ? '★ 保存済み' : '☆ この組み合わせを保存'}</button>
+          <FavButton className="pair-save-btn" fav={comboFav} onToggle={() => toggleFav('combos', comboId)} />
         )}
       </div>
       <input className="search" type="search" placeholder="名前・種類・産地で探す（例：ダーク、ベネズエラ）" value={q} onChange={(e) => setQ(e.target.value)} aria-label="チョコレートを検索" />
@@ -491,16 +491,15 @@ function ChocoList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'com
   )
 }
 
-function ChocoDetail({ id, saved, toggleFav, addHistory }: { id: string; saved: SavedData; toggleFav: (k: 'chocolates', id: string) => void; addHistory: (k: 'chocolates', id: string) => void }) {
+function ChocoDetail({ id, saved, toggleFav }: { id: string; saved: SavedData; toggleFav: (k: 'chocolates', id: string) => void }) {
   const choco = chocolateById(id)
-  useEffect(() => { if (choco) addHistory('chocolates', choco.id) }, [id])
   if (!choco) return <p className="unknown-box">そのチョコレートは収録されていません。</p>
   const fav = saved.favorites.chocolates.includes(choco.id)
   const harmony = recommend(choco.profile, teaItems, 'harmony')
   return (
     <div>
       <BackButton fallback="choco" />
-      <h2>{choco.name} <button className="fav-btn" aria-pressed={fav} onClick={() => toggleFav('chocolates', choco.id)}>{fav ? '★ お気に入り' : '☆ お気に入り'}</button></h2>
+      <h2>{choco.name} <FavButton fav={fav} onToggle={() => toggleFav('chocolates', choco.id)} /></h2>
       <p><span className="badge">{LEVEL_LABEL[choco.evidenceLevel]}</span></p>
       <ProfileView profile={choco.profile} scopeNote={choco.scopeNote} sourceIds={choco.sourceIds} context={{ side: 'chocolate', kindId: choco.kind, itemName: choco.name, itemId: choco.id }} />
       <h3>産地・系統から調べる</h3>
@@ -602,7 +601,7 @@ interface PairSideView {
   title: string
 }
 
-function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFav: (k: 'pairings', id: string) => void; addHistory: (k: 'pairings', id: string) => void }) {
+function PairPage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'pairings', id: string) => void }) {
   // 選択は「調べる」画面と共通の3軸プルダウン（ComboSelectors）で持つ。
   // 分類の値は茶類・種類ID（大分類）かアイテムID（具体的なお茶・チョコ）で、
   // 大分類を選んだ場合は組み合わせエンジンと同じ代表アイテムをペア対象にする。
@@ -730,7 +729,7 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
   const pairId = bothSelected
     ? pairIdOf({ type: leftType, id: leftView.item!.id }, { type: rightType, id: rightView.item!.id })
     : ''
-  useEffect(() => { if (pairId) addHistory('pairings', pairId) }, [pairId])
+  // 第15弾: ペアリングの履歴記録は廃止した（「最近試した組み合わせ」の削除に伴う）。
   useEffect(() => { setCharSel(null) }, [pairId])
   // ※タブ切り替えではスクロールしない（その場で内容だけが切り替わる）。
   //   以前はタブ変更のたびに先頭へスクロールする不具合があった（2026-10-31 指示9）。
@@ -759,15 +758,14 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
   const pairCompoundSides = (sameType ? [leftView, rightView] : [teaView, chocoView]).map(compoundSideOf) as [PairCompoundSide, PairCompoundSide]
   return (
     <div>
-      {/* 第13弾（2026-10-31 実機FB）: 「この組み合わせを保存」は、ページ見出し
-          「組み合わせる」の行の右側に置く（ユーザーが画面上で位置を指定）。
-          保存の実体は従来どおりお気に入りトグルで、表示条件（両側の選択が揃い
-          結果が組み立つとき）も従来どおり。保存後の合図はボタン自体の
-          「★ 保存済み」表示が担うため、ボタンのそばで完結する。 */}
+      {/* 第13弾（2026-10-31 実機FB）: 保存ボタンは、ページ見出し「組み合わせる」の
+          行の右側に置く（ユーザーが画面上で位置を指定）。保存の実体は従来どおり
+          お気に入りトグルで、表示条件（両側の選択が揃い結果が組み立つとき）も従来どおり。
+          第15弾: 文言は共通部品 FavButton の「お気に入り」に統一した。 */}
       <div className="page-head-row">
         <h2>組み合わせる</h2>
         {bothSelected && result && (
-          <button className="fav-btn pair-save-btn" aria-pressed={fav} onClick={() => toggleFav('pairings', pairId)}>{fav ? '★ 保存済み' : '☆ この組み合わせを保存'}</button>
+          <FavButton className="pair-save-btn" fav={fav} onToggle={() => toggleFav('pairings', pairId)} />
         )}
       </div>
       <div className="pair-layout">
@@ -944,7 +942,7 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
   )
 }
 
-function ComparePage() {
+function ComparePage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'teas', id: string) => void }) {
   const [a, setA] = useState(teaItems[1].id); const [b, setB] = useState(teaItems[7].id)
   const [sel, setSel] = useState<{ noteId: string; side: 'a' | 'b' } | null>(null)
   const ta = teaById(a)!; const tb = teaById(b)!
@@ -961,8 +959,8 @@ function ComparePage() {
         <label>比べるお茶 2 <select value={b} onChange={(e) => setB(e.target.value)}>{teaItems.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
       </div>
       <div className="compare-grid">
-        <div><h3>{ta.name}</h3><FlavorWheel profile={ta.profile} onSelectNote={(id) => setSel({ noteId: id, side: 'a' })} /></div>
-        <div><h3>{tb.name}</h3><FlavorWheel profile={tb.profile} onSelectNote={(id) => setSel({ noteId: id, side: 'b' })} /></div>
+        <div><h3>{ta.name}</h3><p><FavButton fav={saved.favorites.teas.includes(ta.id)} onToggle={() => toggleFav('teas', ta.id)} /></p><FlavorWheel profile={ta.profile} onSelectNote={(id) => setSel({ noteId: id, side: 'a' })} /></div>
+        <div><h3>{tb.name}</h3><p><FavButton fav={saved.favorites.teas.includes(tb.id)} onToggle={() => toggleFav('teas', tb.id)} /></p><FlavorWheel profile={tb.profile} onSelectNote={(id) => setSel({ noteId: id, side: 'b' })} /></div>
       </div>
       {sel && (
         <CollapsibleSheet resetKey={`${sel.side}:${sel.noteId}`} title={noteById(sel.noteId)?.name ?? sel.noteId} onDismiss={() => setSel(null)}>
@@ -976,17 +974,21 @@ function ComparePage() {
 }
 
 function SavedPage({ saved, setSaved }: { saved: SavedData; setSaved: (d: SavedData) => void }) {
-  const [error, setError] = useState('')
-  const exportJson = () => {
-    const blob = new Blob([JSON.stringify(saved, null, 2)], { type: 'application/json' })
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'pairing-saved.json'; a.click(); URL.revokeObjectURL(a.href)
-  }
-  const importJson = (f: File) => {
-    f.text().then((t) => { try { setSaved(validateSaved(JSON.parse(t))); setError('') } catch (e) { setError(`読み込めませんでした：${e instanceof Error ? e.message : '不明なエラー'}`) } }).catch(() => setError('ファイルを読み取れませんでした'))
-  }
+  // 第15弾（追加指示）: JSONの書き出し・復元は不要として削除した。
+  // 端末内保存（localStorage）そのものは従来どおり維持する。
   const nameOf = (kind: string, id: string) => {
     if (kind === 'teas') return teaById(id)?.name ?? id
     if (kind === 'chocolates') return chocolateById(id)?.name ?? id
+    // 第15弾で追加したエンティティ系カテゴリ
+    if (kind === 'cultivars') return teaCultivarById(id)?.name ?? id
+    if (kind === 'origins') return cacaoOriginById(id)?.name ?? id
+    if (kind === 'lineages') {
+      const ref = parseLineageFavId(id)
+      if (!ref) return id
+      const e = ref.layer === 'traditional' ? traditionalGroupById(ref.id) : ref.layer === 'genetic' ? geneticGroupById(ref.id) : cacaoCloneById(ref.id)
+      if (!e) return id
+      return ref.layer === 'traditional' ? `${(e as { nameJa: string }).nameJa}（${e.name}）` : e.name
+    }
     // 組み合わせは種別つきID（旧形式はお茶×チョコとして解釈）から名前を引く
     const ref = parsePairId(id)
     if (!ref) return id.replace('+', ' × ')
@@ -1025,17 +1027,30 @@ function SavedPage({ saved, setSaved }: { saved: SavedData; setSaved: (d: SavedD
   const openerOf = (kind: string, id: string): (() => void) | null => {
     if (kind === 'teas') return teaById(id) ? () => go(`tea/${id}`) : null
     if (kind === 'chocolates') return chocolateById(id) ? () => go(`choco/${id}`) : null
+    if (kind === 'cultivars') return teaCultivarById(id) ? () => go(`cultivar/${id}`) : null
+    if (kind === 'origins') return cacaoOriginById(id) ? () => go(`origin/${id}`) : null
+    if (kind === 'lineages') {
+      const ref = parseLineageFavId(id)
+      if (!ref) return null
+      const e = ref.layer === 'traditional' ? traditionalGroupById(ref.id) : ref.layer === 'genetic' ? geneticGroupById(ref.id) : cacaoCloneById(ref.id)
+      return e ? () => go(`cacao/${ref.layer}/${ref.id}`) : null
+    }
     const ref = parsePairId(id)
     if (!ref) return null
     const exists = (s: { type: 'tea' | 'chocolate'; id: string }) => (s.type === 'tea' ? teaById(s.id) : chocolateById(s.id)) != null
     return exists(ref.a) && exists(ref.b) ? () => openPair(id) : null
   }
-  const Section = ({ title, kind, ids }: { title: string; kind: string; ids: string[] }) => (
+  // 第15弾: お気に入りはこのページからも直接外せるようにする（従来は各ページへ
+  // 行ってトグルし直すしかなく、解除の手数が多かった）。
+  const removeFav = (kind: FavKind, id: string) =>
+    setSaved({ ...saved, favorites: { ...saved.favorites, [kind]: saved.favorites[kind].filter((x) => x !== id) } })
+  const Section = ({ title, kind, ids, onRemove }: { title: string; kind: string; ids: string[]; onRemove?: (id: string) => void }) => (
     <section><h3>{title}</h3>{ids.length === 0 ? <p className="note-small">まだありません。</p> : <ul>{ids.map((id) => {
       const open = openerOf(kind, id)
-      return <li key={id}>{open
+      return <li key={id} className="saved-entry">{open
         ? <button type="button" className="linklike saved-entry-link" onClick={open}>{nameOf(kind, id)}</button>
-        : nameOf(kind, id)}</li>
+        : <span>{nameOf(kind, id)}</span>}
+        {onRemove && <button type="button" className="saved-remove-btn" aria-label={`${nameOf(kind, id)}をお気に入りから外す`} onClick={() => onRemove(id)}>外す</button>}</li>
     })}</ul>}</section>
   )
   // 単体組み合わせ（第13弾）の表示名は、調べる画面と同じ補完・分析を通して組み合わせ名を引く
@@ -1070,20 +1085,18 @@ function SavedPage({ saved, setSaved }: { saved: SavedData; setSaved: (d: SavedD
   }
   return (
     <div>
-      <h2>お気に入り・履歴</h2>
-      <Section title="お気に入りのお茶" kind="teas" ids={saved.favorites.teas} />
-      <Section title="お気に入りのチョコ" kind="chocolates" ids={saved.favorites.chocolates} />
-      <Section title="お気に入りの組み合わせ" kind="pairings" ids={saved.favorites.pairings} />
-      <section><h3>お気に入りの単体組み合わせ</h3>{saved.favorites.combos.length === 0 ? <p className="note-small">まだありません。</p> : <ul>{saved.favorites.combos.map((id) => { const ref = parseComboFavId(id); return <li key={id}>{ref
+      <h2>お気に入り</h2>
+      <Section title="お気に入りのお茶" kind="teas" ids={saved.favorites.teas} onRemove={(id) => removeFav('teas', id)} />
+      <Section title="お気に入りのチョコ" kind="chocolates" ids={saved.favorites.chocolates} onRemove={(id) => removeFav('chocolates', id)} />
+      <Section title="お気に入りの組み合わせ" kind="pairings" ids={saved.favorites.pairings} onRemove={(id) => removeFav('pairings', id)} />
+      {/* 第15弾（追加指示）: 「〜を調べるで開く」ボタンは名称タップと同じ遷移・復元の
+          重複だったため削除し、名称タップに一本化した。 */}
+      <section><h3>お気に入りの単体組み合わせ</h3>{saved.favorites.combos.length === 0 ? <p className="note-small">まだありません。</p> : <ul>{saved.favorites.combos.map((id) => { const ref = parseComboFavId(id); return <li key={id} className="saved-entry">{ref
         ? <button type="button" className="linklike saved-entry-link" onClick={() => openCombo(id)}>{comboNameOf(id)}</button>
-        : comboNameOf(id)} <button className="btn" onClick={() => openCombo(id)}>{ref?.side === 'chocolate' ? 'チョコを調べるで開く' : 'お茶を調べるで開く'}</button></li> })}</ul>}</section>
-      <Section title="最近調べたお茶" kind="teas" ids={saved.history.teas} />
-      <Section title="最近調べたチョコ" kind="chocolates" ids={saved.history.chocolates} />
-      <Section title="最近試した組み合わせ" kind="pairings" ids={saved.history.pairings} />
-      <h3>データの書き出し・復元</h3>
-      <button className="btn" onClick={exportJson}>JSONで書き出す</button>
-      <label className="btn file-btn">JSONを読み込む<input type="file" accept="application/json" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) importJson(f) }} /></label>
-      {error && <p className="unknown-box" role="alert">{error}</p>}
+        : <span>{comboNameOf(id)}</span>} <button type="button" className="saved-remove-btn" aria-label={`${comboNameOf(id)}をお気に入りから外す`} onClick={() => removeFav('combos', id)}>外す</button></li> })}</ul>}</section>
+      <Section title="お気に入りの品種" kind="cultivars" ids={saved.favorites.cultivars} onRemove={(id) => removeFav('cultivars', id)} />
+      <Section title="お気に入りの系統" kind="lineages" ids={saved.favorites.lineages} onRemove={(id) => removeFav('lineages', id)} />
+      <Section title="お気に入りの産地" kind="origins" ids={saved.favorites.origins} onRemove={(id) => removeFav('origins', id)} />
       <p className="note-small">保存はこの端末の中だけです。アカウント登録はありません。</p>
     </div>
   )

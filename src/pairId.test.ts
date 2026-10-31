@@ -44,9 +44,10 @@ describe('ペア保存ID（種別つき形式と後方互換）', () => {
     const v = validateSaved({
       version: 1,
       favorites: { teas: [], chocolates: [], pairings: ['sencha+dark-roasted', 'tea:sencha+chocolate:dark-roasted', 'tea:sencha+tea:black-tea'] },
+      // 旧データの history は第15弾で全廃され、読み込み時に無視される
       history: { teas: [], chocolates: [], pairings: ['matcha+milk-chocolate'] },
     })
     expect(v.favorites.pairings).toEqual(['tea:sencha+chocolate:dark-roasted', 'tea:sencha+tea:black-tea'])
-    expect(v.history.pairings).toEqual(['tea:matcha+chocolate:milk-chocolate'])
+    expect('history' in v).toBe(false)
   })
 })

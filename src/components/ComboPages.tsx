@@ -1,5 +1,7 @@
 import { useEffect, useMemo, type ReactNode } from 'react'
 import { readPersisted, savePersisted } from '../hooks/usePersistedState'
+import { comboFavId, type SavedData } from '../storage'
+import FavButton from './FavButton'
 import type { ComboNote } from '../types'
 import { COMBO_INT_LABEL } from './ComboWheel'
 import ComboWheelPanel from './ComboWheelPanel'
@@ -116,7 +118,13 @@ const replaceHash = (path: string) => { history.replaceState(null, '', `#/${path
 const TEA_DEFAULT_SEL: TeaComboSel = { kindId: 'green', regionId: 'nagasaki', cultivarId: 'yabukita' }
 const CHOCO_DEFAULT_SEL: ChocoComboSel = { kind: 'dark', originId: 'ecuador', lineage: { layer: 'genetic', id: 'gen-nacional' } }
 
-export function TeaComboPage({ sub }: { sub?: string }) {
+/** 組み合わせページの選択を、調べる画面と同じ単体組み合わせのお気に入りIDへ変換する。
+ * お茶の産地は、組み合わせエンジンの regionId（'' / 'country:<国>' / 地域id）を
+ * プルダウンの値（'' / 国名 / 'region:<地域id>'）に戻してから格納する（往復可能）。 */
+const teaOriginValueOf = (regionId: string) =>
+  regionId === '' ? '' : regionId.startsWith('country:') ? regionId.slice('country:'.length) : `region:${regionId}`
+
+export function TeaComboPage({ sub, saved, toggleFav }: { sub?: string; saved?: SavedData; toggleFav?: (k: 'combos', id: string) => void }) {
   // 表示する組み合わせ：URL の指定が成立すればそれを、無指定・不成立なら
   // 前回の選択、それも無ければ既定を使う（このページは結果表示専用で、
   // 選択し直す導線は「調べる」「組み合わせる」画面と兄弟リンクが担う）。
@@ -134,11 +142,12 @@ export function TeaComboPage({ sub }: { sub?: string }) {
   }, [sel])
   const analysis = useMemo(() => analyzeTeaCombo(sel), [sel])
   const siblings = useMemo(() => teaComboSiblings(sel), [sel])
+  const favId = comboFavId('tea', { kind: sel.kindId, origin: teaOriginValueOf(sel.regionId), third: sel.cultivarId })
 
   return (
     <div>
       <BackButton fallback="tea" />
-      <h2>{analysis.title}</h2>
+      <h2>{analysis.title} {saved && toggleFav && <FavButton fav={saved.favorites.combos.includes(favId)} onToggle={() => toggleFav('combos', favId)} />}</h2>
       <p className="note-small">産地×品種×分類の具体的な組み合わせの味わいを見るページです。分類のプロファイル、品種の所見、産地の所見、製法の科学を重ねて推測し、実測のある部分と推測の部分を区別して表示します。組み合わせを変えるときは「調べる」「組み合わせる」画面で選び直してください（このページは結果の表示専用です）。</p>
       <AnalysisView analysis={analysis}>
         <Siblings title="違いを見る（兄弟の組み合わせ）" siblings={siblings} pathOf={teaComboPath} />
@@ -149,7 +158,7 @@ export function TeaComboPage({ sub }: { sub?: string }) {
   )
 }
 
-export function ChocoComboPage({ sub }: { sub?: string }) {
+export function ChocoComboPage({ sub, saved, toggleFav }: { sub?: string; saved?: SavedData; toggleFav?: (k: 'combos', id: string) => void }) {
   const sel = useMemo<ChocoComboSel>(() => {
     const parsed = parseChocoComboSub(sub)
     if (parsed.kind && chocoComboViable(parsed)) return parsed
@@ -164,11 +173,12 @@ export function ChocoComboPage({ sub }: { sub?: string }) {
   }, [sel])
   const analysis = useMemo(() => analyzeChocoCombo(sel), [sel])
   const siblings = useMemo(() => chocoComboSiblings(sel), [sel])
+  const favId = comboFavId('chocolate', { kind: sel.kind, origin: sel.originId, third: sel.lineage ? `${sel.lineage.layer}:${sel.lineage.id}` : '' })
 
   return (
     <div>
       <BackButton fallback="choco" />
-      <h2>{analysis.title}</h2>
+      <h2>{analysis.title} {saved && toggleFav && <FavButton fav={saved.favorites.combos.includes(favId)} onToggle={() => toggleFav('combos', favId)} />}</h2>
       <p className="note-small">産地×系統×種類の具体的な組み合わせの味わいを見るページです。種類のプロファイル、系統の所見、産地の所見を重ねて推測し、実測のある部分と推測の部分を区別して表示します。組み合わせを変えるときは「調べる」「組み合わせる」画面で選び直してください（このページは結果の表示専用です）。</p>
       <AnalysisView analysis={analysis}>
         <Siblings title="違いを見る（兄弟の組み合わせ）" siblings={siblings} pathOf={chocoComboPath} />
