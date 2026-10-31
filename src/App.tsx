@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { usePersistedState, readPersisted } from './hooks/usePersistedState'
+import { usePersistedState, readPersisted, savePersisted } from './hooks/usePersistedState'
 import { teaItems, teaKinds, teaById } from './data/teas'
 import { chocolateItems, chocolateById } from './data/chocolates'
 import { sources } from './data/sources'
@@ -11,7 +11,7 @@ import { CHARACTER_RULE_LABELS } from './engine/pairingCharacter'
 import { assembleBlend, type BlendSideResult } from './engine/pairingCombo'
 import type { ChocolateItem, InteractionStatement, PairingCharacter, TeaItem } from './types'
 import { categoryById } from './data/flavors'
-import { loadSaved, persistSaved, pushHistory, validateSaved, pairIdOf, parsePairId, type SavedData } from './storage'
+import { loadSaved, persistSaved, pushHistory, validateSaved, pairIdOf, parsePairId, comboFavId, parseComboFavId, type SavedData } from './storage'
 import { go, scrollTop, trackRoute } from './nav'
 import NoteDetail from './components/NoteDetail'
 import { CollapsibleSheet } from './components/Sheet'
@@ -68,7 +68,7 @@ export default function App() {
   useEffect(() => { trackRoute(routePath) }, [routePath])
   useEffect(() => { persistSaved(saved) }, [saved])
 
-  const toggleFav = (kind: 'teas' | 'chocolates' | 'pairings', id: string) =>
+  const toggleFav = (kind: 'teas' | 'chocolates' | 'pairings' | 'combos', id: string) =>
     setSaved((s) => ({ ...s, favorites: { ...s.favorites, [kind]: s.favorites[kind].includes(id) ? s.favorites[kind].filter((x) => x !== id) : [...s.favorites[kind], id] } }))
   const addHistory = (kind: 'teas' | 'chocolates' | 'pairings', id: string) =>
     setSaved((s) => ({ ...s, history: { ...s.history, [kind]: pushHistory(s.history[kind], id) } }))
@@ -91,9 +91,9 @@ export default function App() {
       </header>
       <main>
         {route.name === 'home' && <Home />}
-        {route.name === 'tea' && !route.id && <TeaList />}
+        {route.name === 'tea' && !route.id && <TeaList saved={saved} toggleFav={toggleFav} />}
         {route.name === 'tea' && route.id && <TeaDetail id={route.id} saved={saved} toggleFav={toggleFav} addHistory={addHistory} />}
-        {route.name === 'choco' && !route.id && <ChocoList />}
+        {route.name === 'choco' && !route.id && <ChocoList saved={saved} toggleFav={toggleFav} />}
         {route.name === 'choco' && route.id && <ChocoDetail id={route.id} saved={saved} toggleFav={toggleFav} addHistory={addHistory} />}
         {route.name === 'pair' && <PairPage saved={saved} toggleFav={toggleFav} addHistory={addHistory} />}
         {route.name === 'compare' && <ComparePage />}
@@ -196,7 +196,7 @@ function ComboPreview({ analysis, path, note: assumedNote }: { analysis: ComboAn
 }
 
 type TeaListFilters = { q: string; kind: string; region: string; cultivarId: string }
-function TeaList() {
+function TeaList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combos', id: string) => void }) {
   const [q, setQ] = useState('')
   const [kindRaw, setKindRaw] = usePersistedState('pairing.teaList.kind', 'all')
   const [regionRaw, setRegionRaw] = usePersistedState('pairing.teaList.region', 'all')
@@ -238,6 +238,10 @@ function TeaList() {
   const previewNote = previewCompleted?.assumedKind && previewSel
     ? `分類は未指定のため、${teaKindName(previewSel.kindId)}として表示しています`
     : undefined
+  // 第13弾追加: 選択中の単体組み合わせ（プルダウンの値そのもの）を保存対象にする。
+  // 表示条件は「プレビューが組み立つこと」で、組み合わせる画面の保存ボタンと揃える。
+  const comboId = previewAnalysis && previewSel ? comboFavId('tea', { kind, origin: region, third: cultivarId }) : ''
+  const comboFav = comboId !== '' && saved.favorites.combos.includes(comboId)
   const current: TeaListFilters = { q, kind, region, cultivarId }
   const shownProfiles = [...profilesFor(current)].sort((a, b) => KIND_ORDER.indexOf(a.kindId) - KIND_ORDER.indexOf(b.kindId))
   const cultivars = cultivarsFor(current)
@@ -245,7 +249,12 @@ function TeaList() {
   const empty = shownProfiles.length + cultivars.length + regions.length === 0
   return (
     <div>
-      <h2>お茶を調べる</h2>
+      <div className="page-head-row">
+        <h2>お茶を調べる</h2>
+        {comboId && (
+          <button className="fav-btn pair-save-btn" aria-pressed={comboFav} onClick={() => toggleFav('combos', comboId)}>{comboFav ? '★ 保存済み' : '☆ この組み合わせを保存'}</button>
+        )}
+      </div>
       <input className="search" type="search" placeholder="名前・別名・産地で探す（例：烏龍茶、煎茶）" value={q} onChange={(e) => setQ(e.target.value)} aria-label="お茶を検索" />
       <section className="filter-hero" role="group" aria-label="条件で絞り込み">
         <h3 className="filter-hero-title"><TeaLeafIcon className="hero-icon tea" />分類・産地・品種で探す</h3>
@@ -337,7 +346,7 @@ function TeaDetail({ id, saved, toggleFav, addHistory }: { id: string; saved: Sa
 
 type LineageSel = { layer: CacaoLayer; id: string }
 type ChocoListFilters = { q: string; kind: string; originId: string; lineage: LineageSel | null }
-function ChocoList() {
+function ChocoList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combos', id: string) => void }) {
   const [q, setQ] = useState('')
   const [kindRaw, setKindRaw] = usePersistedState('pairing.chocoList.kind', 'all')
   const [originRaw, setOriginRaw] = usePersistedState('pairing.chocoList.originId', 'all')
@@ -401,9 +410,17 @@ function ChocoList() {
   const chocoPreviewNote = chocoPreviewCompleted?.assumedKind && chocoPreviewSel
     ? `種類は未指定のため、${CHOCO_KIND_LABEL[chocoPreviewSel.kind] ?? chocoPreviewSel.kind}チョコレートとして表示しています`
     : undefined
+  // 第13弾追加: 選択中の単体組み合わせ（プルダウンの値そのもの）を保存対象にする（お茶側と同仕様）。
+  const comboId = chocoPreviewAnalysis && chocoPreviewSel ? comboFavId('chocolate', { kind, origin: originId, third: lineageValue }) : ''
+  const comboFav = comboId !== '' && saved.favorites.combos.includes(comboId)
   return (
     <div>
-      <h2>チョコを調べる</h2>
+      <div className="page-head-row">
+        <h2>チョコを調べる</h2>
+        {comboId && (
+          <button className="fav-btn pair-save-btn" aria-pressed={comboFav} onClick={() => toggleFav('combos', comboId)}>{comboFav ? '★ 保存済み' : '☆ この組み合わせを保存'}</button>
+        )}
+      </div>
       <input className="search" type="search" placeholder="名前・種類・産地で探す（例：ダーク、ベネズエラ）" value={q} onChange={(e) => setQ(e.target.value)} aria-label="チョコレートを検索" />
       <section className="filter-hero" role="group" aria-label="条件で絞り込み">
         <h3 className="filter-hero-title"><ChocoBarIcon className="hero-icon choco" />分類・産地・系統で探す</h3>
@@ -742,7 +759,17 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
   const pairCompoundSides = (sameType ? [leftView, rightView] : [teaView, chocoView]).map(compoundSideOf) as [PairCompoundSide, PairCompoundSide]
   return (
     <div>
-      <h2>組み合わせる</h2>
+      {/* 第13弾（2026-10-31 実機FB）: 「この組み合わせを保存」は、ページ見出し
+          「組み合わせる」の行の右側に置く（ユーザーが画面上で位置を指定）。
+          保存の実体は従来どおりお気に入りトグルで、表示条件（両側の選択が揃い
+          結果が組み立つとき）も従来どおり。保存後の合図はボタン自体の
+          「★ 保存済み」表示が担うため、ボタンのそばで完結する。 */}
+      <div className="page-head-row">
+        <h2>組み合わせる</h2>
+        {bothSelected && result && (
+          <button className="fav-btn pair-save-btn" aria-pressed={fav} onClick={() => toggleFav('pairings', pairId)}>{fav ? '★ 保存済み' : '☆ この組み合わせを保存'}</button>
+        )}
+      </div>
       <div className="pair-layout">
         {sideCfgs.map((cfg) => {
           const typeName = PAIR_TYPE_NAME[cfg.type]
@@ -904,9 +931,6 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
           <SourceLinks ids={['spence-2020-flavour-pairing']} />
         </section>
       )}
-      <div className="pair-save-row">
-        <button className="fav-btn pair-save-btn" aria-pressed={fav} onClick={() => toggleFav('pairings', pairId)}>{fav ? '★ 保存済み' : '☆ この組み合わせを保存'}</button>
-      </div>
       </>)}
       <details className="pair-notes">
         <summary>指定と見方についての注記</summary>
@@ -974,12 +998,43 @@ function SavedPage({ saved, setSaved }: { saved: SavedData; setSaved: (d: SavedD
   const Section = ({ title, kind, ids }: { title: string; kind: string; ids: string[] }) => (
     <section><h3>{title}</h3>{ids.length === 0 ? <p className="note-small">まだありません。</p> : <ul>{ids.map((id) => <li key={id}>{nameOf(kind, id)}</li>)}</ul>}</section>
   )
+  // 単体組み合わせ（第13弾）の表示名は、調べる画面と同じ補完・分析を通して組み合わせ名を引く
+  const comboNameOf = (id: string): string => {
+    const ref = parseComboFavId(id)
+    if (!ref) return id
+    if (ref.side === 'tea') {
+      const done = completeTeaComboSel({ kindId: ref.kind, regionId: teaOriginComboRegionIdOfValue(ref.origin), cultivarId: ref.third })
+      return done ? analyzeTeaCombo(done.sel).title : id
+    }
+    const lineage = ref.third ? (() => { const [layer, lid] = ref.third.split(':') as [CacaoLayer, string]; return { layer, id: lid } })() : null
+    const kindValue = ref.kind === '' ? '' : (chocolateById(ref.kind) ? chocolateById(ref.kind)!.kind : ref.kind)
+    const done = completeChocoComboSel({ kind: kindValue, originId: ref.origin, lineage })
+    return done ? analyzeChocoCombo(done.sel).title : id
+  }
+  // 単体組み合わせを開く: 調べる画面のプルダウン保存値へ選択を書き戻してから遷移する
+  // （調べる画面はマウント時に保存値を読むため、同じ選択とプレビューが復元される）
+  const openCombo = (id: string) => {
+    const ref = parseComboFavId(id)
+    if (!ref) return
+    if (ref.side === 'tea') {
+      savePersisted('pairing.teaList.kind', ref.kind)
+      savePersisted('pairing.teaList.region', ref.origin)
+      savePersisted('pairing.teaList.cultivarId', ref.third)
+      go('tea')
+    } else {
+      savePersisted('pairing.chocoList.kind', ref.kind)
+      savePersisted('pairing.chocoList.originId', ref.origin)
+      savePersisted('pairing.chocoList.lineage', ref.third)
+      go('choco')
+    }
+  }
   return (
     <div>
       <h2>お気に入り・履歴</h2>
       <Section title="お気に入りのお茶" kind="teas" ids={saved.favorites.teas} />
       <Section title="お気に入りのチョコ" kind="chocolates" ids={saved.favorites.chocolates} />
       <Section title="お気に入りの組み合わせ" kind="pairings" ids={saved.favorites.pairings} />
+      <section><h3>お気に入りの単体組み合わせ</h3>{saved.favorites.combos.length === 0 ? <p className="note-small">まだありません。</p> : <ul>{saved.favorites.combos.map((id) => { const ref = parseComboFavId(id); return <li key={id}>{comboNameOf(id)} <button className="btn" onClick={() => openCombo(id)}>{ref?.side === 'chocolate' ? 'チョコを調べるで開く' : 'お茶を調べるで開く'}</button></li> })}</ul>}</section>
       <Section title="最近調べたお茶" kind="teas" ids={saved.history.teas} />
       <Section title="最近調べたチョコ" kind="chocolates" ids={saved.history.chocolates} />
       <Section title="最近試した組み合わせ" kind="pairings" ids={saved.history.pairings} />

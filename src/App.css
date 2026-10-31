@@ -73,9 +73,25 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 /* 第12弾: 結果エリア下部の注記群（根拠区分チップ・同種ペア注記・第2層の土台注記）。
    本文と区切るため上に余白と細い罫を置く。 */
 .pair-summary-notes { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--line); }
-/* 「この組み合わせを保存」は結果の一番下に置く（2026-10-31 指示6） */
-.pair-save-row { display: flex; justify-content: center; margin: 16px 0 4px; }
-.pair-save-btn { font-size: 0.95rem; padding: 10px 20px; min-height: 44px; }
+/* 「この組み合わせを保存」はページ見出しの行の右側に置く（第13弾・2026-10-31 実機FB。
+   第2弾で結果の下部へ移したボタンを、ユーザーが画面上で指定した見出し横へ移設。
+   お茶を調べる／チョコを調べる画面にも同じ見出し行・同じボタンを置くため、
+   見出し行は3画面共通の .page-head-row とする）。
+   見出し・ボタンとも nowrap＋flex:none で横書き一列を保ち（第11弾の折り返し対策と同じ考え方）、
+   狭幅では文字と余白を段階的に詰めて一行に収める。 */
+.page-head-row { display: flex; align-items: center; gap: 8px; }
+.page-head-row h2 { flex: none; white-space: nowrap; }
+.page-head-row .pair-save-btn { margin-left: auto; flex: none; }
+.pair-save-btn { font-size: 0.95rem; padding: 10px 20px; min-height: 44px; white-space: nowrap; }
+@media (max-width: 480px) {
+  .page-head-row h2 { font-size: 1.35rem; }
+  .page-head-row .pair-save-btn { font-size: 0.88rem; padding: 8px 10px; }
+}
+@media (max-width: 360px) {
+  .page-head-row { gap: 6px; }
+  .page-head-row h2 { font-size: 1.15rem; }
+  .page-head-row .pair-save-btn { font-size: 0.82rem; padding: 6px 8px; }
+}
 /* 詳細・組み合わせページ冒頭の「戻る」ボタン */
 .back-btn { margin: 4px 0 2px; min-height: 44px; }
 .pair-summary-line { margin: 4px 0; }

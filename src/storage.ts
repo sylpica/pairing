@@ -1,12 +1,14 @@
 // 端末内保存（localStorage）。形式バージョンを持ち、不正データは安全に捨てる。
 export interface SavedData {
   version: 1
-  favorites: { teas: string[]; chocolates: string[]; pairings: string[] }
+  // combos は第13弾で追加した「単体組み合わせ（調べる画面の3軸選択）」のお気に入り。
+  // 旧データには無いため、読み込み時は空配列で補う（後方互換）。
+  favorites: { teas: string[]; chocolates: string[]; pairings: string[]; combos: string[] }
   history: { teas: string[]; chocolates: string[]; pairings: string[] }
 }
 const KEY = 'pairing-app:v1'
 export const HISTORY_LIMIT = 50
-export const emptySaved = (): SavedData => ({ version: 1, favorites: { teas: [], chocolates: [], pairings: [] }, history: { teas: [], chocolates: [], pairings: [] } })
+export const emptySaved = (): SavedData => ({ version: 1, favorites: { teas: [], chocolates: [], pairings: [], combos: [] }, history: { teas: [], chocolates: [], pairings: [] } })
 
 export function loadSaved(): SavedData {
   try {
@@ -25,7 +27,7 @@ export function validateSaved(v: unknown): SavedData {
   const pairings = (xs: string[]) => uniq(xs.map(migratePairId))
   return {
     version: 1,
-    favorites: { teas: uniq(arr(d.favorites?.teas ?? [])), chocolates: uniq(arr(d.favorites?.chocolates ?? [])), pairings: pairings(arr(d.favorites?.pairings ?? [])) },
+    favorites: { teas: uniq(arr(d.favorites?.teas ?? [])), chocolates: uniq(arr(d.favorites?.chocolates ?? [])), pairings: pairings(arr(d.favorites?.pairings ?? [])), combos: uniq(arr(d.favorites?.combos ?? [])) },
     history: { teas: uniq(arr(d.history?.teas ?? [])).slice(0, HISTORY_LIMIT), chocolates: uniq(arr(d.history?.chocolates ?? [])).slice(0, HISTORY_LIMIT), pairings: pairings(arr(d.history?.pairings ?? [])).slice(0, HISTORY_LIMIT) },
   }
 }
@@ -66,6 +68,30 @@ export function parsePairId(id: string): PairRef | null {
 export function migratePairId(id: string): string {
   const ref = parsePairId(id)
   return ref ? pairIdOf(ref.a, ref.b) : id
+}
+
+// ===== 単体組み合わせ（調べる画面の3軸選択）の保存ID（第13弾で追加） =====
+// お茶を調べる／チョコを調べる画面で選択中の単体組み合わせ（分類×産地×品種／
+// 種類×産地×系統）を、お気に入り（favorites.combos）に保存するためのID。
+// 形式: 'tea-combo:<分類>|<産地>|<品種>' / 'choco-combo:<種類>|<産地>|<系統>'
+// 値はプルダウンの値そのもの（未指定は '-' と書く）。値に '|' は含まれない
+// （分類・種類はID、産地は国名か産地ID、品種・系統はIDか '<layer>:<id>'）。
+// ペアの保存ID（'<種別>:<id>+<種別>:<id>'）とは接頭辞で区別できる。
+export interface ComboFavRef { side: 'tea' | 'chocolate'; kind: string; origin: string; third: string }
+
+const encAxis = (v: string) => (v === '' ? '-' : v)
+const decAxis = (v: string) => (v === '-' ? '' : v)
+
+export function comboFavId(side: 'tea' | 'chocolate', sel: { kind: string; origin: string; third: string }): string {
+  return `${side === 'tea' ? 'tea-combo' : 'choco-combo'}:${[sel.kind, sel.origin, sel.third].map(encAxis).join('|')}`
+}
+
+export function parseComboFavId(id: string): ComboFavRef | null {
+  const m = /^(tea-combo|choco-combo):(.+)$/.exec(id)
+  if (!m) return null
+  const parts = m[2].split('|')
+  if (parts.length !== 3 || parts.some((p) => p === '')) return null
+  return { side: m[1] === 'tea-combo' ? 'tea' : 'chocolate', kind: decAxis(parts[0]), origin: decAxis(parts[1]), third: decAxis(parts[2]) }
 }
 export function persistSaved(d: SavedData) { try { localStorage.setItem(KEY, JSON.stringify(d)) } catch { /* 保存領域の不足等では黙って失敗し、画面操作は継続する */ } }
 export function pushHistory(list: string[], id: string, max = 20) { return [id, ...list.filter((x) => x !== id)].slice(0, max) }

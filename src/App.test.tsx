@@ -374,18 +374,57 @@ describe('UI改善：絞り込みのメイン化・チョコ種類追加・系�
 describe('実機フィードバック第2弾：保存ボタン位置・タブ・ナビ・戻るボタン', () => {
   beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
 
-  it('「この組み合わせを保存」は結果の下側にある（タイトル直下ではない・指示6）', () => {
+  it('「この組み合わせを保存」は見出し「組み合わせる」の行の右側にある（第13弾・下部に重複なし）', () => {
     location.hash = '#/pair'; render(<App />)
-    const saveBtn = screen.getByRole('button', { name: /この組み合わせを保存/ })
-    const summary = screen.getByLabelText('組み合わせの結果（要約）')
-    expect(summary.contains(saveBtn)).toBe(false) // 要約（タイトル直下）の中には無い
+    // 重複していない（ページ内に1つだけ）
+    const saveBtns = screen.getAllByRole('button', { name: /この組み合わせを保存/ })
+    expect(saveBtns).toHaveLength(1)
+    const saveBtn = saveBtns[0]
+    // 見出し行（.page-head-row）の中にあり、見出し「組み合わせる」と同じ行で、その後（右側）
+    const headRow = document.querySelector('.page-head-row')
+    expect(headRow).toBeTruthy()
+    expect(headRow!.contains(saveBtn)).toBe(true)
+    const h2 = headRow!.querySelector('h2')
+    expect(h2?.textContent).toBe('組み合わせる')
+    expect((h2 as Node).compareDocumentPosition(saveBtn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // 結果エリアの中には無く、旧来の下部の行（.pair-save-row）は廃止されている
+    expect(screen.getByLabelText('組み合わせの結果（要約）').contains(saveBtn)).toBe(false)
+    expect(document.querySelector('.pair-save-row')).toBeNull()
+    // タブより前（画面の上部）に来ている
     const tabs = document.querySelector('.tabs')
     expect(tabs).toBeTruthy()
-    // タブ・詳細より後（結果ブロックの末尾側）に配置されている
-    expect((tabs as Node).compareDocumentPosition(saveBtn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    // 押すと保存済みになる
+    expect((tabs as Node).compareDocumentPosition(saveBtn) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
+    // 押すと従来どおり保存済みになり、お気に入りに種別つきIDで記録される
     fireEvent.click(saveBtn)
     expect(screen.getByRole('button', { name: /保存済み/ })).toBeTruthy()
+    const savedData = JSON.parse(localStorage.getItem('pairing-app:v1')!) as { favorites: { pairings: string[] } }
+    expect(savedData.favorites.pairings).toHaveLength(1)
+    expect(savedData.favorites.pairings[0]).toMatch(/^(tea|chocolate):[^+]+\+(tea|chocolate):/)
+    // もう一度押すと保存が取り消される（従来どおりのトグル動作）
+    fireEvent.click(screen.getByRole('button', { name: /保存済み/ }))
+    const after = JSON.parse(localStorage.getItem('pairing-app:v1')!) as { favorites: { pairings: string[] } }
+    expect(after.favorites.pairings).toHaveLength(0)
+  })
+
+  it('見出し行の CSS が「見出し・ボタンとも横書き一列」を保証している（第13弾）', async () => {
+    const { readFileSync } = await import('node:fs')
+    const css = readFileSync('src/App.css', 'utf-8')
+    const ruleOf = (selector: string) => {
+      const i = css.indexOf(selector)
+      expect(i).toBeGreaterThanOrEqual(0)
+      return css.slice(i, css.indexOf('}', i))
+    }
+    // 見出し行は flex で、ボタンは右端へ（3画面共通の .page-head-row）
+    expect(ruleOf('.page-head-row {')).toContain('display: flex')
+    expect(ruleOf('.page-head-row .pair-save-btn')).toContain('margin-left: auto')
+    // 見出し・ボタンとも折り返さない（第11弾の折り返し問題を再発させない）
+    expect(ruleOf('.page-head-row h2')).toContain('white-space: nowrap')
+    // 単独ルール（行頭から始まる .pair-save-btn）を対象にする
+    expect(ruleOf('\n.pair-save-btn {')).toContain('white-space: nowrap')
+    // タップ高さ44pxを保つ
+    expect(ruleOf('\n.pair-save-btn {')).toContain('min-height: 44px')
+    // 旧来の下部行は廃止
+    expect(css).not.toContain('.pair-save-row')
   })
 
   it('タブ切り替えでページ先頭へスクロールしない（指示9）', () => {
@@ -527,5 +566,86 @@ describe('実機フィードバック第9弾・追加指示A：カカオ含有�
     const texts = cardTexts()
     expect(texts.some((t) => t.includes('ミルクチョコレート'))).toBe(true)
     expect(texts.some((t) => t.includes('ルビーチョコレート'))).toBe(true)
+  })
+})
+
+// 実機フィードバック第13弾（追加指示）: お茶を調べる／チョコを調べる画面でも、
+// 見出しの横の「この組み合わせを保存」で選択中の単体組み合わせを保存でき、
+// お気に入りから開くとその画面で同じ選択とプレビューが復元される。
+describe('実機フィードバック第13弾（追加）：調べる画面の単体組み合わせ保存と復元', () => {
+  beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
+
+  it('お茶: 未選択では保存ボタンが無く、軸を選ぶと見出し行に出て保存できる', () => {
+    location.hash = '#/tea'; render(<App />)
+    // プレビューが組み立たない状態（全軸未指定）ではボタンは出ない
+    expect(screen.queryByRole('button', { name: /この組み合わせを保存/ })).toBeNull()
+    fireEvent.change(screen.getByLabelText('分類（茶類）で絞り込み'), { target: { value: 'black-tea' } })
+    const btn = screen.getByRole('button', { name: /この組み合わせを保存/ })
+    // 見出し「お茶を調べる」の行（.page-head-row）の中にある
+    const headRow = document.querySelector('.page-head-row')
+    expect(headRow).toBeTruthy()
+    expect(headRow!.contains(btn)).toBe(true)
+    expect(headRow!.querySelector('h2')?.textContent).toBe('お茶を調べる')
+    expect(screen.getByLabelText('選択中の組み合わせのフレーバー')).toBeTruthy()
+    fireEvent.click(btn)
+    expect(screen.getByRole('button', { name: /保存済み/ })).toBeTruthy()
+    const savedData = JSON.parse(localStorage.getItem('pairing-app:v1')!) as { favorites: { combos: string[] } }
+    expect(savedData.favorites.combos).toEqual(['tea-combo:black-tea|-|-'])
+  })
+
+  it('お茶: お気に入りから開くと、同じ選択とプレビューが復元される（往復）', () => {
+    localStorage.setItem('pairing-app:v1', JSON.stringify({
+      version: 1,
+      favorites: { teas: [], chocolates: [], pairings: [], combos: ['tea-combo:black-tea|-|-'] },
+      history: { teas: [], chocolates: [], pairings: [] },
+    }))
+    location.hash = '#/saved'; render(<App />)
+    expect(screen.getByText('お気に入りの単体組み合わせ')).toBeTruthy()
+    expect(screen.getAllByText(/紅茶/).length).toBeGreaterThan(0) // 組み合わせ名が表示される
+    fireEvent.click(screen.getByRole('button', { name: 'お茶を調べるで開く' }))
+    // 遷移し、調べる画面のプルダウン保存値へ選択が書き戻されている
+    expect(location.hash).toBe('#/tea')
+    expect(JSON.parse(localStorage.getItem('pairing.teaList.kind')!)).toBe('black-tea')
+    cleanup(); location.hash = '#/tea'; render(<App />)
+    expect((screen.getByLabelText('分類（茶類）で絞り込み') as HTMLSelectElement).value).toBe('black-tea')
+    expect(screen.getByLabelText('選択中の組み合わせのフレーバー')).toBeTruthy()
+    // 復元された組み合わせは保存済みとして表示される
+    expect(screen.getByRole('button', { name: /保存済み/ })).toBeTruthy()
+  })
+
+  it('チョコ: 産地を選んで保存し、お気に入りから開くと復元される（往復）', () => {
+    location.hash = '#/choco'; render(<App />)
+    expect(screen.queryByRole('button', { name: /この組み合わせを保存/ })).toBeNull()
+    const originSel = screen.getByLabelText('産地で絞り込み') as HTMLSelectElement
+    const originValue = [...originSel.options].map((o) => o.value).find((v) => v !== '')!
+    expect(originValue).toBeTruthy()
+    fireEvent.change(originSel, { target: { value: originValue } })
+    const btn = screen.getByRole('button', { name: /この組み合わせを保存/ })
+    const headRow = document.querySelector('.page-head-row')
+    expect(headRow).toBeTruthy()
+    expect(headRow!.contains(btn)).toBe(true)
+    expect(headRow!.querySelector('h2')?.textContent).toBe('チョコを調べる')
+    fireEvent.click(btn)
+    const savedData = JSON.parse(localStorage.getItem('pairing-app:v1')!) as { favorites: { combos: string[] } }
+    expect(savedData.favorites.combos).toEqual([`choco-combo:-|${originValue}|-`])
+    cleanup(); location.hash = '#/saved'; render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'チョコを調べるで開く' }))
+    expect(location.hash).toBe('#/choco')
+    expect(JSON.parse(localStorage.getItem('pairing.chocoList.originId')!)).toBe(originValue)
+    cleanup(); location.hash = '#/choco'; render(<App />)
+    expect((screen.getByLabelText('産地で絞り込み') as HTMLSelectElement).value).toBe(originValue)
+    expect(screen.getByLabelText('選択中の組み合わせのフレーバー')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /保存済み/ })).toBeTruthy()
+  })
+
+  it('旧データ（combos 無し・ペア保存あり）でもお気に入り画面が開ける（後方互換）', () => {
+    localStorage.setItem('pairing-app:v1', JSON.stringify({
+      version: 1,
+      favorites: { teas: [], chocolates: [], pairings: ['sencha+dark-roasted'] },
+      history: { teas: [], chocolates: [], pairings: [] },
+    }))
+    location.hash = '#/saved'; render(<App />)
+    expect(screen.getByText(/煎茶 × ダークチョコレート（焙煎）/)).toBeTruthy()
+    expect(screen.getByText('お気に入りの単体組み合わせ')).toBeTruthy()
   })
 })
