@@ -65,6 +65,47 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
     expect(screen.getByLabelText(/花系を開く/)).toBeTruthy()
   })
 
+  it('第17弾：ドリルダウンではホイールが説明文より前に来る（香り第3階層・組み合わせ系とアイテム系）', () => {
+    const expectWheelBeforeHead = (container: HTMLElement) => {
+      const wheel = container.querySelector('svg.wheel')
+      const head = container.querySelector('.wheel-entry-head')
+      expect(wheel).toBeTruthy()
+      expect(head).toBeTruthy()
+      // 説明文（.wheel-entry-head）はホイールの後ろ（下）にある
+      expect(wheel!.compareDocumentPosition(head!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      // 説明文自体は残っている（推測の根拠・根拠成分が見られる）
+      expect(head!.textContent).toContain('根拠成分')
+    }
+    // 組み合わせ系：長崎 × やぶきた × 緑茶 → 花系 → ジャスミン（スクリーンショットの状態）
+    const a = analyzeTeaCombo({ kindId: 'green', regionId: 'nagasaki', cultivarId: 'yabukita' })
+    const c1 = renderPanel(a)
+    fireEvent.click(screen.getByLabelText(/花系を開く/))
+    fireEvent.click(screen.getByLabelText(/ジャスミン（\d+%）に寄与する化学物質を見る/))
+    expectWheelBeforeHead(c1.container)
+    cleanup()
+    // アイテム系：蒸し緑茶の詳細ホイールでも同じ並び
+    const item = teaItems.find((t) => t.id === 'green-steamed')!
+    const c2 = render(<ProfileWheelPanel profile={item.profile} context={{ side: 'tea', kindId: item.kindId, itemName: item.name, itemId: item.id }} />)
+    fireEvent.click(screen.getByLabelText(/花系を開く/))
+    fireEvent.click(screen.getByLabelText(/ジャスミン（\d+%）に寄与する化学物質を見る/))
+    expectWheelBeforeHead(c2.container)
+  })
+
+  it('第17弾：味の第3階層でもホイールが注記より前に来る', () => {
+    const a = analyzeTeaCombo({ kindId: 'black', regionId: 'nagasaki', cultivarId: 'yabukita' })
+    const { container } = renderPanel(a)
+    fireEvent.click(screen.getByRole('tab', { name: '味' }))
+    fireEvent.click(screen.getByLabelText(/基本味を開く/))
+    fireEvent.click(screen.getByRole('button', { name: /^苦味（.+）に寄与する物質を見る$/ }))
+    const wheel = container.querySelector('svg.wheel')
+    const percentNote = container.querySelector('.wheel-percent-note')
+    expect(wheel).toBeTruthy()
+    expect(percentNote).toBeTruthy()
+    expect(wheel!.compareDocumentPosition(percentNote!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // ホイールより前に説明文の塊（.wheel-entry-head）は無い
+    expect(container.querySelector('.wheel-entry-head')).toBeNull()
+  })
+
   it('マダガスカル × クリオロ × ダーク：甘い香り→キャラメル→フラネオールの詳細が出る', () => {
     const a = analyzeChocoCombo({ kind: 'dark', originId: 'madagascar', lineage: { layer: 'traditional', id: 'trad-criollo' } })
     const { container } = renderPanel(a)

@@ -299,6 +299,14 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
             <button className="btn ghost" onClick={() => nav(() => setEntryKey(null))}>← 中分類に戻る</button>
             <span className="wheel-crumb">香り › {tier.name} › {entry.label}</span>
           </div>
+          <p className="note-small wheel-hint">化学物質のセグメントを押すと、成分の詳細が表示されます。</p>
+          <TieredWheel segments={compoundSegments} centerLabel={entry.label} ariaLabel={`${ariaLabel}（${entry.label}に寄与する化学物質）`}
+            onSelect={(key) => {
+              const tc = entry.compounds.find((x) => x.compound.id === key)
+              if (tc) setSheet({ type: 'compound', tc, percent: tc.percent })
+            }} />
+          <p className="note-small wheel-percent-note">{SMALL_PERCENT_NOTE}</p>
+          <CompoundLegend />
           <div className="wheel-entry-head">
             {entry.kind === 'note' && entry.note && (
               <p><strong>{entry.label}</strong> <span className="badge">{COMBO_INT_LABEL[entry.note.intensity]}・{COMBO_LEVEL_LABEL[entry.note.level]}</span>{' '}
@@ -317,14 +325,6 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
               </div>
             )}
           </div>
-          <p className="note-small wheel-hint">化学物質のセグメントを押すと、成分の詳細が表示されます。</p>
-          <TieredWheel segments={compoundSegments} centerLabel={entry.label} ariaLabel={`${ariaLabel}（${entry.label}に寄与する化学物質）`}
-            onSelect={(key) => {
-              const tc = entry.compounds.find((x) => x.compound.id === key)
-              if (tc) setSheet({ type: 'compound', tc, percent: tc.percent })
-            }} />
-          <p className="note-small wheel-percent-note">{SMALL_PERCENT_NOTE}</p>
-          <CompoundLegend />
         </>
       )}
 
