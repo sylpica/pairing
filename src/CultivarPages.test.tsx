@@ -89,15 +89,17 @@ describe('品種・系統データベースの画面連携', () => {
     expect(screen.getAllByText(/科学データ未確認/).length).toBeGreaterThan(0)
   })
 
-  it('品種ページのホイールでも、香りを押すと根拠と成分のシートが開く（指示2・3）', () => {
+  it('品種ページのホイールでも、階層を辿ると根拠と成分のシートが開く（指示2・3・第8弾）', () => {
     location.hash = '#/cultivar/okumidori'; render(<App />)
     expect(screen.queryByRole('dialog')).toBeNull()
-    // セグメントには化合物名の併記がある（裏付けのある香り）
+    // 大分類セグメントには中分類（具体名）の併記がある
     const subs = [...document.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '')
     expect(subs.length).toBeGreaterThan(0)
-    const chip = [...document.querySelectorAll('.wheel-list .chip')].find((el) => el.textContent?.includes('花様'))
+    const chip = [...document.querySelectorAll('.wheel-note-index .chip')].find((el) => el.textContent?.includes('花様'))
     expect(chip).toBeTruthy()
     fireEvent.click(chip!)
+    // 花様には具体名の推測があるため、まず花系の中分類が開く。そこから根拠シートへ進む
+    fireEvent.click(screen.getByRole('button', { name: '「花様」の根拠を見る' }))
     const dialog = screen.getByRole('dialog')
     expect(dialog.textContent).toContain('この香りの根拠')
     expect(dialog.textContent).toContain('この香りに関係する成分')

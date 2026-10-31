@@ -44,20 +44,26 @@ describe('組み合わせページ（産地×品種×分類）', () => {
     expect(wheel.compareDocumentPosition(tastes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
-  it('セグメントに化合物名が併記される（裏付けのある香りだけ・指示3）', () => {
+  it('大分類には中分類（具体名）が併記され、小分類で化合物名が出る（裏付けのある香りだけ・指示3・第8弾）', () => {
     location.hash = '#/combo/tea/green.nagasaki.yabukita'
     render(<App />)
+    // 大分類セグメントの小さな文字は中分類（具体名）：緑茶の花様への推測＝バラ・ジャスミン
     const subs = [...document.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '')
     expect(subs.length).toBeGreaterThan(0)
-    // 緑茶の花様には (Z)-ジャスモン酸メチル等の裏付けがある
-    expect(subs.some((s) => s.includes('ジャスモン酸メチル'))).toBe(true)
+    expect(subs.some((s) => s.includes('ジャスミン'))).toBe(true)
+    // 花系 → ジャスミン（中分類）→ 小分類（化学物質）に (Z)-ジャスモン酸メチルが出る
+    fireEvent.click(screen.getByLabelText(/花系を開く/))
+    fireEvent.click(screen.getByLabelText(/ジャスミン（\d+%）に寄与する化学物質を見る/))
+    const labels = [...document.querySelectorAll('.wheel-label')].map((el) => el.textContent ?? '').join('')
+    expect(labels).toContain('ジャスモン酸メチル')
   })
 
-  it('セグメントを押すと根拠の内訳と成分がシートで開く（指示2・3）', () => {
+  it('階層を辿ると根拠の内訳と成分がシートで開く（指示2・3・第8弾）', () => {
     location.hash = '#/combo/tea/green.nagasaki.yabukita'
     render(<App />)
     expect(screen.queryByRole('dialog')).toBeNull()
-    fireEvent.click(screen.getByLabelText(/花様（.+）の根拠を見る/))
+    fireEvent.click(screen.getByLabelText(/花系を開く/))
+    fireEvent.click(screen.getByRole('button', { name: '「花様」の根拠を見る' }))
     const dialog = screen.getByRole('dialog')
     expect(dialog.getAttribute('aria-label')).toContain('花様')
     expect(dialog.textContent).toContain('この香りの根拠')
@@ -72,12 +78,14 @@ describe('組み合わせページ（産地×品種×分類）', () => {
     expect(screen.getByText(/「花様」の根拠情報をもう一度開く/)).toBeTruthy()
   })
 
-  it('チップからも同じシートが開く', () => {
+  it('チップからも階層を辿って同じシートが開く（第8弾）', () => {
     location.hash = '#/combo/tea/green.nagasaki.yabukita'
     render(<App />)
-    const chip = [...document.querySelectorAll('.wheel-list .chip')].find((el) => el.textContent?.includes('花様'))
+    const chip = [...document.querySelectorAll('.wheel-note-index .chip')].find((el) => el.textContent?.includes('花様'))
     expect(chip).toBeTruthy()
     fireEvent.click(chip!)
+    // 花様には具体名の推測があるため、まず花系の中分類が開く。そこから根拠シートへ進む
+    fireEvent.click(screen.getByRole('button', { name: '「花様」の根拠を見る' }))
     expect(screen.getByRole('dialog').textContent).toContain('この香りの根拠')
   })
 

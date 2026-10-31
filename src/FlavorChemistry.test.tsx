@@ -9,18 +9,23 @@ const clickButton = (name: RegExp) => {
 }
 /** 名前など複数箇所に出る文字列は「どこかに表示されていること」で検証する */
 const expectShown = (re: RegExp) => expect(screen.getAllByText(re).length).toBeGreaterThan(0)
+/** ホイールのセグメントラベル（SVGテキスト。2行に割れた名前も連結して読む） */
+const wheelText = () => [...document.querySelectorAll('.wheel-label')].map((el) => el.textContent ?? '').join('')
 
 describe('フレーバーホイール×科学成分の画面連携（追加指示11章）', () => {
   beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
 
-  it('1. 白茶の「青草・若葉」をタップすると関連成分がシートで確認できる', () => {
+  it('1. 白茶の「青草・若葉」をタップすると関連成分が確認できる', () => {
     location.hash = '#/tea/white-tea'; render(<App />)
     clickButton(/植物系/)
     clickButton(/青草・若葉/)
-    // シート（ダイアログ）として画面遷移せずに開く
+    // 第8弾: 中分類（青草・若葉）を押すと小分類（化学物質）のホイールが出る
+    expect(wheelText()).toContain('ヘキサナール')
+    expect(wheelText()).toContain('(Z)-3-ヘキセン-1-オール')
+    // 根拠の詳細はシート（ダイアログ）として画面遷移せずに開く
+    fireEvent.click(screen.getByRole('button', { name: '「青草・若葉」の根拠を見る' }))
     expect(screen.getByRole('dialog')).toBeTruthy()
     expectShown(/ヘキサナール/)
-    expectShown(/\(Z\)-3-ヘキセン-1-オール/)
     // 階層表示: 白茶の試料での研究例として区別される
     expectShown(/白茶の試料での研究例/)
   })
@@ -29,6 +34,7 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
     location.hash = '#/tea/white-tea'; render(<App />)
     clickButton(/植物系/)
     clickButton(/青草・若葉/)
+    fireEvent.click(screen.getByRole('button', { name: '「青草・若葉」の根拠を見る' }))
     fireEvent.click(screen.getByRole('button', { name: '成分情報を閉じる' }))
     expect(screen.queryByRole('dialog')).toBeNull()
     // 選択中の香味は保持され、再表示ボタンが出る
@@ -42,6 +48,7 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
     location.hash = '#/tea/green-steamed'; render(<App />)
     clickButton(/植物系/)
     clickButton(/青草・若葉/)
+    fireEvent.click(screen.getByRole('button', { name: '「青草・若葉」の根拠を見る' }))
     expectShown(/そのもの（個別の試料）での成分情報は未確認です/)
     expectShown(/他のお茶・チョコレートでの研究例/)
     expectShown(/ヘキサナール/)
@@ -49,16 +56,20 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
 
   it('5. 紅茶の苦味からカフェイン、渋味から渋味の科学的区別と成分を確認できる', () => {
     location.hash = '#/tea/black-tea'; render(<App />)
-    // 第7弾・課題B: 味覚は「味」タブでホイール表示になり、味のセグメントから成分シートを開く
+    // 第7弾・課題B: 味覚は「味」タブでホイール表示になる。第8弾: 次元を押すと寄与成分のホイールが出て、成分から詳細シートを開く
     fireEvent.click(screen.getByRole('tab', { name: '味' }))
     fireEvent.click(screen.getByRole('button', { name: /^苦味（.+）の根拠を見る$/ }))
-    expectShown(/カフェイン/)
+    expect(wheelText()).toContain('カフェイン')
+    fireEvent.click(screen.getByLabelText(/カフェイン（\d+%）の詳細を見る/))
     expectShown(/再構成・除去（オミッション）実験で、苦味の主要呈味化合物/)
     cleanup()
     location.hash = '#/tea/black-tea'; render(<App />)
     fireEvent.click(screen.getByRole('tab', { name: '味' }))
     fireEvent.click(screen.getByRole('button', { name: /^渋味（収れん感）（.+）の根拠を見る$/ }))
-    // 渋味は基本味ではなく収れん感であることが出典つきで示される
+    expect(wheelText()).toContain('ガレート型カテキン類')
+    expect(wheelText()).toContain('フラボノール配糖体')
+    // 渋味は基本味ではなく収れん感であることが、味の根拠シートで出典つきで示される
+    fireEvent.click(screen.getByRole('button', { name: '「渋味（収れん感）」の根拠を見る' }))
     expectShown(/渋味は基本味ではありません/)
     expectShown(/Bajec/)
     expectShown(/ガレート型カテキン類/)
@@ -69,9 +80,11 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
     location.hash = '#/tea/matcha'; render(<App />)
     fireEvent.click(screen.getByRole('tab', { name: '味' }))
     fireEvent.click(screen.getByRole('button', { name: /^うま味（.+）の根拠を見る$/ }))
-    expectShown(/L-テアニン/)
-    expectShown(/コハク酸・没食子酸・テオガリン/)
-    expectShown(/グルタミン酸/)
+    expect(wheelText()).toContain('L-テアニン')
+    expect(wheelText()).toContain('コハク酸・没食子酸・テオガリン')
+    expect(wheelText()).toContain('グルタミン酸')
+    // グルタミン酸の詳細では、寄与が未確認である限定が併記される
+    fireEvent.click(screen.getByLabelText(/グルタミン酸（\d+%）の詳細を見る/))
     expectShown(/未確認/)
   })
 

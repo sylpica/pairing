@@ -94,6 +94,16 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 .wheel-mode-toggle { display: flex; gap: 6px; margin: 10px 0 4px; }
 .wheel-mode-toggle button { flex: 0 0 auto; padding: 8px 22px; border-radius: 999px; border: 1.5px solid var(--line); background: #f3ede2; font: inherit; cursor: pointer; min-height: 40px; }
 .wheel-mode-toggle button[aria-selected="true"] { background: var(--card); font-weight: 700; border-color: var(--accent2); }
+/* 3階層ホイール（第8弾）: 階層ナビゲーション・案内文・割合の注記・香り一覧 */
+.wheel-nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 6px 0 2px; }
+.wheel-crumb { font-size: 0.9rem; font-weight: 700; color: var(--ink); }
+.wheel-hint { margin: 4px 0 6px; }
+.wheel-percent-note { margin: 6px 0; }
+.wheel-note-index { margin-top: 10px; }
+.wheel-note-index-group { margin-top: 6px; }
+.wheel-note-index-cat { display: flex; align-items: center; gap: 6px; font-weight: 700; margin: 4px 0; }
+.wheel-source-notes { margin-top: 10px; }
+.wheel-entry-head { margin: 6px 0; }
 .app-footer { margin-top: 36px; border-top: 2px solid var(--line); padding-top: 12px; font-size: 0.85rem; display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
 .linklike { background: none; border: none; font: inherit; color: var(--accent2); cursor: pointer; text-decoration: underline; }
 .file-btn { display: inline-block; margin-left: 8px; }

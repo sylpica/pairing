@@ -1,56 +1,46 @@
-import { useMemo, useState } from 'react'
-import type { FlavorProfile, TasteKey } from '../types'
+import { useMemo } from 'react'
+import type { Basis, ComboLevel, ComboNote, FlavorProfile } from '../types'
 import type { CompoundContext } from '../data/compounds'
-import { noteById } from '../data/flavors'
-import { TASTE_LABELS } from '../engine/pairing'
-import FlavorWheel from './FlavorWheel'
-import TasteWheel, { comboTastesFromProfile } from './TasteWheel'
+import TieredWheelPanel from './TieredWheelPanel'
+import { comboTastesFromProfile } from './TasteWheel'
 import NoteDetail from './NoteDetail'
 import TasteDetail from './TasteDetail'
-import { CollapsibleSheet } from './Sheet'
 
 /**
- * アイテム詳細（実測プロファイル）の「香り／味」切り替えパネル（第7弾・課題B）。
- * 香りモードは従来の FlavorWheel、味モードはアイテムの味覚プロファイルを
- * ホイール化した TasteWheel を表示する。味の詳細シートは従来の TasteDetail
- * （味に関係する成分表示）をそのまま使う。
- * 判断（課題B-4）: アイテム詳細ページにも切り替えを付け、従来の味覚チャート
- * （TasteChart の棒グラフ）はホイールの下のチップ一覧と詳細シートで代替する。
+ * アイテム詳細（実測プロファイル）のホイールパネル（第8弾で3階層化）。
+ * 組み合わせ系と同じ TieredWheelPanel を使い、香りは
+ * 大分類→中分類（具体名）→小分類（化学物質）、味は次元→物質の階層にする。
+ * 詳細シートはアイテム系の従来表示（NoteDetail／TasteDetail）を差し込む。
+ * アイテムのプロファイルを組み合わせ系の形（ComboNote）へ変換する際、
+ * basis（measured/sensory → measured、それ以外 → general）を根拠レベルに写す。
  */
+const basisLevel = (b: Basis): ComboLevel => (b === 'measured' || b === 'sensory' ? 'measured' : 'general')
+
+export function comboNotesFromProfile(profile: FlavorProfile): ComboNote[] {
+  return profile.aromas.map((a) => ({
+    noteId: a.noteId,
+    intensity: a.intensity,
+    level: basisLevel(a.basis),
+    basis: [{ from: 'profile' as const, text: '', sourceIds: [...a.sourceIds] }],
+    sourceIds: [...a.sourceIds],
+  }))
+}
+
 export default function ProfileWheelPanel({ profile, context }: {
   profile: FlavorProfile
   context?: CompoundContext
 }) {
-  const [mode, setMode] = useState<'aroma' | 'taste'>('aroma')
-  const [selNote, setSelNote] = useState<string | null>(null)
-  const [selTaste, setSelTaste] = useState<TasteKey | null>(null)
+  const notes = useMemo(() => comboNotesFromProfile(profile), [profile])
   const tastes = useMemo(() => comboTastesFromProfile(profile), [profile])
   return (
-    <div>
-      <div className="wheel-mode-toggle" role="tablist" aria-label="ホイールの表示切り替え（香りと味）">
-        <button role="tab" aria-selected={mode === 'aroma'} onClick={() => setMode('aroma')}>香り</button>
-        <button role="tab" aria-selected={mode === 'taste'} onClick={() => setMode('taste')}>味</button>
-      </div>
-      {mode === 'aroma' ? (
-        <>
-          <FlavorWheel profile={profile} context={context} onSelectNote={setSelNote} />
-          {selNote && (
-            <CollapsibleSheet resetKey={selNote} title={noteById(selNote)?.name ?? selNote} onDismiss={() => setSelNote(null)}>
-              <NoteDetail noteId={selNote} profile={profile} context={context} />
-            </CollapsibleSheet>
-          )}
-        </>
-      ) : (
-        <>
-          <TasteWheel tastes={tastes}
-            onSelectTaste={(k) => setSelTaste(selTaste === k ? null : k)} selectedTasteKey={selTaste} />
-          {selTaste && (
-            <CollapsibleSheet resetKey={selTaste} title={TASTE_LABELS[selTaste]} onDismiss={() => setSelTaste(null)}>
-              <TasteDetail taste={selTaste} profile={profile} context={context} />
-            </CollapsibleSheet>
-          )}
-        </>
-      )}
-    </div>
+    <TieredWheelPanel
+      notes={notes}
+      tastes={tastes}
+      context={context}
+      ariaLabel="フレーバーホイール"
+      detailNoun="成分情報"
+      renderNoteDetail={(note) => <NoteDetail noteId={note.noteId} profile={profile} context={context} />}
+      renderTasteDetail={(taste) => <TasteDetail taste={taste.key} profile={profile} context={context} />}
+    />
   )
 }
