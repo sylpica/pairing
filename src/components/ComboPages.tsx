@@ -35,8 +35,9 @@ const AXIS_SUMMARY_LABEL: Record<string, string> = { region: '産地の反映', 
 function AnalysisView({ analysis, children }: { analysis: ComboAnalysis; children?: ReactNode }) {
   return (
     <div>
-      <p><span className="badge">組み合わせ全体の根拠：{COMBO_LEVEL_LABEL[analysis.overallLevel]}</span></p>
-      <ComboWheelPanel notes={analysis.notes} tastes={analysis.tastes} context={analysis.context} resetKey={analysis.title} />
+      {/* 第19弾：根拠チップは単独で置かず、ホイールの凡例ボックスの中に集約する */}
+      <ComboWheelPanel notes={analysis.notes} tastes={analysis.tastes} context={analysis.context} resetKey={analysis.title}
+        legendExtra={<p><span className="badge">組み合わせ全体の根拠：{COMBO_LEVEL_LABEL[analysis.overallLevel]}</span></p>} />
       {analysis.axisSummaries.length > 0 && <>
         <h3>ホイールへの反映</h3>
         <p className="note-small">選んだ産地・品種（系統）の所見が、上のホイールにどう反映されたか／されなかったかを示します。</p>

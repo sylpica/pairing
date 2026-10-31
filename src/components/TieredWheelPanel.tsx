@@ -46,7 +46,7 @@ function LevelBadge({ level }: { level: ComboNote['level'] }) {
   return <span className={level === 'inferred' ? 'badge badge-inferred' : 'badge'}>{COMBO_LEVEL_LABEL[level]}</span>
 }
 
-function AromaLegend({ level }: { level: 0 | 1 }) {
+function AromaLegend({ level, extra }: { level: 0 | 1; extra?: ReactNode }) {
   return (
     <div className="combo-legend" role="note" aria-label="ホイールの凡例">
       <p className="note-small"><strong>凡例（濃さと輪郭＝根拠の確かさ）</strong></p>
@@ -58,11 +58,12 @@ function AromaLegend({ level }: { level: 0 | 1 }) {
       {level === 0
         ? <p className="note-small">大分類のセグメントの大きさは、その分類に属する香りの強さの合計の目安です。濃さと輪郭による根拠の区別は、中分類以降で表示します。セグメント内の小さな文字は、その大分類の中分類（具体名）です。</p>
         : <p className="note-small">中分類のセグメントの大きさと割合は、その具体名の裏付けの大きさの目安です（実測の含有率ではありません）。</p>}
+      {extra}
     </div>
   )
 }
 
-function TasteLegend({ level }: { level: 0 | 1 }) {
+function TasteLegend({ level, extra }: { level: 0 | 1; extra?: ReactNode }) {
   return (
     <div className="combo-legend" role="note" aria-label="ホイールの凡例">
       <p className="note-small"><strong>凡例（濃さと輪郭＝根拠の確かさ）</strong></p>
@@ -74,11 +75,12 @@ function TasteLegend({ level }: { level: 0 | 1 }) {
       {level === 0
         ? <p className="note-small">味の大分類は2つだけです。基本味（甘味・酸味・苦味・うま味）は舌で感じる基本の味、口当たり・収れん感は口の中の感覚として感じるものです（渋味は基本味ではなく、収れん感です）。大分類のセグメントの大きさは、その分類に属する味の強さの合計の目安です。濃さと輪郭による根拠の区別は、中分類以降で表示します。セグメント内の小さな文字は、その大分類の中分類（個々の味）です。</p>
         : <p className="note-small">セグメントの大きさは強さの目安（弱い・普通・強い）です。根拠のある味だけを表示しています（データの無い味は作りません）。セグメント内の小さな文字は、その味に寄与する物質です（寄与する物質の裏付けが無い味は「成分データなし」と示します）。味を押すと、その味に寄与する物質が見えます。</p>}
+      {extra}
     </div>
   )
 }
 
-function CompoundLegend() {
+function CompoundLegend({ extra }: { extra?: ReactNode }) {
   return (
     <div className="combo-legend" role="note" aria-label="ホイールの凡例">
       <p className="note-small"><strong>凡例（濃さ＝根拠の近さ）</strong></p>
@@ -86,15 +88,18 @@ function CompoundLegend() {
         <li><span className="legend-swatch" style={{ background: '#8d7b68', opacity: 0.95 }} />この分類・種類の試料での研究例</li>
         <li><span className="legend-swatch" style={{ background: '#8d7b68', opacity: 0.62 }} />お茶・チョコレート全般の研究例</li>
       </ul>
+      {extra}
     </div>
   )
 }
 
-export default function TieredWheelPanel({ notes, tastes, context, resetKey, ariaLabel, detailNoun = '根拠情報', renderNoteDetail, renderTasteDetail }: {
+export default function TieredWheelPanel({ notes, tastes, context, resetKey, ariaLabel, detailNoun = '根拠情報', legendExtra, renderNoteDetail, renderTasteDetail }: {
   notes: ComboNote[]
   tastes: ComboTaste[]
   context?: CompoundContext
   resetKey?: string
+  /** 第19弾：画面側の根拠・状態系の注意書き（バッジ類）を凡例ボックス内に集約するための差し込み口 */
+  legendExtra?: ReactNode
   /** ホイール（svg）の aria-label。大分類表示で使う */
   ariaLabel: string
   /** ノート・味の詳細シートの呼び名（組み合わせ系は「根拠情報」、アイテム系は「成分情報」） */
@@ -247,7 +252,7 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
         <>
           <p className="note-small wheel-hint">大分類のセグメントを押すと、中分類（具体名）が表示されます。</p>
           <TieredWheel segments={catSegments} centerLabel="香り" ariaLabel={ariaLabel} onSelect={onSelectCategory} />
-          <AromaLegend level={0} />
+          <AromaLegend level={0} extra={legendExtra} />
           <div className="wheel-note-index">
             <p className="note-small"><strong>この組み合わせの香り一覧</strong>（押すと、その香りの成分または根拠へ進みます）</p>
             {tiers.map((t) => (
@@ -277,7 +282,7 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
           <p className="note-small wheel-hint">中分類（具体名）のセグメントを押すと、その具体名に寄与する化学物質が表示されます。</p>
           <TieredWheel segments={entrySegments} centerLabel={tier.name} ariaLabel={`${ariaLabel}（${tier.name}の中分類）`} onSelect={onSelectEntry} />
           <p className="note-small wheel-percent-note">{MID_PERCENT_NOTE}</p>
-          <AromaLegend level={1} />
+          <AromaLegend level={1} extra={legendExtra} />
           <div className="wheel-source-notes">
             <p className="note-small"><strong>この大分類のもとになった香り</strong></p>
             <ul className="wheel-list">
@@ -306,7 +311,7 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
               if (tc) setSheet({ type: 'compound', tc, percent: tc.percent })
             }} />
           <p className="note-small wheel-percent-note">{SMALL_PERCENT_NOTE}</p>
-          <CompoundLegend />
+          <CompoundLegend extra={legendExtra} />
           <div className="wheel-entry-head">
             {entry.kind === 'note' && entry.note && (
               <p><strong>{entry.label}</strong> <span className="badge">{COMBO_INT_LABEL[entry.note.intensity]}・{COMBO_LEVEL_LABEL[entry.note.level]}</span>{' '}
@@ -336,7 +341,7 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
         <>
           <p className="note-small wheel-hint">味の大分類のセグメントを押すと、その大分類に属する味（中分類）が表示されます。</p>
           <TieredWheel segments={tasteGroupSegments} centerLabel="味" ariaLabel={`${ariaLabel}（味の大分類）`} onSelect={onSelectTasteGroup} />
-          <TasteLegend level={0} />
+          <TasteLegend level={0} extra={legendExtra} />
         </>
       )}
 
@@ -349,7 +354,7 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
           <p className="note-small wheel-hint">味のセグメントを押すと、その味に寄与する物質が表示されます。</p>
           <TieredWheel segments={tasteMidSegments} centerLabel={tasteGroup.name} ariaLabel={`${ariaLabel}（${tasteGroup.name}の味）`}
             onSelect={(key) => nav(() => setTasteKey(key as TasteKey))} />
-          <TasteLegend level={1} />
+          <TasteLegend level={1} extra={legendExtra} />
         </>
       )}
 
@@ -374,7 +379,7 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
                   if (tc) setSheet({ type: 'compound', tc, percent: tc.percent, tasteFocus: tasteKey })
                 }} />
               <p className="note-small wheel-percent-note">{SMALL_PERCENT_NOTE}</p>
-              <CompoundLegend />
+              <CompoundLegend extra={legendExtra} />
             </>
           )}
         </>

@@ -106,13 +106,14 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
     expectShown(/配合された糖によるもの/)
   })
 
-  it('4. 成分一覧では成分→香味・味の逆引き検索が動く', () => {
+  it('4. 成分一覧は検索窓なしで全成分がそのまま表示される（第19弾で逆引き検索を廃止）', () => {
     location.hash = '#/compounds'; render(<App />)
-    fireEvent.change(screen.getByLabelText('成分を検索'), { target: { value: 'リナロール' } })
+    expect(screen.queryByLabelText('成分を検索')).toBeNull()
+    // 検索しなくても、香味つきの成分も苦味成分も同時に一覧に出ている
     expectShown(/関係する香味：柑橘、花様/)
-    fireEvent.change(screen.getByLabelText('成分を検索'), { target: { value: '苦味' } })
     expectShown(/カフェイン/)
     expectShown(/テオブロミン/)
+    expectShown(/リナロール/)
   })
 
   it('8. ペアリング結果の分類（甘い香り）から成分を調べられる', () => {

@@ -127,13 +127,22 @@ describe('第18弾：品種・系統ページではホイールが説明文よ�
   // a の後に b が続く（b が a より後ろ）かどうか
   const isAfter = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0
 
-  it('品種ページ（おくみどり）：ホイールと根拠チップが説明文より前にある', () => {
+  it('品種ページ（おくみどり）：ホイールが説明文より前にあり、根拠チップと確認バッジは凡例ボックス内にある（第19弾）', () => {
     location.hash = '#/cultivar/okumidori'; render(<App />)
     const wheel = screen.getByLabelText(/組み合わせのフレーバーホイール/)
     const badge = screen.getByText(/この組み合わせ全体の根拠/)
     const desc = screen.getAllByText(/固有の実測プロファイルではありません/)[0]
     expect(isAfter(wheel, desc)).toBe(true)
+    // 根拠チップは単独で置かれず、凡例ボックス（ホイールの下）の中に集約されている
+    expect(badge.closest('.combo-legend')).toBeTruthy()
+    expect(isAfter(wheel, badge)).toBe(true)
     expect(isAfter(badge, desc)).toBe(true)
+    // 確認バッジ（存在／分類／科学データ）も凡例ボックスの中にある
+    const legend = document.querySelector('.combo-legend')
+    expect(legend).toBeTruthy()
+    expect(legend!.textContent).toContain('存在：')
+    expect(legend!.textContent).toContain('分類：')
+    expect(legend!.textContent).toMatch(/科学データ/)
     // 説明文自体は削除されず、ホイールの下に残っている
     expect(desc.textContent).toContain('組み合わせの推測')
   })

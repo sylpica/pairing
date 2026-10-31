@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import App from './App'
+import { compounds } from './data/compounds'
 
 describe('画面の基本動作（§16相当のローカル検証）', () => {
   beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
@@ -27,15 +28,58 @@ describe('画面の基本動作（§16相当のローカル検証）', () => {
     fireEvent.change(screen.getByLabelText('分類（種類）で絞り込み'), { target: { value: 'dark' } })
     expect(document.querySelector('.combo-preview')).toBeTruthy()
   })
+  it('お茶を調べるのリセットで全プルダウンが「指定しない」に戻りプレビューが消える（第19弾）', () => {
+    location.hash = '#/tea'; render(<App />)
+    fireEvent.change(screen.getByLabelText('分類（茶類）で絞り込み'), { target: { value: 'green' } })
+    expect(document.querySelector('.combo-preview')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'リセット' }))
+    expect((screen.getByLabelText('分類（茶類）で絞り込み') as HTMLSelectElement).value).toBe('')
+    expect((screen.getByLabelText('産地で絞り込み') as HTMLSelectElement).value).toBe('')
+    expect((screen.getByLabelText('品種で絞り込み') as HTMLSelectElement).value).toBe('')
+    expect(document.querySelector('.combo-preview')).toBeNull()
+  })
+  it('チョコを調べるのリセットで全プルダウンが「指定しない」に戻りプレビューが消える（第19弾）', () => {
+    location.hash = '#/choco'; render(<App />)
+    fireEvent.change(screen.getByLabelText('分類（種類）で絞り込み'), { target: { value: 'dark' } })
+    expect(document.querySelector('.combo-preview')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'リセット' }))
+    expect((screen.getByLabelText('分類（種類）で絞り込み') as HTMLSelectElement).value).toBe('')
+    expect((screen.getByLabelText('産地で絞り込み') as HTMLSelectElement).value).toBe('')
+    expect((screen.getByLabelText('系統で絞り込み') as HTMLSelectElement).value).toBe('')
+    expect(document.querySelector('.combo-preview')).toBeNull()
+  })
+  it('調べるプレビューの根拠チップは凡例ボックスの中にある（第19弾）', () => {
+    location.hash = '#/tea'; render(<App />)
+    fireEvent.change(screen.getByLabelText('分類（茶類）で絞り込み'), { target: { value: 'green' } })
+    const badge = screen.getByText(/組み合わせ全体の根拠/)
+    expect(badge.closest('.combo-legend')).toBeTruthy()
+    expect(badge.closest('.combo-preview')).toBeTruthy()
+  })
+  it('お茶詳細では根拠レベルのバッジが凡例ボックスの中にある（第19弾）', () => {
+    location.hash = '#/tea/sencha'; render(<App />)
+    const legend = document.querySelector('.combo-legend')
+    expect(legend).toBeTruthy()
+    const badge = legend!.querySelector('.badge')
+    expect(badge).toBeTruthy()
+    expect(['実測・官能評価あり', '一般的な知見', '探索的な予想', '情報不足']).toContain(badge!.textContent)
+  })
   it('品種・系統を調べるの検索窓は残る（第18弾の訂正：検索が主要な導線）', () => {
     location.hash = '#/cultivars'; render(<App />)
     expect(screen.getByLabelText('品種・系統を検索')).toBeTruthy()
   })
-  it('成分一覧では説明段落が検索窓より下（画面最下部）にある（第18弾追加指示）', () => {
+  it('成分一覧には検索窓が無く、全件表示で説明段落が画面最下部にある（第19弾）', () => {
     location.hash = '#/compounds'; render(<App />)
-    const input = screen.getByLabelText('成分を検索')
+    // 検索窓（入力欄）は無い
+    expect(screen.queryByLabelText('成分を検索')).toBeNull()
+    expect(document.querySelector('input.search')).toBeNull()
+    // 一覧は全件表示（カード数が収録成分数と一致する）
+    const cards = document.querySelectorAll('article.temporal-card')
+    expect(cards.length).toBe(compounds.length)
+    // 説明段落は最後のカードより下（画面最下部）にあり、検索の使い方には触れていない
     const desc = screen.getByText(/香味や味に寄与することが研究で示された化学成分です/)
-    expect(input.compareDocumentPosition(desc) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const lastCard = cards[cards.length - 1]
+    expect(lastCard.compareDocumentPosition(desc) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(desc.textContent).not.toMatch(/探せます|検索/)
   })
   it('存在しないお茶の詳細は未収録と表示する', () => {
     location.hash = '#/tea/no-such-tea'; render(<App />)

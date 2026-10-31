@@ -33,10 +33,11 @@ interface WheelTab {
   context: CompoundContext
   footer: ReactNode
 }
-function EntityWheelTabs({ tabs }: { tabs: WheelTab[] }) {
+function EntityWheelTabs({ tabs, legendExtra }: { tabs: WheelTab[]; legendExtra?: ReactNode }) {
   const [idx, setIdx] = useState(0)
   const tab = tabs[Math.min(idx, tabs.length - 1)]
-  if (!tab) return null
+  // ホイールが組み立てられない対象では凡例ボックス自体が無いため、バッジはその場に出す（表示自体は失わない）
+  if (!tab) return legendExtra ? <>{legendExtra}</> : null
   return (
     <div>
       {tabs.length > 1 && (
@@ -48,8 +49,10 @@ function EntityWheelTabs({ tabs }: { tabs: WheelTab[] }) {
           </select>
         </label>
       )}
-      <p><span className="badge">この組み合わせ全体の根拠：{COMBO_LEVEL_LABEL[tab.overallLevel]}</span></p>
-      <ComboWheelPanel notes={tab.notes} tastes={tab.tastes} context={tab.context} resetKey={tab.key} />
+      {/* 第19弾：根拠・状態系のバッジはホイールより上に置かず、凡例ボックスの中に集約する
+          （ホイールが画面の上の方に上がるように）。並びは「見出し→プルダウン→切替→ホイール」になる */}
+      <ComboWheelPanel notes={tab.notes} tastes={tab.tastes} context={tab.context} resetKey={tab.key}
+        legendExtra={<>{legendExtra}<p><span className="badge">この組み合わせ全体の根拠：{COMBO_LEVEL_LABEL[tab.overallLevel]}</span></p></>} />
       {tab.footer}
     </div>
   )
@@ -162,9 +165,10 @@ export function CultivarsPage() {
   )
 }
 
-function CultivarWheelSection({ cultivarId, cultivarName }: { cultivarId: string; cultivarName: string }) {
+function CultivarWheelSection({ cultivarId, cultivarName, legendExtra }: { cultivarId: string; cultivarName: string; legendExtra?: ReactNode }) {
   const wheels = useMemo(() => cultivarWheels(cultivarId), [cultivarId])
-  if (wheels.length === 0) return null
+  // ホイールが無い品種では凡例ボックスが無いため、バッジはその場に出す（表示自体は失わない）
+  if (wheels.length === 0) return legendExtra ? <>{legendExtra}</> : null
   const tabs: WheelTab[] = wheels.map((w) => ({
     key: w.kindId,
     label: w.kindName,
@@ -180,7 +184,7 @@ function CultivarWheelSection({ cultivarId, cultivarName }: { cultivarId: string
     <>
       <h3>分類との組み合わせで見る味わい（フレーバーホイール）</h3>
       {/* 第18弾：ホイールを見出し直下に置き、説明文はホイールの下に回す */}
-      <EntityWheelTabs tabs={tabs} />
+      <EntityWheelTabs tabs={tabs} legendExtra={legendExtra} />
       <p className="note-small">ホイールは、分類のプロファイルを土台に、品種の所見と製法の科学を重ねた<strong>組み合わせの推測</strong>です。{cultivarName}固有の実測プロファイルではありません。品種固有の実測がある部分は、下の「科学的な所見」に分けて示します。</p>
     </>
   )
@@ -199,8 +203,8 @@ export function TeaCultivarDetail({ id, fav, onToggleFav }: { id: string; fav?: 
         <span className="badge">{RANK_LABEL[c.rank]}</span> <span className="badge">{c.country}</span>
         {c.aliases.length > 0 && <span className="note-small"> 別名：{c.aliases.join('、')}</span>}
       </p>
-      <VerificationBadges v={c.verification} />
-      <CultivarWheelSection cultivarId={c.id} cultivarName={c.name} />
+      {/* 第19弾：確認バッジ（存在／分類／科学データ）はタイトル直下に置かず、凡例ボックス内へ */}
+      <CultivarWheelSection cultivarId={c.id} cultivarName={c.name} legendExtra={<VerificationBadges v={c.verification} />} />
       {c.registration && <p><strong>登録情報：</strong>{c.registration}</p>}
       {c.breeding && <><h3>由来・育成</h3><p>{c.breeding}</p></>}
       {parents.length > 0 && (
@@ -242,8 +246,8 @@ export function CacaoDetail({ layer, id, fav, onToggleFav }: { layer: CacaoLayer
         <span className="badge">{CACAO_LAYER_LABEL[layer]}</span>
         {entity.aliases.length > 0 && <span className="note-small"> 別名：{entity.aliases.join('、')}</span>}
       </p>
-      <VerificationBadges v={entity.verification} />
-      <LineageWheelSection layer={layer} id={id} entityName={title} hasFlavorFindings={entity.findings.some((f) => FLAVOR_FINDING_KINDS.includes(f.kind))} />
+      {/* 第19弾：確認バッジ（存在／分類／科学データ）はタイトル直下に置かず、凡例ボックス内へ */}
+      <LineageWheelSection layer={layer} id={id} entityName={title} hasFlavorFindings={entity.findings.some((f) => FLAVOR_FINDING_KINDS.includes(f.kind))} legendExtra={<VerificationBadges v={entity.verification} />} />
       {trad && <><h3>この分類について</h3><p>{trad.nature}</p></>}
       {gen && <>
         <p><strong>命名の由来：</strong>{gen.namingBasis}</p>
@@ -283,8 +287,8 @@ export function CacaoDetail({ layer, id, fav, onToggleFav }: { layer: CacaoLayer
   )
 }
 
-function LineageWheelSection({ layer, id, entityName, hasFlavorFindings }: {
-  layer: CacaoLayer; id: string; entityName: string; hasFlavorFindings: boolean
+function LineageWheelSection({ layer, id, entityName, hasFlavorFindings, legendExtra }: {
+  layer: CacaoLayer; id: string; entityName: string; hasFlavorFindings: boolean; legendExtra?: ReactNode
 }) {
   const wheels = useMemo(() => lineageWheels(layer, id), [layer, id])
   const tabs: WheelTab[] = wheels.map((w) => ({
@@ -300,7 +304,7 @@ function LineageWheelSection({ layer, id, entityName, hasFlavorFindings }: {
     <>
       <h3>種類との組み合わせで見る味わい（フレーバーホイール）</h3>
       {/* 第18弾：ホイールを見出し直下に置き、説明文と注意の箱はホイールの下に回す */}
-      <EntityWheelTabs tabs={tabs} />
+      <EntityWheelTabs tabs={tabs} legendExtra={legendExtra} />
       <p className="note-small">ホイールは、種類のプロファイルを土台に、系統の所見を重ねた<strong>組み合わせの推測</strong>です。{entityName}固有の実測プロファイルではありません。系統固有の実測がある部分は、下の「科学的な所見」に分けて示します。</p>
       {!hasFlavorFindings && <p className="unknown-box">この系統については、香味の科学的な所見が確認できていません。そのためホイールは種類一般のプロファイルの表示であり、系統の情報は味わいの推測に使っていません。遺伝的分類だけから味を断定することはしません。</p>}
     </>

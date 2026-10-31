@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { ComboNote, ComboTaste } from '../types'
 import type { CompoundContext } from '../data/compounds'
 import TieredWheelPanel from './TieredWheelPanel'
@@ -12,12 +13,14 @@ import ComboTasteDetail from './ComboTasteDetail'
  * ComboWheel のある全画面（組み合わせページ／調べるプレビュー／
  * 品種・系統ページ／組み合わせるのタブ）で共通に使う。
  */
-export default function ComboWheelPanel({ notes, tastes, context, resetKey }: {
+export default function ComboWheelPanel({ notes, tastes, context, resetKey, legendExtra }: {
   notes: ComboNote[]
   tastes: ComboTaste[]
   context?: CompoundContext
   /** 組み合わせが変わったら選択とモードを戻すためのキー */
   resetKey?: string
+  /** 第19弾：根拠・状態系の注意書きを凡例ボックス内に集約するための差し込み口 */
+  legendExtra?: ReactNode
 }) {
   return (
     <TieredWheelPanel
@@ -25,6 +28,7 @@ export default function ComboWheelPanel({ notes, tastes, context, resetKey }: {
       tastes={tastes}
       context={context}
       resetKey={resetKey}
+      legendExtra={legendExtra}
       ariaLabel="組み合わせのフレーバーホイール（推測を含む）"
       renderNoteDetail={(note) => <ComboNoteDetail note={note} context={context} />}
       renderTasteDetail={(taste) => <ComboTasteDetail taste={taste} />}

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import type { Basis, ComboLevel, ComboNote, FlavorProfile } from '../types'
 import type { CompoundContext } from '../data/compounds'
 import TieredWheelPanel from './TieredWheelPanel'
@@ -27,9 +27,11 @@ export function comboNotesFromProfile(profile: FlavorProfile): ComboNote[] {
   }))
 }
 
-export default function ProfileWheelPanel({ profile, context }: {
+export default function ProfileWheelPanel({ profile, context, legendExtra }: {
   profile: FlavorProfile
   context?: CompoundContext
+  /** 第19弾：根拠・状態系の注意書きを凡例ボックス内に集約するための差し込み口 */
+  legendExtra?: ReactNode
 }) {
   const notes = useMemo(() => comboNotesFromProfile(profile), [profile])
   const tastes = useMemo(() => comboTastesFromProfile(profile), [profile])
@@ -38,6 +40,7 @@ export default function ProfileWheelPanel({ profile, context }: {
       notes={notes}
       tastes={tastes}
       context={context}
+      legendExtra={legendExtra}
       ariaLabel="フレーバーホイール"
       detailNoun="成分情報"
       renderNoteDetail={(note) => <NoteDetail noteId={note.noteId} profile={profile} context={context} />}

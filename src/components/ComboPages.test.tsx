@@ -27,6 +27,13 @@ describe('組み合わせページ（産地×品種×分類）', () => {
     expect(screen.getAllByText(/長崎産の実測は確認できていません/).length).toBeGreaterThan(0)
   })
 
+  it('根拠チップは単独で置かれず凡例ボックスの中にある（第19弾）', () => {
+    location.hash = '#/combo/tea/green.nagasaki.yabukita'
+    render(<App />)
+    const badge = screen.getByText(/組み合わせ全体の根拠/)
+    expect(badge.closest('.combo-legend')).toBeTruthy()
+  })
+
   it('結果表示専用：このページ自体にプルダウンは無い（指示1）', () => {
     location.hash = '#/combo/tea/green.nagasaki.yabukita'
     render(<App />)

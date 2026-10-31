@@ -54,13 +54,6 @@ function parseRoute(): Route {
   return { name: KNOWN_ROUTES.includes(name) ? name : 'home', id, sub }
 }
 
-const norm = (s: string) => s.toLowerCase().replace(/[\s　]/g, '').replace(/ヶ/g, 'ケ')
-function matches(query: string, names: string[]) {
-  if (!query.trim()) return true
-  const q = norm(query)
-  return names.some((n) => norm(n).includes(q) || q.includes(norm(n)) && norm(n).length >= 2)
-}
-
 export default function App() {
   const [route, setRoute] = useState<Route>(parseRoute())
   const [saved, setSaved] = useState<SavedData>(loadSaved())
@@ -182,8 +175,9 @@ function ComboPreview({ analysis, path, note: assumedNote }: { analysis: ComboAn
     <section className="combo-preview" aria-label="選択中の組み合わせのフレーバー">
       <h3>{analysis.title}</h3>
       {assumedNote && <p className="note-small">{assumedNote}</p>}
-      <p><span className="badge">組み合わせ全体の根拠：{COMBO_LEVEL_LABEL[analysis.overallLevel]}</span></p>
-      <ComboWheelPanel notes={analysis.notes} tastes={analysis.tastes} context={analysis.context} resetKey={analysis.title} />
+      {/* 第19弾：根拠チップは単独で置かず、ホイールの凡例ボックスの中に集約する */}
+      <ComboWheelPanel notes={analysis.notes} tastes={analysis.tastes} context={analysis.context} resetKey={analysis.title}
+        legendExtra={<p><span className="badge">組み合わせ全体の根拠：{COMBO_LEVEL_LABEL[analysis.overallLevel]}</span></p>} />
       {analysis.tastes.length > 0 && <p>味わい：{analysis.tastes.map((t) => `${COMBO_TASTE_LABEL[t.key]}（${COMBO_INT_LABEL[t.intensity]}）`).join('、')}</p>}
       {analysis.axisSummaries.map((s) => (
         <p key={s.axis} className="note-small"><strong>{AXIS_SUMMARY_LABEL[s.axis]}</strong>：{s.text}</p>
@@ -253,7 +247,11 @@ function TeaList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combo
         )}
       </div>
       <section className="filter-hero" role="group" aria-label="条件で絞り込み">
-        <h3 className="filter-hero-title"><TeaLeafIcon className="hero-icon tea" />分類・産地・品種で探す</h3>
+        <div className="filter-hero-head">
+          <h3 className="filter-hero-title"><TeaLeafIcon className="hero-icon tea" />分類・産地・品種で探す</h3>
+          {/* 第19弾追加指示：全部「指定しない」に戻すリセットを見出しの右に置く */}
+          <button type="button" className="btn ghost filter-reset-btn" onClick={() => applySelects({ kind: '', origin: '', cultivar: '' })}>リセット</button>
+        </div>
         <div className="filter-grid cols-3">
           <TeaComboSelects value={selects} onChange={applySelects} variant="hero"
             labels={{ kind: '分類（茶類）で絞り込み', origin: '産地で絞り込み', cultivar: '品種で絞り込み' }}
@@ -322,8 +320,9 @@ function TeaDetail({ id, saved, toggleFav }: { id: string; saved: SavedData; tog
     <div>
       <BackButton fallback="tea" />
       <h2>{tea.name} <FavButton fav={fav} onToggle={() => toggleFav('teas', tea.id)} /></h2>
-      <p><span className="badge">{LEVEL_LABEL[tea.evidenceLevel]}</span></p>
-      <ProfileView profile={tea.profile} scopeNote={tea.scopeNote} sourceIds={tea.sourceIds} context={{ side: 'tea', kindId: tea.kindId, itemName: tea.name, itemId: tea.id }} />
+      {/* 第19弾：根拠レベルのバッジは単独で置かず、ホイールの凡例ボックスの中に集約する */}
+      <ProfileView profile={tea.profile} scopeNote={tea.scopeNote} sourceIds={tea.sourceIds} context={{ side: 'tea', kindId: tea.kindId, itemName: tea.name, itemId: tea.id }}
+        legendExtra={<p><span className="badge">{LEVEL_LABEL[tea.evidenceLevel]}</span></p>} />
       {kindCultivars.length > 0 && <>
         <h3>この茶類で確認済みの品種・系統</h3>
         <p className="note-small">公的資料・研究で組み合わせが確認できている品種だけを示します。品種ごとに確認済みの茶類は品種ページで確認できます。</p>
@@ -414,7 +413,11 @@ function ChocoList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'com
         )}
       </div>
       <section className="filter-hero" role="group" aria-label="条件で絞り込み">
-        <h3 className="filter-hero-title"><ChocoBarIcon className="hero-icon choco" />分類・産地・系統で探す</h3>
+        <div className="filter-hero-head">
+          <h3 className="filter-hero-title"><ChocoBarIcon className="hero-icon choco" />分類・産地・系統で探す</h3>
+          {/* 第19弾追加指示：全部「指定しない」に戻すリセットを見出しの右に置く */}
+          <button type="button" className="btn ghost filter-reset-btn" onClick={() => applySelects({ kind: '', origin: '', lineage: '' })}>リセット</button>
+        </div>
         <div className="filter-grid cols-3">
           <ChocoComboSelects value={selects} onChange={applySelects} variant="hero"
             labels={{ kind: '分類（種類）で絞り込み', origin: '産地で絞り込み', cultivar: '系統で絞り込み' }}
@@ -491,8 +494,9 @@ function ChocoDetail({ id, saved, toggleFav }: { id: string; saved: SavedData; t
     <div>
       <BackButton fallback="choco" />
       <h2>{choco.name} <FavButton fav={fav} onToggle={() => toggleFav('chocolates', choco.id)} /></h2>
-      <p><span className="badge">{LEVEL_LABEL[choco.evidenceLevel]}</span></p>
-      <ProfileView profile={choco.profile} scopeNote={choco.scopeNote} sourceIds={choco.sourceIds} context={{ side: 'chocolate', kindId: choco.kind, itemName: choco.name, itemId: choco.id }} />
+      {/* 第19弾：根拠レベルのバッジは単独で置かず、ホイールの凡例ボックスの中に集約する */}
+      <ProfileView profile={choco.profile} scopeNote={choco.scopeNote} sourceIds={choco.sourceIds} context={{ side: 'chocolate', kindId: choco.kind, itemName: choco.name, itemId: choco.id }}
+        legendExtra={<p><span className="badge">{LEVEL_LABEL[choco.evidenceLevel]}</span></p>} />
       <h3>産地・系統から調べる</h3>
       <p className="note-small">このプロファイルは種類・製法レベルの情報で、特定の産地や系統の味を示すものではありません。原料の産地や系統が表示されている製品については、各ページで確認できている科学データの範囲を確認できます。産地は品種ではなく、産地と系統は多対多の関係にあります。</p>
       <h4>産地</h4>
@@ -1094,21 +1098,14 @@ function SavedPage({ saved, setSaved }: { saved: SavedData; setSaved: (d: SavedD
 }
 
 function CompoundsPage({ highlightId }: { highlightId?: string }) {
-  const [q, setQ] = useState('')
-  const shown = compounds.filter((c) => {
-    if (!q.trim()) return true
-    const hay = [c.name, ...c.aliases, c.detectedIn, ...c.noteIds.map((n) => noteById(n)?.name ?? n),
-      ...(c.tasteLinks ?? []).map((l) => (l.taste === 'sweet' ? '甘味' : l.taste === 'sour' ? '酸味' : l.taste === 'bitter' ? '苦味' : l.taste === 'astringent' ? '渋味' : 'うま味'))]
-    return matches(q, hay)
-  })
+  // 第19弾: ユーザー決定により検索窓を削除。一覧は全件表示（絞り込みなし）
+  const shown = compounds
   useEffect(() => {
     if (highlightId) document.getElementById(`compound-${highlightId}`)?.scrollIntoView?.()
   }, [highlightId])
   return (
     <div>
       <h2>成分一覧</h2>
-      <input className="search" type="search" placeholder="成分・香味・味で探す（例：リナロール、青草・若葉、苦味）" value={q} onChange={(e) => setQ(e.target.value)} aria-label="成分を検索" />
-      {shown.length === 0 && <p className="unknown-box">見つかりませんでした。根拠が確認できない成分は登録していないため、収録範囲外かもしれません。</p>}
       {shown.map((c) => (
         <article className={highlightId === c.id ? 'temporal-card compound-highlight' : 'temporal-card'} key={c.id} id={`compound-${c.id}`}>
           <CompoundCard compound={c} />
@@ -1116,7 +1113,7 @@ function CompoundsPage({ highlightId }: { highlightId?: string }) {
         </article>
       ))}
       {/* 第18弾追加指示：文字だけの細かい説明は操作要素より前に置かず、画面の一番下に置く */}
-      <p>香味や味に寄与することが研究で示された化学成分です。「検出された」ことと「香り・味に寄与する」ことは分けて記録しています。香り・味の記述がない成分は、その旨を明記しています。成分名・別名・香味名・味の名前で探せます（成分→香味・食品の逆引き）。</p>
+      <p>香味や味に寄与することが研究で示された化学成分です。「検出された」ことと「香り・味に寄与する」ことは分けて記録しています。香り・味の記述がない成分は、その旨を明記しています。</p>
     </div>
   )
 }
