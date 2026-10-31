@@ -258,6 +258,7 @@ const CHOCO_ORIGIN_EXCEPTIONS = new Set([
   'cote-divoire,dominican-republic,ecuador,madagascar,peru,tanzania,venezuela',
   'cote-divoire,dominican-republic,ecuador,tanzania,venezuela',
   'cote-divoire,dominican-republic,madagascar,tanzania,venezuela',
+  'cote-divoire,dominican-republic,tanzania,venezuela',
   'cote-divoire,ecuador,ghana,madagascar,peru,tanzania',
   'cote-divoire,ecuador,ghana,madagascar,peru,tanzania,venezuela',
   'cote-divoire,ecuador,ghana,peru,tanzania',
@@ -265,6 +266,7 @@ const CHOCO_ORIGIN_EXCEPTIONS = new Set([
   'cote-divoire,ghana,madagascar,tanzania',
   'cote-divoire,ghana,madagascar,tanzania,venezuela',
   'cote-divoire,ghana,tanzania',
+  'cote-divoire,ghana,tanzania,venezuela',
   'cote-divoire,madagascar,tanzania',
   'cote-divoire,madagascar,tanzania,venezuela',
   'cote-divoire,tanzania',
@@ -362,15 +364,15 @@ describe('味ホイールの同一性監査（第37弾）', () => {
     check(r.pairVaryChoco, PAIR_CHOCO_EXCEPTIONS, 'pair-choco')
     check(r.pairVaryTea, PAIR_TEA_EXCEPTIONS, 'pair-tea')
     expect(missing).toEqual([])
-    // 集計の後退防止（第37弾の到達点。改善で下回るのはよい）
+    // 集計の後退防止（第38弾の到達点。改善で下回るのはよい）
     expect(summary.teaVaryCultivar.baseEqualPairs).toBeLessThanOrEqual(180)
     expect(summary.teaVaryRegion.baseEqualPairs).toBeLessThanOrEqual(193)
     expect(summary.chocoVaryLineage.baseEqualPairs).toBeLessThanOrEqual(397)
-    expect(summary.chocoVaryOrigin.baseEqualPairs).toBeLessThanOrEqual(326)
+    expect(summary.chocoVaryOrigin.baseEqualPairs).toBeLessThanOrEqual(311)
     expect(summary.pairVaryChoco.baseEqualPairs).toBeLessThanOrEqual(399)
     expect(summary.pairVaryTea.baseEqualPairs).toBeLessThanOrEqual(182)
     expect(summary.teaVaryCultivar.distinct).toBeGreaterThanOrEqual(82)
-    expect(summary.chocoVaryLineage.distinct).toBeGreaterThanOrEqual(104)
+    expect(summary.chocoVaryLineage.distinct).toBeGreaterThanOrEqual(108)
   }, 1200000)
 
   it('再現ケース：ルビー × ドミニカ共和国 × マラニョンは、土台とも他の系統・産地とも味表示が異なる', () => {
@@ -439,5 +441,32 @@ describe('味ホイールの同一性監査（第37弾）', () => {
     const syAstr = sy.tastes.find((t) => t.key === 'astringent')!
     expect(syAstr.intensity).toBe('strong')
     expect(syAstr.level).toBe('inferred')
+  })
+
+  it('第38弾の新規ルールが味表示に現れる（マダガスカルの酸味）', () => {
+    // ダーク: 土台の酸味 weak が、クエン酸含有量の実測からの推論で normal になる
+    const dk = analyzeChocoCombo({ kind: 'dark', originId: 'madagascar', lineage: null })
+    const dkSour = dk.tastes.find((t) => t.key === 'sour')!
+    expect(dkSour.intensity).toBe('normal')
+    expect(dkSour.level).toBe('inferred')
+    expect(dkSour.sourceIds).toContain('panda-2022-cacao-composition')
+    // ルビー: 土台の酸味 normal が strong になる（種類を越えた読み替え）
+    const rb = analyzeChocoCombo({ kind: 'ruby', originId: 'madagascar', lineage: null })
+    const rbSour = rb.tastes.find((t) => t.key === 'sour')!
+    expect(rbSour.intensity).toBe('strong')
+    expect(rbSour.level).toBe('inferred')
+    // ホワイトは対象外（カカオマスを使わない）: 酸味は現れない
+    const wh = analyzeChocoCombo({ kind: 'white', originId: 'madagascar', lineage: null })
+    expect(wh.tastes.find((t) => t.key === 'sour')).toBeUndefined()
+  })
+
+  it('第38弾の調査記録：CCN-51 はクローン所見だけで一段まで（二重計上の禁止）', () => {
+    // CCN-51 の苦味・渋味の方向はクローン自体の所見（Rottiers 2019 由来）が
+    // 既に担っている。同じ証拠の軸ルールを重ねると2段跳びになるため、
+    // 軸ルールは追加しない。ミルクの苦味は weak→normal の一段だけに留まる。
+    const mk = analyzeChocoCombo({ kind: 'milk', originId: '', lineage: { layer: 'clone', id: 'ccn-51' } })
+    const mkBitter = mk.tastes.find((t) => t.key === 'bitter')!
+    expect(mkBitter.intensity).toBe('normal')
+    expect(mkBitter.level).toBe('inferred')
   })
 })

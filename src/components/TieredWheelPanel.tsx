@@ -42,7 +42,7 @@ import { CollapsibleSheet } from './Sheet'
 const MID_PERCENT_NOTE = '割合は裏付けデータから算出した目安で、実測の含有率ではありません。各割合は、その具体名を裏付ける化合物の数と根拠の近さ（この分類・種類の試料での研究例ほど大きく）から算出しています。化合物の裏付けが無い具体名は、香りの強さ（弱い・普通・強い）で重み付けしています。'
 const SMALL_PERCENT_NOTE = '割合は裏付けデータから算出した目安で、実測の含有率ではありません。各割合は、化合物の根拠の近さ（この分類・種類の試料での研究例ほど大きく、お茶・チョコレート全般の研究例は中ほど）から算出しています。'
 const CAT_PERCENT_NOTE = '割合は裏付けデータから算出した目安で、実測の含有率ではありません。各割合は、その大分類に属する香りの強さ（弱い・普通・強い）の合計の重みから算出しています。'
-const TASTE_PERCENT_NOTE = '割合は裏付けデータから算出した目安で、実測の含有率ではありません。各割合は、味の強さ（弱い・普通・強い）の重みから算出しています。'
+const TASTE_PERCENT_NOTE = '割合は裏付けデータから算出した目安で、実測の含有率ではありません。各割合は、味の強さ（弱い・普通・強い）を主成分とし、その味に結びつく具体名と寄与する化学物質の裏付けの大きさも加えた重みから算出しています。'
 
 type SheetState =
   | { type: 'compound'; tc: TierCompound; percent: number; tasteFocus?: TasteKey }
@@ -84,7 +84,7 @@ function TasteLegend({ level, extra }: { level: 0 | 1; extra?: ReactNode }) {
         <li><span className="legend-swatch legend-inferred" style={{ background: '#8d7b68', opacity: TIER_LEVEL_OPACITY.inferred }} />推測（未検証）：薄い表示＋破線の輪郭</li>
       </ul>
       {level === 0
-        ? <p className="note-small">第1階層は、その対象で確認されている基本味そのものです（甘味・酸味・苦味・うま味。データのある味だけを表示し、データの無い味は作りません）。セグメントの大きさと割合は、味の強さ（弱い・普通・強い）の重みから算出した目安です（実測の含有率ではありません）。セグメント内の小さな文字は、その味の具体名（フレーバー）のプレビューです（化学物質の名前はここには出しません）。渋味（収れん感）は基本味ではないためホイールには入れず、ホイールのすぐ下のゲージで示します。味を押すと、その味の具体名が見えます（具体名が示せない味は、根拠の説明が表示されます）。</p>
+        ? <p className="note-small">第1階層は、その対象で確認されている基本味そのものです（甘味・酸味・苦味・うま味。データのある味だけを表示し、データの無い味は作りません）。セグメントの大きさと割合は、味の強さ（弱い・普通・強い）を主成分とし、その味に結びつく具体名と寄与する化学物質の裏付けの大きさも加えて算出した目安です（実測の含有率ではありません）。セグメント内の小さな文字は、その味の具体名（フレーバー）のプレビューです（化学物質の名前はここには出しません）。渋味（収れん感）は基本味ではないためホイールには入れず、ホイールのすぐ下のゲージで示します。味を押すと、その味の具体名が見えます（具体名が示せない味は、根拠の説明が表示されます）。</p>
         : <p className="note-small">中分類は、その味に対応づく具体名（フレーバー名）です。具体名と味の対応づけは、香りの性質と化合物の知見に基づく解釈です（実測の分類ではありません）。具体名には、その対象で確認済みの呈味成分をもとに代表例として示す推測（未検証）の名前も含まれます。セグメントの大きさと割合は、その具体名の裏付けの大きさの目安です（実測の含有率ではありません）。セグメント内の小さな文字は、その具体名に寄与する化学物質です（裏付けが無い具体名は「成分データなし」と示します）。</p>}
       {extra}
     </div>
@@ -92,16 +92,17 @@ function TasteLegend({ level, extra }: { level: 0 | 1; extra?: ReactNode }) {
 }
 
 /**
- * 渋味ゲージ（第36弾）。渋味（収れん感）は基本味ではないため味ホイールには
- * 入れず、ホイールのすぐ下に強さのゲージとして示す。ゲージ全体がボタンで、
- * 押すと渋味に寄与する化学物質の表示に進む。渋味の記録が無い対象では
- * この部品自体を出さない（呼び出し側で出し分ける）。
+ * 渋味ゲージ（第36弾。第38弾で5段階化）。渋味（収れん感）は基本味では
+ * ないため味ホイールには入れず、ホイールのすぐ下に強さのゲージとして
+ * 示す。ゲージ全体がボタンで、押すと渋味に寄与する化学物質の表示に進む。
+ * 渋味の記録が無い対象ではこの部品自体を出さない（呼び出し側で出し分ける）。
+ * 段階は5段階（とても弱い・弱い・普通・強い・とても強い）で、渋味の
+ * 強さの記録と、寄与する化学物質の裏付けの大きさから算出した目安
+ * （実測値ではない）。算出は engine/wheelTiers.ts の astringencyStageOf。
  */
-const GAUGE_RANK: Record<string, number> = { weak: 1, normal: 2, strong: 3 }
-
 function AstringencyGauge({ data, onOpen }: { data: AstringencyData; onOpen: () => void }) {
-  const rank = GAUGE_RANK[data.taste.intensity] ?? 0
-  const label = COMBO_INT_LABEL[data.taste.intensity]
+  const stage = data.stage ?? 0
+  const label = data.stageLabel ?? COMBO_INT_LABEL[data.taste.intensity]
   return (
     <button type="button" className="astringency-gauge" onClick={onOpen}
       aria-label={`渋味（収れん感）は${label}。押すと、渋味に寄与する化学物質が見えます`}>
@@ -111,12 +112,12 @@ function AstringencyGauge({ data, onOpen }: { data: AstringencyData; onOpen: () 
         <LevelBadge level={data.taste.level} />
       </span>
       <span className="gauge-bar" aria-hidden="true">
-        {[1, 2, 3].map((i) => (
-          <span key={i} className={i <= rank ? 'gauge-seg on' : 'gauge-seg'} style={i <= rank ? { background: TASTE_COLORS.astringent } : undefined} />
+        {[1, 2, 3, 4, 5].map((i) => (
+          <span key={i} className={i <= stage ? 'gauge-seg on' : 'gauge-seg'} style={i <= stage ? { background: TASTE_COLORS.astringent } : undefined} />
         ))}
       </span>
-      <span className="gauge-scale" aria-hidden="true"><span>弱い</span><span>普通</span><span>強い</span></span>
-      <span className="gauge-hint">渋味は基本味ではないため、ホイールとは別に示します。押すと、渋味に寄与する化学物質が見えます。</span>
+      <span className="gauge-scale" aria-hidden="true"><span>とても弱い</span><span>弱い</span><span>普通</span><span>強い</span><span>とても強い</span></span>
+      <span className="gauge-hint">渋味は基本味ではないため、ホイールとは別に示します。段階は、渋味の強さの記録と、寄与する化学物質の裏付け（数と根拠の近さ）の大きさから算出した目安で、実測値ではありません。押すと、渋味に寄与する化学物質が見えます。</span>
     </button>
   )
 }

@@ -391,7 +391,8 @@ export interface TasteNoteEntry {
 export interface TasteNoteTier {
   key: TasteKey
   taste: ComboTaste
-  /** 第1階層の大きさ（味の強さの重み） */
+  /** 第1階層の大きさ（第38弾: 味の強さの重み×60＋具体名の裏付けの大きさ（上限59）。
+   *  算出の設計は buildTasteNoteTiers のコメント参照） */
   weight: number
   /** 第1階層の割合（％、合計100） */
   percent: number
@@ -447,10 +448,22 @@ export function buildTasteNoteTiers(notes: ComboNote[], tastes: ComboTaste[], co
     }
     const percents = allocatePercents(entries.map((e) => e.weight))
     entries.forEach((e, i) => { e.percent = percents[i] })
+    // 第38弾: 第1階層の重みの解像度を上げる。従来は味の強さ（弱い1・普通2・
+    // 強い3）だけで決めていたため、産地・品種で裏付けが違っても％が動かず、
+    // 「操作しても表示がほぼ変わらない」状態だった。新しい重みは
+    //   強さのランク × 60 ＋ その味の具体名の裏付けの大きさ（第2階層の
+    //   エントリの重みの合計。上限59で頭打ち）
+    // とする。強さの段差（60）が裏付けの上限（59）より大きいため、強さの
+    // 順序が裏付けの大小で逆転することはない（裏付けは同じ強さ同士の
+    // 微差と、％の細かさにだけ効く）。二重数えを避けるため、裏付けは
+    // 第2階層で既に使っている重み（化合物の根拠の近さの合計。化合物の
+    // 裏付けが無い具体名はノートの強さ）をそのまま再利用し、新しい
+    // 係数は作らない。％は従来どおり「裏付けデータから算出した目安」。
+    const support = entries.reduce((a, e) => a + e.weight, 0)
     out.push({
       key: taste.key,
       taste,
-      weight: rank(taste.intensity),
+      weight: rank(taste.intensity) * 60 + Math.min(support, 59),
       percent: 0,
       entries,
     })
@@ -460,19 +473,66 @@ export function buildTasteNoteTiers(notes: ComboNote[], tastes: ComboTaste[], co
   return out
 }
 
+export type AstringencyStage = 1 | 2 | 3 | 4 | 5
+
+export const ASTRINGENCY_STAGE_LABELS: Record<AstringencyStage, string> = {
+  1: 'とても弱い', 2: '弱い', 3: '普通', 4: '強い', 5: 'とても強い',
+}
+
+// 第38弾: 渋味ゲージの5段階化。3段階の強さ（弱い・普通・強い）だけでは
+// 「普通」への集中が残り、産地・系統を変えてもゲージが動かなかった。
+// 段階は、強さのランクを中心の帯とし、渋味に寄与する化合物の裏付けの
+// 大きさ（ゲージのタップ先の化合物ホイールで使っている TierCompound の
+// 重み＝根拠の近さの合計。以下 support）で前後の帯に振り分けて決める:
+//   support の帯: 小 = 4以下 / 中 = 8〜11 / 大 = 15以上
+//     （実測した全グリッドで support は 4・8・11・15 の4値のみだった）
+//   弱い:   小→1（とても弱い） 中→2（弱い）       大→2
+//   普通:   小→2（弱い）       中→3（普通）       大→4（強い）
+//   強い:   小→4（強い）       中→5（とても強い） 大→5
+// 強さの順序は逆転しない（弱い<普通<強いの大小関係は段階でも保たれる）。
+// 同じ入力には同じ段階が返る決定的な算出であり、実測値ではない
+// （表示側で「裏付けデータから算出した目安」と明示する）。
+const ASTRINGENCY_STAGE_TABLE: Record<number, [AstringencyStage, AstringencyStage, AstringencyStage]> = {
+  1: [1, 2, 2],
+  2: [2, 3, 4],
+  3: [4, 5, 5],
+}
+
+export function astringencyStageOf(intensity: string, support: number): AstringencyStage | null {
+  const r = rank(intensity)
+  if (r === 0) return null
+  const band = support <= 4 ? 0 : support <= 11 ? 1 : 2
+  return ASTRINGENCY_STAGE_TABLE[r][band]
+}
+
 export interface AstringencyData {
   taste: ComboTaste
   /** 渋味に寄与する化学物質（文脈がある場合は tier 2 以内）。ゲージのタップ先で出す */
   compounds: TierCompound[]
+  /** 寄与化合物の裏付けの大きさ（化合物の重みの合計）。5段階の算出材料 */
+  support: number
+  /** 5段階の段階（1=とても弱い〜5=とても強い）。強さの記録が無い場合は null */
+  stage: AstringencyStage | null
+  /** 段階の表示名（stage が null の場合は null） */
+  stageLabel: string | null
 }
 
 /**
- * 渋味（収れん感）のゲージ用データ（第36弾）。
+ * 渋味（収れん感）のゲージ用データ（第36弾。第38弾で5段階化）。
  * 渋味は基本味ではないため味ホイールの第1階層には入れず、ホイールのすぐ下に
  * ゲージとして示す。渋味の記録そのものが無い対象では null（ゲージ自体を出さない）。
  */
 export function buildAstringency(tastes: ComboTaste[], context?: WheelContexts): AstringencyData | null {
   const taste = tastes.find((t) => t.key === 'astringent')
   if (!taste) return null
-  return { taste, compounds: buildTasteCompounds('astringent', context) }
+  const compounds = buildTasteCompounds('astringent', context)
+  const support = compounds.reduce((a, c) => a + c.weight, 0)
+  const stage = astringencyStageOf(taste.intensity, support)
+  return {
+    taste,
+    compounds,
+    support,
+    stage,
+    stageLabel: stage ? ASTRINGENCY_STAGE_LABELS[stage] : null,
+  }
 }
