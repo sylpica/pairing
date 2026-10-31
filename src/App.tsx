@@ -8,6 +8,7 @@ import { recommend, TASTE_LABELS } from './engine/pairing'
 import { hasAnyInteraction } from './engine/interactions'
 import { CHARACTER_RULE_LABELS } from './engine/pairingCharacter'
 import { assembleBlend, type BlendSideResult } from './engine/pairingCombo'
+import { buildPairingConclusion } from './engine/pairingConclusion'
 import type { ChocolateItem, InteractionStatement, PairingCharacter, TeaItem } from './types'
 import { categoryById } from './data/flavors'
 import { loadSaved, persistSaved, pairIdOf, parsePairId, comboFavId, parseComboFavId, parseLineageFavId, type SavedData } from './storage'
@@ -698,6 +699,8 @@ function PairPage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'pair
   const characters = assembly?.characters ?? null
   const allCharacters = characters ? [...characters.aroma, ...characters.tasteMouthfeel] : []
   const wheel = assembly?.wheel ?? null
+  // 第30弾: 「組み合わせの見方」タブ先頭の結論（ペアリング合成の集約）
+  const conclusion = result ? buildPairingConclusion(wheel, result) : null
   // ホイールの表示リセット用キー（選択が変わればタイトルかアイテムが変わる）
   const wheelResetKey = bothSelected ? `${leftView.item!.id}:${leftView.title}|${rightView.item!.id}:${rightView.title}` : ''
   // 品種・系統・産地の指定についての文脈ノート（側ごと・種別ごとに組み立てる）。
@@ -856,11 +859,24 @@ function PairPage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'pair
         : activeView.item && <ProfileWheelPanel profile={activeView.item.profile} context={{ side: activeView.type, kindId: activeView.type === 'tea' ? (activeView.item as TeaItem).kindId : (activeView.item as ChocolateItem).kind, itemName: activeView.item.name, itemId: activeView.item.id }} />)}
       {tab === 'pair' && (
         <section>
-          <p><span className="badge">{LEVEL_LABEL[result.level]}</span></p>
-          <p>{result.message}</p>
+          {/* 第30弾: 先頭は結論。免責・留保（根拠区分バッジと message）は
+              詳細の最下部へ移し、存在感を最小にした。 */}
+          {conclusion && (
+            <div className="temporal-card pair-conclusion">
+              <h3>結論</h3>
+              <p><strong>{conclusion.lead}</strong></p>
+              {conclusion.enhance.length > 0 && <p>強まる要素：{conclusion.enhance.join('、')}</p>}
+              {conclusion.suppress.length > 0 && <p>和らぐ要素：{conclusion.suppress.join('、')}</p>}
+              {conclusion.contrast && <p>対比の軸：{conclusion.contrast}</p>}
+              <p className="note-small">{conclusion.direct
+                ? <><span className="badge">直接研究の知見を含む</span> この分類ペアには、お茶とチョコレートを実際に組み合わせた官能研究があり、結論の一部はその知見に基づきます。それ以外は両側のプロファイルと相互作用の一般原理からの推測です。</>
+                : <><span className="badge badge-inferred">推測（未検証）</span> 両側のプロファイルと、文献に基づく相互作用の一般原理から組み立てた結論です。根拠の詳細は下にあります。</>}</p>
+            </div>
+          )}
+          <h3>詳細（根拠）</h3>
           {result.sharedNotes.length > 0 && <>
             <h3>共通する香り（調和の候補）</h3>
-            <p className="note-small">香りを押すと、その香りに関係する成分を、両側に分けて確認できます。</p>
+            <p className="note-small">両側のプロファイルに記録がある香りです。香りを押すと、その香りに関係する成分と出典を、両側に分けて確認できます。</p>
             <div className="filter-row">{result.sharedNotes.map((s) => <button key={s.noteId} className="chip" onClick={() => { setPairNote(s.noteId); setPairCat(null) }}>{s.name}の成分を見る</button>)}</div>
           </>}
           {result.sharedCategories.length > 0 && <>
@@ -870,6 +886,7 @@ function PairPage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'pair
           </>}
           {result.contrasts.length > 0 && <>
             <h3>対比する特徴（対比の候補）</h3>
+            <p className="note-small">対比は、両側のプロファイル（香味・味覚の記録）の違いから挙げた候補です。各カードの説明文が、その根拠です。</p>
             {result.contrasts.map((c, i) => <div className="temporal-card" key={i}><h4>{c.label}</h4><p>{c.detail}</p>
               {c.noteId && <button className="chip" onClick={() => { setPairNote(c.noteId as string); setPairCat(null) }}>{noteById(c.noteId)?.name ?? c.noteId}の成分を見る</button>}
             </div>)}
@@ -929,6 +946,8 @@ function PairPage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'pair
           )}
           <SourceLinks ids={['galmarini-2016-cheese-wine-tds', 'galmarini-2017-sequence-temporal']} />
           <SourceLinks ids={['spence-2020-flavour-pairing']} />
+          {/* 第30弾: 免責・留保は詳細の最下部に小さく置く */}
+          <p className="note-small pair-disclaimer"><span className="badge">{LEVEL_LABEL[result.level]}</span> {result.message}</p>
         </section>
       )}
       </>)}
@@ -1135,7 +1154,7 @@ function SourcesPage() {
   return (
     <div>
       <h2>出典・論文一覧</h2>
-      <p>表示している香味データは、以下の検証済み論文の範囲に基づきます（2026-10-30 確認）。論文の文章や図表は転載していません。</p>
+      <p>表示している香味データは、以下の検証済みの出典（論文・公的資料・メーカー資料など）の範囲に基づきます（2026-11-01 確認）。出典の文章や図表は転載していません。メーカー資料などは「参考情報」として区別し、各カードに種別を示しています。</p>
       {sources.map((s) => (
         <article className="temporal-card" key={s.id}>
           <h3>{s.title}</h3>

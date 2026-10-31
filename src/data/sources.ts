@@ -290,7 +290,7 @@ export const sources: Source[] = [
   {
     id: 'buettner-2005-retronasal-persistence',
     kind: 'original',
-    title: 'Investigation of the retronasal perception of strawberry aroma in milk and milk-type matrices (Buettner & Mestres 2005 として調査で確認)',
+    title: 'Investigation of the Retronasal Perception of Strawberry Aroma Aftersmell Depending on Matrix Composition',
     authors: 'Buettner A, Mestres M',
     year: 2005, journal: 'Journal of Agricultural and Food Chemistry 53(5):1661–1669',
     doi: '10.1021/jf048502+',
@@ -301,7 +301,7 @@ export const sources: Source[] = [
   {
     id: 'carvalho-2013-milk-chocolate-coating',
     kind: 'original',
-    title: 'Milk chocolate oral processing and mouth coating study (Carvalho-da-Silva et al. 2013 として調査で確認)',
+    title: 'Oral processing of two milk chocolate samples',
     authors: 'Carvalho-da-Silva AM, et al.',
     year: 2013, journal: 'Food & Function 4:461–469',
     doi: '10.1039/C2FO30173C',
@@ -312,7 +312,7 @@ export const sources: Source[] = [
   {
     id: 'lenfant-2013-dark-chocolate-shape-ti',
     kind: 'original',
-    title: 'Dark chocolate shape and time-intensity study (Lenfant et al. 2013 として調査で確認)',
+    title: 'Impact of the shape on sensory properties of individual dark chocolate pieces',
     authors: 'Lenfant F, et al.',
     year: 2013, journal: 'LWT - Food Science and Technology 51(2):545–552',
     doi: '10.1016/j.lwt.2012.11.001',
@@ -323,7 +323,7 @@ export const sources: Source[] = [
   {
     id: 'lesschaeve-2005-polyphenols-astringency',
     kind: 'review',
-    title: 'Polyphenols and astringency/bitterness perception review (Lesschaeve & Noble 2005)',
+    title: 'Polyphenols: factors influencing their sensory properties and their effects on food and beverage preferences',
     authors: 'Lesschaeve I, Noble AC',
     year: 2005, journal: 'American Journal of Clinical Nutrition 81(1 Suppl):330S–335S',
     doi: '10.1093/ajcn/81.1.330S', pmid: '15640499',
@@ -334,7 +334,7 @@ export const sources: Source[] = [
   {
     id: 'ross-2007-wine-astringency-buildup',
     kind: 'original',
-    title: 'Repeated sipping and astringency build-up in red wine (Ross et al. 2007 として調査で確認)',
+    title: 'Efficacy of Palate Cleansers for Reduction of Astringency Carryover during Repeated Ingestions of Red Wine',
     authors: 'Ross CF, et al.',
     year: 2007, journal: 'Journal of Sensory Studies 22:293–312',
     doi: '10.1111/j.1745-459X.2007.00107.x',
@@ -345,7 +345,7 @@ export const sources: Source[] = [
   {
     id: 'yang-2025-gongfu-infusions',
     kind: 'original',
-    title: 'Gongfu-style multiple infusions of Wuyi rock tea aroma study (Yang et al. 2025 として調査で確認)',
+    title: 'Development of analytical "aroma wheels" for Oolong tea infusions (Shuixian and Rougui) and prediction of dynamic aroma release and colour changes during "Chinese tea ceremony" with machine learning',
     authors: 'Yang Y, et al.',
     year: 2025, journal: 'Food Chemistry 464(Pt 1):141537',
     doi: '10.1016/j.foodchem.2024.141537',
@@ -356,7 +356,7 @@ export const sources: Source[] = [
   {
     id: 'talavera-2005-trpm5-temperature',
     kind: 'original',
-    title: 'Heat activation of TRPM5 underlies thermal taste responses (Talavera et al. 2005)',
+    title: 'Heat activation of TRPM5 underlies thermal sensitivity of sweet taste',
     authors: 'Talavera K, et al.',
     year: 2005, journal: 'Nature 438:1022–1025',
     doi: '10.1038/nature04248',
@@ -367,7 +367,7 @@ export const sources: Source[] = [
   {
     id: 'galmarini-2016-cheese-wine-tds',
     kind: 'original',
-    title: 'Cheese consumption sequence and wine temporal perception (Galmarini et al. 2016 として調査で確認)',
+    title: 'Use of Multi-Intake Temporal Dominance of Sensations (TDS) to Evaluate the Influence of Cheese on Wine Perception',
     authors: 'Galmarini MV, et al.',
     year: 2016, journal: 'Journal of Food Science 81(10):2566–2577',
     doi: '10.1111/1750-3841.13500',
@@ -378,12 +378,13 @@ export const sources: Source[] = [
   {
     id: 'galmarini-2017-sequence-temporal',
     kind: 'original',
-    title: 'Sequential consumption and temporal perception (Galmarini et al. 2017 として調査で確認)',
-    authors: 'Galmarini MV, et al.',
+    title: 'Use of Multi-Intake Temporal Dominance of Sensations (TDS) to Evaluate the Influence of Wine on Cheese Perception',
+    authors: 'Galmarini MV, Loiseau AL, Debreyer D, Visalli M, Schlich P',
     year: 2017, journal: 'Journal of Food Science 82(11):2669–2678',
+    doi: '10.1111/1750-3841.13932',
     pmid: '29023703',
-    url: 'https://pubmed.ncbi.nlm.nih.gov/29023703/',
-    scope: '逆方向の順序でも時間的知覚が変化した一方、嗜好は変わらなかった原著。順序効果の一般例として使用。DOI は調査で確定できていないため PubMed リンクを用いる（未確認事項として明記）。タイトルは調査記録に基づく要約的表記。',
+    url: 'https://doi.org/10.1111/1750-3841.13932',
+    scope: '逆方向の順序でも時間的知覚が変化した一方、嗜好は変わらなかった原著。順序効果の一般例として使用。（第31弾で PubMed レコードにより正式タイトル・著者・DOI を確認して更新）',
     license: '未確認（Wiley）', verified: true,
   },
   // ===== 品種・系統データベース拡充（2026-10-30）で追加した出典 =====
@@ -487,7 +488,7 @@ export const sources: Source[] = [
   {
     id: 'darjeeling-genotypes-2021-scirep',
     kind: 'original',
-    title: '（正式タイトルは調査で未確認。DOI で参照する）',
+    title: 'Ecophysiological traits differentially modulate secondary metabolite accumulation and antioxidant properties of tea plant [Camellia sinensis (L.) O. Kuntze]',
     authors: '（著者名は調査で未確認）',
     year: 2021, journal: 'Scientific Reports',
     doi: '10.1038/s41598-021-82454-3',
@@ -643,7 +644,7 @@ export const sources: Source[] = [
   {
     id: 'parada-2024-cacao-origins',
     kind: 'original',
-    title: 'Chemical characterization of 26 single-origin chocolates (NMR, metabolomics, stable isotopes, multi-element analysis)',
+    title: 'Characterization of dark chocolates based on polyphenolic profiles and antioxidant activity',
     authors: 'Parada et al.（著者詳細は本登録では未確認）',
     year: 2024, journal: 'Journal of Food Science',
     doi: '10.1111/1750-3841.17451',
@@ -654,7 +655,7 @@ export const sources: Source[] = [
   {
     id: 'panda-2022-cacao-composition',
     kind: 'original',
-    title: 'Nutritional and functional composition of single-origin chocolates including a Venezuelan sample',
+    title: 'Influence of cocoa origin on the nutritional characterization of chocolate',
     authors: 'Panda et al.（著者詳細は本登録では未確認）',
     year: 2022, journal: 'European Food Research and Technology',
     doi: '10.1007/s00217-022-04070-3',
@@ -686,7 +687,7 @@ export const sources: Source[] = [
   {
     id: 'owusu-2012-ghana-fermentation',
     kind: 'original',
-    title: 'Effects of fermentation method and processing conditions on the flavour of Ghanaian cocoa',
+    title: 'Effect of fermentation method, roasting and conching conditions on the aroma volatiles of dark chocolate',
     authors: 'Owusu M et al.（著者詳細は本登録では未確認）',
     year: 2012, journal: 'Journal of Food Processing and Preservation',
     doi: '10.1111/j.1745-4549.2011.00602.x',
@@ -697,7 +698,7 @@ export const sources: Source[] = [
   {
     id: 'owusu-2013-ghana-quality',
     kind: 'original',
-    title: 'Quality attributes of Ghanaian cocoa beans under different fermentation methods',
+    title: 'Relationship of sensory and instrumental aroma measurements of dark chocolate as influenced by fermentation method, roasting and conching conditions',
     authors: 'Owusu M et al.（著者詳細は本登録では未確認）',
     year: 2013, journal: 'Journal of Food Science and Technology',
     doi: '10.1007/s13197-011-0420-2',
@@ -708,7 +709,7 @@ export const sources: Source[] = [
   {
     id: 'li-2021-madagascar-cacao-snp',
     kind: 'original',
-    title: 'SNP analysis of farmer cacao samples from the Sambirano region, Madagascar',
+    title: 'Traditional varieties of cacao (Theobroma cacao) in Madagascar: their origin and dispersal revealed by SNP markers',
     authors: 'Li et al.（著者詳細は本登録では未確認）',
     year: 2021, journal: 'Beverage Plant Research',
     doi: '10.48130/BPR-2021-0004',
@@ -719,7 +720,7 @@ export const sources: Source[] = [
   {
     id: 'godocikova-2020-madagascar-volatiles',
     kind: 'original',
-    title: 'Volatile compounds of single-origin chocolates including a Madagascar sample',
+    title: 'Antioxidant Activities and Volatile Flavor Components of Selected Single-Origin and Blend Chocolates',
     authors: 'Godočíková et al.（著者詳細は本登録では未確認）',
     year: 2020, journal: 'Molecules 25(16):3648',
     doi: '10.3390/molecules25163648',
@@ -730,7 +731,7 @@ export const sources: Source[] = [
   {
     id: 'guzman-penella-2023-dominican-cacao',
     kind: 'original',
-    title: 'Sensory and volatile characterization of Dominican Republic Trinitario cacao (54 samples)',
+    title: 'Link between Flavor Perception and Volatile Compound Composition of Dark Chocolates Derived from Trinitario Cocoa Beans from Dominican Republic',
     authors: 'Guzmán Penella et al.（著者詳細は本登録では未確認）',
     year: 2023, journal: 'Molecules 28(9):3805',
     doi: '10.3390/molecules28093805',
@@ -741,7 +742,7 @@ export const sources: Source[] = [
   {
     id: 'cartas-2024-peru-chocolate',
     kind: 'original',
-    title: 'Composition of Peruvian chocolates labelled Piura Blanco and Chuncho',
+    title: 'Influence of geographical origin in the physical and bioactive parameters of single origin dark chocolate',
     authors: 'Cartas et al.（著者詳細は本登録では未確認）',
     year: 2024, journal: 'European Food Research and Technology',
     doi: '10.1007/s00217-024-04558-0',
@@ -763,7 +764,7 @@ export const sources: Source[] = [
   {
     id: 'cote-divoire-yeast-2024',
     kind: 'original',
-    title: 'Yeasts involved in the fermentation of cocoa from Côte d’Ivoire',
+    title: 'Influence of Yeast Interactions on the Fermentation Process and Aroma Production in Synthetic Cocoa Pulp vs. Real Mucilage Media',
     authors: '著者詳細は本登録では未確認',
     year: 2024, journal: 'Fermentation 10(12):662',
     doi: '10.3390/fermentation10120662',
@@ -1135,7 +1136,7 @@ export const sources: Source[] = [
   {
     id: 'zhu-2015-oolong-tea-odorants',
     kind: 'original',
-    title: 'Characterization of the Key Odorants in Oolong Tea Infusions by GC-O and OAV',
+    title: 'Comparison of Aroma-Active Volatiles in Oolong Tea Infusions Using GC-Olfactometry, GC-FPD, and GC-MS',
     authors: 'Zhu JC, et al.',
     year: 2015, journal: 'Journal of Agricultural and Food Chemistry 63(34):7499–7510',
     doi: '10.1021/acs.jafc.5b02358',
@@ -1146,7 +1147,7 @@ export const sources: Source[] = [
   {
     id: 'ouyang-2024-baimao-black-tea-odorants',
     kind: 'original',
-    title: '白毛茶紅茶の主要香気成分に関する研究（Food Chemistry: X 掲載）',
+    title: 'Characterization of key odorants in Baimaocha black teas from different regions',
     authors: 'Ouyang J, et al.',
     year: 2024, journal: 'Food Chemistry: X 22:101303',
     doi: '10.1016/j.fochx.2024.101303',
@@ -1157,7 +1158,7 @@ export const sources: Source[] = [
   {
     id: 'wang-2023-dongding-oolong-sensomics',
     kind: 'original',
-    title: '凍頂烏龍茶のセンソミクス研究（Foods 掲載）',
+    title: 'Characterization of the Key Aroma Compounds in Dong Ding Oolong Tea by Application of the Sensomics Approach',
     authors: 'Wang D, et al.',
     year: 2023, journal: 'Foods 12(17):3158',
     doi: '10.3390/foods12173158',
@@ -1456,7 +1457,7 @@ export const sources: Source[] = [
   {
     id: 'chen-2025-ttesh18-qingxin-process',
     kind: 'original',
-    title: '台茶18号と青心の品種×製法（烏龍茶製法／紅茶製法）比較',
+    title: 'Effect of tea manufacturing processes and cultivars on tea infusion color',
     authors: 'Chen C, Yang C-Y, Tzen JTC',
     year: 2025, journal: 'Scientific Reports 15',
     doi: '10.1038/s41598-025-14852-w',
@@ -1727,7 +1728,7 @@ export const sources: Source[] = [
   {
     id: 'sri-lanka-2017-black-tea-origin-classification',
     kind: 'original',
-    title: 'スリランカ紅茶13産地の品質パラメータによる判別分析（フレーバーシーズンと揮発成分）',
+    title: 'Classification of geographical origin of Sri Lankan black tea using discriminant function analysis',
     authors: '（著者名は書誌テキストから特定できず）',
     year: 2017, journal: 'Tropical Agricultural Research 29(1): 12–24',
     doi: '10.4038/tar.v29i1.8293',
@@ -1768,7 +1769,7 @@ export const sources: Source[] = [
   {
     id: 'sarmah-2026-assam-orthodox-ctc-biochemical',
     kind: 'original',
-    title: 'Biochemical Quality Parameters of Orthodox and CTC Black Teas Produced in Upper Assam and North Bank Regions of Assam, India',
+    title: 'Biochemical Quality Profile of Black Tea from Upper Assam and North Bank Region of Assam, India',
     authors: 'Sarmah K, Kalita A, Mazumder P, Das D, Baruah D',
     year: 2026, journal: 'Foods 15: 158',
     doi: '10.3390/foods15010158', pmid: '41517222',
@@ -1779,7 +1780,7 @@ export const sources: Source[] = [
   {
     id: 'su-2022-keemun-grade-key-volatiles',
     kind: 'original',
-    title: '祁門紅茶の等級を分けるキー揮発成分の解析（官能・ケモメトリクス併用）',
+    title: 'Aroma effects of key volatile compounds in Keemun black tea at different grades: HS-SPME-GC-MS, sensory evaluation, and chemometrics',
     authors: 'Su D, et al.',
     year: 2022, journal: 'Food Chemistry 373: 131587',
     doi: '10.1016/j.foodchem.2021.131587',
@@ -1790,7 +1791,7 @@ export const sources: Source[] = [
   {
     id: 'zhang-2025-huangshan-maofeng-chiral-volatiles',
     kind: 'original',
-    title: '黄山毛峰と浙江烘青緑茶のキラル揮発成分による産地・品種の判別',
+    title: 'Uncovering characteristic and enantiomeric distribution of volatile components in Huangshan Maofeng and Zhejiang baked green teas',
     authors: 'Zhang Y, et al.',
     year: 2025, journal: 'Food Chemistry 465(Pt 2): 142001',
     doi: '10.1016/j.foodchem.2024.142001', pmid: '39581079',
@@ -1801,7 +1802,7 @@ export const sources: Source[] = [
   {
     id: 'liang-2024-rougui-aroma-types',
     kind: 'original',
-    title: '武夷岩茶・肉桂の香型を分ける揮発成分とキー香気成分',
+    title: 'Characterization of volatile compounds and identification of key aroma compounds in different aroma types of Rougui Wuyi rock tea',
     authors: 'Liang J, et al.',
     year: 2024, journal: 'Food Chemistry 455: 139931',
     doi: '10.1016/j.foodchem.2024.139931', pmid: '38850976',
@@ -1812,7 +1813,7 @@ export const sources: Source[] = [
   {
     id: 'wang-2026-zherong-white-tea-origin',
     kind: 'original',
-    title: '柘栄白茶の PTR-TOF-MS による香気プロファイルと他産地白茶との判別',
+    title: 'Analysis of main aroma components of Zherong white tea and establishment of machine learning model for sensory evaluation',
     authors: 'Wang Y, et al.',
     year: 2026, journal: 'Journal of the Science of Food and Agriculture 106(4): 2397–2409',
     doi: '10.1002/jsfa.70347', pmid: '41292103',
@@ -1823,7 +1824,7 @@ export const sources: Source[] = [
   {
     id: 'zhou-2025-yunnan-sundried-green-tea-regions',
     kind: 'original',
-    title: '雲南省13地域の晒青緑茶の風味特性と、標高・土壌有効態リンの影響',
+    title: 'Flavor Characteristics of Sun-Dried Green Tea in Different Regions of Yunnan: Metabolite Basis and Soil Influencing Factors',
     authors: 'Zhou X, et al.',
     year: 2025, journal: 'Foods 14(7): 1280',
     doi: '10.3390/foods14071280', pmid: '40238592',
@@ -1844,7 +1845,7 @@ export const sources: Source[] = [
   {
     id: 'zhong-2026-guizhou-green-teas',
     kind: 'original',
-    title: '貴州の代表緑茶3種（湄潭翠芽・湄潭毛峰・都匀毛尖）の揮発成分とフェノール類の比較',
+    title: 'Guizhou Green Tea Metabolomics Analysis: Volatile Metabolites Based on HS-GC-IMS and UPLC-Q-TOF-MS/MS and Quality Evaluation',
     authors: 'Zhong F, et al.',
     year: 2026, journal: 'International Journal of Food Science 2026: 1031648',
     doi: '10.1155/ijfo/1031648', pmid: '42164811',
@@ -1866,7 +1867,7 @@ export const sources: Source[] = [
   {
     id: 'yao-2023-xinyang-black-tea-honey-aroma',
     kind: 'original',
-    title: '信陽紅茶の蜜糖様香気のキー成分（フェニルアセトアルデヒド）',
+    title: 'Widely targeted volatileomics analysis reveals the typical aroma formation of Xinyang black tea during fermentation',
     authors: 'Yao Y, et al.',
     year: 2023, journal: 'Food Research International 164: 112387',
     doi: '10.1016/j.foodres.2022.112387', pmid: '36737972',
@@ -1877,7 +1878,7 @@ export const sources: Source[] = [
   {
     id: 'zhu-2021-laoshan-green-tea-odorants',
     kind: 'original',
-    title: '嶗山緑茶の香気活性成分とジメチルスルフィドの高い OAV',
+    title: 'Characterization of the key aroma compounds in Laoshan green teas by application of odour activity value (OAV), gas chromatography-mass spectrometry-olfactometry (GC-MS-O) and comprehensive two-dimensional gas chromatography mass spectrometry (GC × GC-qMS)',
     authors: 'Zhu Y, et al.',
     year: 2021, journal: 'Food Chemistry 339: 128136',
     doi: '10.1016/j.foodchem.2020.128136', pmid: '33152893',
@@ -1920,7 +1921,7 @@ export const sources: Source[] = [
   {
     id: 'feng-2026-ankang-selenium-green-tea',
     kind: 'original',
-    title: '安康の富硒緑茶の小産地判別（非揮発成分89種の定量と DOT 解析）',
+    title: 'Multi-scale quality evaluation and geographical origins discrimination of Ankang green tea by intelligent sensory analysis, selenium elemental analysis and quantitative non-volatile sensometabolomics',
     authors: 'Feng Y, et al.',
     year: 2026, journal: 'Food Chemistry 498(Pt 2): 147206',
     doi: '10.1016/j.foodchem.2025.147206', pmid: '41297472',
@@ -1941,7 +1942,7 @@ export const sources: Source[] = [
   {
     id: 'chen-2023-baozhong-grade-aroma',
     kind: 'original',
-    title: '文山包種茶の等級による揮発成分の違い（花様キー成分は高級茶で有意に強い）',
+    title: 'Determining the Relationship between Aroma and Quality of Bao-Chung Tea by Solid-Phase Microextraction (SPME) and Electronic Nose Analyses',
     authors: 'Chen X, et al.',
     year: 2023, journal: 'Horticulturae 9(8): 930',
     doi: '10.3390/horticulturae9080930',
@@ -1952,7 +1953,7 @@ export const sources: Source[] = [
   {
     id: 'baba-2014-chinese-green-tea-aeda',
     kind: 'original',
-    title: 'Characterization of Odor-Active Compounds of Various Chinese Green Teas Using Gas Chromatography–Olfactometry (AEDA comparison of 碧螺春・龍井・毛峰)',
+    title: 'Characterization of the Potent Odorants Contributing to the Characteristic Aroma of Chinese Green Tea Infusions by Aroma Extract Dilution Analysis',
     authors: 'Baba R, Kumazawa K',
     year: 2014, journal: 'Journal of Agricultural and Food Chemistry 62(33): 8308–8313',
     doi: '10.1021/jf502308a',
@@ -1993,7 +1994,7 @@ export const sources: Source[] = [
   {
     id: 'pramudya-2018-green-tea-temperature-cata',
     kind: 'original',
-    title: 'Using Check-All-That-Apply (CATA) Method for Determining Product Temperature-Dependent Sensory-Attribute Variations: A Case Study on Freshly Brewed Japanese Green Tea',
+    title: 'Influences of Product Temperature on Emotional Responses to, and Sensory Attributes of, Coffee and Green Tea Beverages',
     authors: 'Pramudya RC, Seo HS',
     year: 2018, journal: 'Frontiers in Psychology 8: 2264',
     doi: '10.3389/fpsyg.2017.02264', pmid: '29375418',
@@ -2004,7 +2005,7 @@ export const sources: Source[] = [
   {
     id: 'lee-2013-korean-green-tea-infusions',
     kind: 'original',
-    title: 'Sensory and Instrumental Analysis of Different Types of Green Teas Produced and Consumed in Korea',
+    title: 'Sensory and Instrumental Flavor Changes in Green Tea Brewed Multiple Times',
     authors: 'Lee J, Chambers E IV, Chambers DH, et al.',
     year: 2013, journal: 'Foods 2(4): 554–571',
     doi: '10.3390/foods2040554',
@@ -2015,7 +2016,7 @@ export const sources: Source[] = [
   {
     id: 'zhao-2024-green-tea-storage',
     kind: 'original',
-    title: 'Changes in Quality of Green Tea during 12 Months of Storage',
+    title: 'Impact of Storage Temperature on Green Tea Quality: Insights from Sensory Analysis and Chemical Composition',
     authors: 'Zhao, et al.',
     year: 2024, journal: 'Beverages 10(2): 35',
     doi: '10.3390/beverages10020035',
@@ -2058,7 +2059,7 @@ export const sources: Source[] = [
   {
     id: 'li-2026-bai-mudan-aging-multiomics',
     kind: 'original',
-    title: '白牡丹の貯蔵0–11年マルチオミクス（官能は fresh から aged へ、陳年の特徴香は cedrol 等）',
+    title: 'Multi-omics insights into the formation mechanism of aging quality in white tea (Bai Mudan) during storage: Integrating sensory evaluation, volatilomics, metabolomics, and metagenomics',
     authors: 'Li W, Chen J, Zhang J, Peng Z',
     year: 2026, journal: 'Food Research International 224: 117996',
     doi: '10.1016/j.foodres.2025.117996', pmid: '41412669',
@@ -2154,7 +2155,7 @@ export const sources: Source[] = [
   {
     id: 'eskes-2018-chuncho-fine-flavour',
     kind: 'original',
-    title: 'Chuncho cocoa of La Convención, Cusco, Peru: diversity and fine flavour characteristics（Agrotrópica 掲載）',
+    title: 'Large genetic diversity for fine-flavor traits unveiled in cacao (Theobroma cacao L.) with special attention to the native Chuncho variety in Cusco, Peru',
     authors: 'Eskes AB ほか',
     year: 2018,
     journal: 'Agrotrópica 30(3): 157-174',
@@ -2182,6 +2183,46 @@ export const sources: Source[] = [
     url: 'https://gopaldharaindia.com/cultivars/',
     scope: '生産者（茶園）の公式発信（参考情報。本文を確認、2026-10-31 時点）。AV2 について、花様・果実様・蜂蜜様のノートで知られ、セカンドフラッシュではムスカテルの特徴を示すと記述。茶園自身の解説であり査読済みの官能データではないため、アプリでは参考情報として格付けし、推測（inferred）の足がかりとしてのみ用いる。',
     license: '未確認（生産者公式ページ・参考情報）', verified: true,
+  },
+  {
+    id: 'minamikyushu-yutakamidori',
+    kind: 'general',
+    title: '茶の品種～ゆたかみどり（南九州市公式サイト）',
+    authors: '南九州市',
+    year: 2026,
+    url: 'https://www.city.minamikyushu.lg.jp/chirancha/ajiwau/chirancha_hinshu/8120.html',
+    scope: '自治体の公式品種説明（公的資料）。ゆたかみどりは「味に渋味が強く、やぶきたに比べるとやや旨味が乏しい」素性を持ち、被覆栽培と深蒸し製法を組み合わせることで「濃緑色で深いこくと旨味」が特徴になると説明する。2026-10-31 に本文を確認。',
+    license: '未確認（自治体公式サイト）', verified: true,
+  },
+  {
+    id: 'cha-hinshu-handbook-6',
+    kind: 'general',
+    title: '茶品種ハンドブック 第6版（日本茶業中央会の試飲調査を含む）',
+    authors: '農研機構（茶品種ハンドブック）／日本茶業中央会（試飲調査）',
+    year: 2026,
+    url: 'https://www.naro.go.jp/publicity_report/publication/files/cha_hinshu_handbook06.pdf',
+    scope: '農研機構が公開する茶品種ハンドブック第6版に収録された、日本茶業中央会（日本茶インストラクター協会の協力）の試飲調査による品種別特性の一覧。ほくめいは「ウッディな中にスパイシーさが広がる香り」と記録される。査読論文ではない公的・業界団体の調査記録であり、アプリでは推測（inferred）の足がかりとしてのみ用いる。2026-10-31 に本文を確認。',
+    license: '未確認（農研機構公開PDF）', verified: true,
+  },
+  {
+    id: 'tbrs-tea-breeding-cultivars',
+    kind: 'general',
+    title: '茶樹遺傳育種（台湾・茶及飲料作物改良場 公式サイトの品種解説）',
+    authors: '台湾・茶及飲料作物改良場（TBRS）',
+    year: 2026,
+    url: 'https://www.tbrs.gov.tw/ws.php?id=4692',
+    scope: '台湾の公的機関による公式品種解説。臺茶21號（紅韻）について、成茶の香気は「柑橘類の花に似た花香」を持つと記述する。公的機関の解説であり査読論文ではないため、アプリでは推測（inferred）の足がかりとしてのみ用いる。2026-10-31 に本文を確認。',
+    license: '未確認（台湾公的機関公式サイト）', verified: true,
+  },
+  {
+    id: 'ttch-jinxuan-black-tea',
+    kind: 'manufacturer',
+    title: '嚴選金萱紅茶-台茶12號（TTCh 製品ページ）',
+    authors: 'TTCh（台湾の茶販売事業者）',
+    year: 2026,
+    url: 'https://www.ttch.com.tw/zh/livings/content/2c9f80637abe0699017ac2de0ea5002d',
+    scope: '販売事業者の金萱（台茶12号）紅茶の製品説明（参考情報）。金萱紅茶は「金萱特有の蜜果香」を持ち、芳しい渋味の後に甘さが残ると記述する。販売者の記述であり査読済みの官能データではないため、アプリでは参考情報として格付けし、推測（inferred）の足がかりとしてのみ用いる。2026-10-31 に本文を確認。',
+    license: '未確認（販売事業者ページ・参考情報）', verified: true,
   },
   {
     id: 'english-tea-store-taiwan-cultivars',

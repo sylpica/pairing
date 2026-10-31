@@ -63,8 +63,11 @@ describe('品種・系統データベースの画面連携', () => {
     location.hash = '#/compare-cultivars'; render(<App />)
     expect(screen.getAllByText('やぶきた').length).toBeGreaterThan(0)
     expect(screen.getAllByText('おくみどり').length).toBeGreaterThan(0)
-    // 所見のない品種（ほくめい）に切り替えると「不明」が正直に表示される
-    fireEvent.change(screen.getByLabelText('品種 2'), { target: { value: 'hokumei' } })
+    // 所見のない品種に切り替えると「不明」が正直に表示される
+    // （ほくめいは第28弾で試飲調査の所見を登録したため、対象を所見のない
+    //  うじみどり（抹茶の形態で利用が確認できる品種）に変更）
+    fireEvent.change(screen.getByLabelText('茶類'), { target: { value: 'matcha-form' } })
+    fireEvent.change(screen.getByLabelText('品種 2'), { target: { value: 'ujimidori' } })
     expect(screen.getByText(/所見：不明/)).toBeTruthy()
   })
 
@@ -119,6 +122,7 @@ describe('品種・系統データベースの画面連携', () => {
 
   it('品種ページのホイールでも、階層を辿ると根拠と成分のシートが開く（指示2・3・第8弾）', () => {
     location.hash = '#/cultivar/okumidori'; render(<App />)
+    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 第33弾: 既定は味
     expect(screen.queryByRole('dialog')).toBeNull()
     // 大分類セグメントには中分類（具体名）の併記がある
     const subs = [...document.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '')

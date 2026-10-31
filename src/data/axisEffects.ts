@@ -531,6 +531,11 @@ export const teaAxisRules: TeaAxisRule[] = [
         text: '同じ AEDA で、(Z)-ジャスモン酸メチルが花様の香りに大きく影響するとされ、アロマプロファイルでは やぶきた に比べて花様が強かったとされました。分類プロファイルの花様は、品種自身の実測でも裏付けられます。',
         sourceIds: ['mizukami-2012-sofu-yabukita-aeda'],
       },
+      {
+        noteId: 'honey', mode: 'add', level: 'measured',
+        text: '同じ AEDA で、β-ダマセノンも そうふう の煎茶の香りに強く影響する成分とされました。β-ダマセノンは蜂蜜様の香りの成分として知られます。強さの格付けはされていないため、弱いとして示します。',
+        sourceIds: ['mizukami-2012-sofu-yabukita-aeda'],
+      },
     ],
     tasteEffects: [],
   },
@@ -541,6 +546,11 @@ export const teaAxisRules: TeaAxisRule[] = [
       {
         noteId: 'floral-general', mode: 'emphasize', shift: 'stronger', level: 'inferred',
         text: '香駿は、香気発揚処理を施した「香り緑茶」の調査で、花様・甘い香りを強く感じるとする回答が やぶきた より有意に多い品種でした。ただし通常の煎茶での比較ではないため、通常の緑茶でも花様が一段強まる方向を、推測として示します。',
+        sourceIds: ['shiratori-2022-kaori-ryokucha'],
+      },
+      {
+        noteId: 'hay', mode: 'add', level: 'inferred',
+        text: '同じ香り緑茶の調査で、香駿のクマリン含量は やぶきた・さやまかおり より有意に高いことが示されました。クマリンは干し草様の甘い香りの成分として知られます。含量差が実測された成分の既知の香りからの推測として、干し草を弱く示します（香気発揚処理条件下の比較であり、寄与の直接実測はありません）。',
         sourceIds: ['shiratori-2022-kaori-ryokucha'],
       },
     ],
@@ -576,6 +586,18 @@ export const teaAxisRules: TeaAxisRule[] = [
     tasteEffects: [],
   },
   {
+    id: 'axc-kanayamidori-green-inf',
+    axis: 'cultivar', entityId: 'kanayamidori', kindCategory: 'green',
+    noteEffects: [
+      {
+        noteId: 'milk', mode: 'add', level: 'inferred',
+        text: '同じ官能評価で、かなやみどり は「クリーミー」の記述子にも有意な関連が示されました。その記述子を、最も近い収録ノート「ミルク」へ読み替えた推測として、ミルクを弱く示します（記述子とノートの対応づけ自体が解釈であり、成分の寄与を示すものではありません）。',
+        sourceIds: ['kinoshita-2015-kagoshima-cultivar-aroma'],
+      },
+    ],
+    tasteEffects: [],
+  },
+  {
     id: 'ax-haramidori-green',
     axis: 'cultivar', entityId: 'harumidori', kindCategory: 'green',
     noteEffects: [
@@ -588,6 +610,18 @@ export const teaAxisRules: TeaAxisRule[] = [
         noteId: 'fruit-general', mode: 'add', level: 'measured',
         text: '同じ研究で、はるみどり は「フルーティー」の記述子にも有意な関連が示されました。記述子レベルの知見であり、強さの格付けはされていないため、弱いとして示します。',
         sourceIds: ['kinoshita-2015-kagoshima-cultivar-aroma'],
+      },
+    ],
+    tasteEffects: [],
+  },
+  {
+    id: 'axc-harumidori-parent-inf',
+    axis: 'cultivar', entityId: 'harumidori', kindCategory: 'green',
+    noteEffects: [
+      {
+        noteId: 'honey', mode: 'add', level: 'inferred',
+        text: 'はるみどりは やぶきた を交配親に持ちます（育成記録）。親の やぶきた では煎茶の AEDA で β-ダマセノン（蜂蜜様の香りの成分）が主要な香気寄与成分の一つとされました。その交配親の実測に基づく推測として、蜂蜜を一段弱く（弱い）で示します（はるみどり自体の実測ではありません）。',
+        sourceIds: ['mizukami-2012-sofu-yabukita-aeda', 'naro-tea-cultivar-list'],
       },
     ],
     tasteEffects: [],
@@ -624,7 +658,13 @@ export const teaAxisRules: TeaAxisRule[] = [
   {
     id: 'ax-fukumidori-green',
     axis: 'cultivar', entityId: 'fukumidori', kindCategory: 'green',
-    noteEffects: [],
+    noteEffects: [
+      {
+        noteId: 'green-vegetable', mode: 'add', level: 'general',
+        text: '埼玉県茶業研究所のブレンド設計報告では、ふくみどり の香気は「ややむれ臭や青臭が感じられ、爽快さがない」と記述されました。公的機関の記述に基づく一般的な知見として、その青臭さの方向を最も近い収録ノート「青い野菜」へ読み替え、弱く示します（記述の読み替えであり、成分の寄与を示すものではありません）。',
+        sourceIds: ['sasaki-2018-green-tea-cultivar-blending'],
+      },
+    ],
     tasteEffects: [
       {
         key: 'umami', direction: 'stronger', level: 'general',
@@ -714,6 +754,11 @@ export const teaAxisRules: TeaAxisRule[] = [
         text: 'せいめいは さえみどり を交配親に持ちます（育成記録）。親の さえみどり の官能記述子「さつま芋（様）」を最も近い収録ノート「栗」へ読み替えた推測を、交配親の記録に基づく推測として、親側の効果より一段弱く（根拠を補うだけに留め）示します。もう一方の親 ふしゅん には香味の効果が無く、逆方向の競合はありません。',
         sourceIds: ['yoshida-2018-seimei', 'kinoshita-2015-kagoshima-cultivar-aroma'],
       },
+      {
+        noteId: 'honey', mode: 'add', level: 'inferred',
+        text: 'せいめいの祖父母にあたる やぶきた（さえみどり の交配親）では、煎茶の AEDA で β-ダマセノン（蜂蜜様の香りの成分）が主要な香気寄与成分の一つとされました。祖先の実測に基づく推測として、蜂蜜を一段弱く（弱い）で示します（せいめい自体の実測ではありません）。',
+        sourceIds: ['yoshida-2018-seimei', 'mizukami-2012-sofu-yabukita-aeda'],
+      },
     ],
     tasteEffects: [],
   },
@@ -727,7 +772,13 @@ export const teaAxisRules: TeaAxisRule[] = [
         sourceIds: ['kinoshita-2015-kagoshima-cultivar-aroma'],
       },
     ],
-    tasteEffects: [],
+    tasteEffects: [
+      {
+        key: 'sweet', direction: 'stronger', level: 'inferred',
+        text: '同じ官能評価で、さえみどり は「甘さ」「なめらかな」の記述子にも有意な関連が示されました。品種所見自体の味の方向からの推測として、甘味を一段強めに示します（記述子レベルの知見であり、呈味成分の実測ではありません）。',
+        sourceIds: ['kinoshita-2015-kagoshima-cultivar-aroma'],
+      },
+    ],
   },
   {
     id: 'axc-asatsuyu-green-inf',
@@ -749,6 +800,40 @@ export const teaAxisRules: TeaAxisRule[] = [
         noteId: 'chestnut', mode: 'emphasize', level: 'inferred',
         text: 'ゆたかみどりは あさつゆ の自殖系統です（育成記録）。親の あさつゆ の官能記述子「さつま芋（様）」を最も近い収録ノート「栗」へ読み替えた推測を、交配親（自殖親）の記録に基づく推測として、親側の効果より一段弱く（根拠を補うだけに留め）示します。ゆたかみどり自体の記述子（「独特な」「やさしい」）は方向を示さないため、この推測は親側の知見だけに基づきます。',
         sourceIds: ['kinoshita-2015-kagoshima-cultivar-aroma', 'naro-tea-cultivar-list'],
+      },
+    ],
+    tasteEffects: [],
+  },
+  {
+    id: 'axc-yutakamidori-green-inf',
+    axis: 'cultivar', entityId: 'yutakamidori', kindCategory: 'green',
+    noteEffects: [],
+    tasteEffects: [
+      {
+        key: 'umami', direction: 'stronger', level: 'inferred',
+        text: '南九州市の公式品種説明では、ゆたかみどり は被覆栽培と深蒸し製法を組み合わせることで「深いこくと旨味」が特徴になるとされます。この品種の代表的な栽培・製造のされ方に基づく推測として、うま味を一段強めに示します（被覆・深蒸し以外の製造では当てはまらない場合があります）。',
+        sourceIds: ['minamikyushu-yutakamidori'],
+      },
+      {
+        key: 'astringent', direction: 'stronger', level: 'inferred',
+        text: '同じ公式説明では、ゆたかみどり の素性は「味に渋味が強く、やぶきたに比べるとやや旨味が乏しい」ともされます。品種自体の味の方向からの推測として、渋味も一段強めに示します（被覆・深蒸しでは渋味が和らぐ方向に働くため、製造条件によって印象は変わります）。',
+        sourceIds: ['minamikyushu-yutakamidori'],
+      },
+    ],
+  },
+  {
+    id: 'axc-hokumei-green-inf',
+    axis: 'cultivar', entityId: 'hokumei', kindCategory: 'green',
+    noteEffects: [
+      {
+        noteId: 'wood', mode: 'add', level: 'inferred',
+        text: '日本茶業中央会の試飲調査（茶品種ハンドブック第6版に収録）では、ほくめい は「ウッディな中にスパイシーさが広がる香り」と記録されました。公的・業界団体の試飲記録に基づく推測として、その記述を最も近い収録ノート「木」へ読み替え、弱く示します（査読済みの官能実測ではありません）。',
+        sourceIds: ['cha-hinshu-handbook-6'],
+      },
+      {
+        noteId: 'warm-spice', mode: 'add', level: 'inferred',
+        text: '同じ試飲記録の「スパイシーさ」の部分を、最も近い収録ノート「温かいスパイス」へ読み替えた推測として弱く示します。',
+        sourceIds: ['cha-hinshu-handbook-6'],
       },
     ],
     tasteEffects: [],
@@ -791,6 +876,11 @@ export const teaAxisRules: TeaAxisRule[] = [
         text: 'べにほまれを紅茶に製造した比較（1967年の GC 分析）では、べにほまれは β-フェニルエチルアルコール（2-フェニルエタノール）に富むことが示されました。この成分の既知の香り（バラ様）からの推論として、バラを弱く示す推測です（相対量の比較であり、現代的基準の寄与評価ではありません）。',
         sourceIds: ['saijo-kuwahara-1967-black-tea-aroma'],
       },
+      {
+        noteId: 'green-leaf', mode: 'add', level: 'inferred',
+        text: '同じ1967年の GC 比較では、べにほまれは緑茶用品種 みよし と比べて青葉臭成分も多いとされました。検出された成分群の既知の香りの方向からの推論として、青草・若葉を弱く示す推測です（相対量の比較であり、現代的基準の寄与評価ではありません）。',
+        sourceIds: ['saijo-kuwahara-1967-black-tea-aroma'],
+      },
     ],
     tasteEffects: [],
   },
@@ -802,6 +892,18 @@ export const teaAxisRules: TeaAxisRule[] = [
         noteId: 'rose', mode: 'add', level: 'inferred',
         text: 'べにふうきは べにほまれ を交配親に持ちます（育成記録）。親の べにほまれ は紅茶で β-フェニルエチルアルコールに富むことが示されており、その成分の既知の香り（バラ様）を、交配親の記録に基づく推測として一段弱く（弱い）で示します。べにふうき自体の所見（EGCG3″Me の含有）は香味の方向を示すものではないため、この推測は親側の知見だけに基づきます。',
         sourceIds: ['saijo-kuwahara-1967-black-tea-aroma', 'naro-tea-cultivar-list'],
+      },
+    ],
+    tasteEffects: [],
+  },
+  {
+    id: 'axc-benifuuki-oolong-inf',
+    axis: 'cultivar', entityId: 'benifuuki', kindCategory: 'oolong',
+    noteEffects: [
+      {
+        noteId: 'rose', mode: 'add', level: 'inferred',
+        text: '農研機構の品種特性では、べにふうき は「軽く萎凋するとダージリン様のフレーバーが発揚する」とされます。半発酵茶は萎凋を含む製法であり、そのダージリン様の方向を、ダージリン茶の特徴香の読み替えとして最も近い収録ノート「バラ」で弱く示す推測です（べにふうきの半発酵茶での官能実測ではありません）。',
+        sourceIds: ['naro-tea-cultivar-list'],
       },
     ],
     tasteEffects: [],
@@ -841,6 +943,18 @@ export const teaAxisRules: TeaAxisRule[] = [
     tasteEffects: [],
   },
   {
+    id: 'axc-jinxuan-black-inf',
+    axis: 'cultivar', entityId: 'jinxuan', kindCategory: 'black',
+    noteEffects: [
+      {
+        noteId: 'fruit-general', mode: 'emphasize', shift: 'stronger', level: 'inferred',
+        text: '金萱のミルク様の香りは半発酵製法と結びついた特徴として研究されていますが、販売事業者の金萱紅茶の製品説明では、紅茶に仕上げた金萱は「金萱特有の蜜果香（蜂蜜と果実の香り）」を持つとされます。参考情報に基づく読み替えの推測として、紅茶では果実全般を一段強めに示します（査読済みの官能実測ではありません）。',
+        sourceIds: ['ttch-jinxuan-black-tea'],
+      },
+    ],
+    tasteEffects: [],
+  },
+  {
     id: 'axc-hongyu-black-inf',
     axis: 'cultivar', entityId: 'hongyu', kindCategory: 'black',
     noteEffects: [
@@ -853,6 +967,18 @@ export const teaAxisRules: TeaAxisRule[] = [
         noteId: 'herb', mode: 'add', level: 'inferred',
         text: '同じ学位論文で最も豊富とされたサリチル酸メチルは、成分データでは爽やかでミント様の香りの成分として記録されています。その成分からの推論として、ハーブを弱く示す推測です。',
         sourceIds: ['peng-2022-ttesh18-thesis'],
+      },
+    ],
+    tasteEffects: [],
+  },
+  {
+    id: 'axc-hongyun-black-inf',
+    axis: 'cultivar', entityId: 'hongyun', kindCategory: 'black',
+    noteEffects: [
+      {
+        noteId: 'white-flower', mode: 'add', level: 'inferred',
+        text: '台湾・茶及飲料作物改良場（TBRS）の公式品種解説では、紅韻（台茶21号）の紅茶は柑橘類の花に似た花香を持ち、濃い花果香の高香品種とされます。公的機関の解説に基づく推測として、その花香の方向を最も近い収録ノート「白い花」へ読み替え、弱く示します（品種単独の査読済み香気実測ではありません）。',
+        sourceIds: ['tbrs-tea-breeding-cultivars'],
       },
     ],
     tasteEffects: [],
@@ -1001,6 +1127,23 @@ export const teaAxisRules: TeaAxisRule[] = [
         text: '同じ茶園の解説で挙げられた果実様のノート（セカンドフラッシュではムスカテルの特徴）です。参考情報に基づく仮説として、果実全般を弱く示す推測です。',
         sourceIds: ['gopaldhara-cultivar-guide'],
       },
+      {
+        noteId: 'dried-fruit', mode: 'add', level: 'inferred',
+        text: '同じ茶園の解説にある「セカンドフラッシュではムスカテルの特徴」という記述に基づきます。ムスカテルはダージリン茶でブドウ・レーズン様と表現される特徴香であり、最も近い収録ノート「ドライフルーツ」へ読み替えた推測として弱く示します（参考情報に基づく仮説です）。',
+        sourceIds: ['gopaldhara-cultivar-guide'],
+      },
+    ],
+    tasteEffects: [],
+  },
+  {
+    id: 'axc-av2-oolong-inf',
+    axis: 'cultivar', entityId: 'av2', kindCategory: 'oolong',
+    noteEffects: [
+      {
+        noteId: 'dried-fruit', mode: 'add', level: 'inferred',
+        text: 'ダージリンの茶園 Gopaldhara の品種解説では、AV2 はセカンドフラッシュの紅茶でムスカテルの特徴を示すとされます。ムスカテルはブドウ・レーズン様と表現される特徴香であり、同じ品種の半発酵茶への読み替え推測として、最も近い収録ノート「ドライフルーツ」を弱く示します（参考情報に基づく仮説であり、半発酵茶での実測ではありません）。',
+        sourceIds: ['gopaldhara-cultivar-guide'],
+      },
     ],
     tasteEffects: [],
   },
@@ -1038,8 +1181,8 @@ export const teaAxisRules: TeaAxisRule[] = [
     axis: 'cultivar', entityId: 'soufu', kindCategory: 'oolong',
     noteEffects: [
       {
-        noteId: 'fruit-general', mode: 'add', level: 'inferred',
-        text: 'そうふう の品種特異的な香りの原因成分アントラニル酸メチルは、葉に含まれる揮発成分であり、煎茶の AEDA で果実様の香りに大きく影響するとされました。葉レベルの成分の知見を、半発酵茶（そうふう は緑茶・半発酵茶の兼用品種として登録）へ読み替えた推測として、果実全般を弱く示します（烏龍茶での寄与の実測ではありません）。',
+        noteId: 'fruit-general', mode: 'emphasize', shift: 'stronger', level: 'inferred',
+        text: 'そうふう の品種特異的な香りの原因成分アントラニル酸メチルは、葉に含まれる揮発成分であり、煎茶の AEDA で果実様の香りに大きく影響するとされました。農研機構の育成時評価でも そうふう は「半発酵茶として高品質で特に香気に優れる」とされています。葉レベルの成分の知見を、半発酵茶（そうふう は緑茶・半発酵茶の兼用品種として登録）へ読み替えた推測として、果実全般を一段強めに示します（烏龍茶での寄与の実測ではありません）。',
         sourceIds: ['sawai-2004-sofu-methyl-anthranilate', 'mizukami-2012-sofu-yabukita-aeda'],
       },
     ],
@@ -1098,6 +1241,23 @@ export const chocoAxisRules: ChocoAxisRule[] = [
       },
     ],
     tasteEffects: [],
+  },
+  {
+    id: 'axl-criollo-taste-inf',
+    axis: 'lineage', entityId: 'trad-criollo', lineageLayer: 'traditional', kinds: ['dark', 'milk', 'ruby'],
+    noteEffects: [],
+    tasteEffects: [
+      {
+        key: 'bitter', direction: 'milder', level: 'inferred',
+        text: '伝統的タイプ区分の種子フェノール組成を比較した研究では、発酵・乾燥中のカテキン類の減少が Criollo 試料で他より強く、著者らはこれが「クリオロチョコレートのマイルドな香味の一因かもしれない」と解釈しました。著者らの解釈に基づく推測として、苦味を一段穏やかに示します（官能の実測ではありません）。',
+        sourceIds: ['elwers-2009-cocoa-phenolics'],
+      },
+      {
+        key: 'astringent', direction: 'milder', level: 'inferred',
+        text: '同じ解釈に基づく推測として、渋味も一段穏やかに示します。なお同研究では、総ポリフェノール量とエピカテキン量自体には遺伝的に決まる差は見出されなかったため、穏やかさの方向は著者らの解釈の範囲に限ります。',
+        sourceIds: ['elwers-2009-cocoa-phenolics'],
+      },
+    ],
   },
   {
     id: 'ax-guiana-dark',
@@ -1195,9 +1355,67 @@ export const chocoAxisRules: ChocoAxisRule[] = [
     tasteEffects: [],
   },
   {
+    id: 'axl-trinitario-fruit-inf',
+    axis: 'lineage', entityId: 'trad-trinitario', lineageLayer: 'traditional', kinds: ['dark', 'milk', 'ruby'],
+    noteEffects: [
+      {
+        noteId: 'fruit-general', mode: 'add', level: 'inferred',
+        text: 'トリニタリオを構成する代表的クローン ICS-95 は、コロンビアの農園試料をクローン別に比較した査読研究で、「新鮮な果実」を含む最良の官能属性を示した群に含まれました。構成クローンの知見を集団へ読み替えた推測として、果実全般を弱く示します（トリニタリオ集団自体の官能実測ではありません）。',
+        sourceIds: ['ramon-2023-colombia-cacao-clones'],
+      },
+    ],
+    tasteEffects: [],
+  },
+  {
     id: 'axl-gencriollo-dark-inf',
     axis: 'lineage', entityId: 'gen-criollo', lineageLayer: 'genetic', kinds: ['dark', 'milk', 'ruby'],
     noteEffects: crioMirrorEffects('遺伝集団クリオロは、伝統的分類のクリオロと概ね対応することが両エンティティに記録されています。その対応に基づき、伝統的分類側の記述子を読み替えた推測です（遺伝集団そのものの香味実測ではありません）。', ['ramos-2013-venezuela-criollo-liquor']),
+    tasteEffects: [],
+  },
+  {
+    id: 'axl-amelonado-inf',
+    axis: 'lineage', entityId: 'gen-amelonado', lineageLayer: 'genetic', kinds: ['dark'],
+    noteEffects: [
+      {
+        noteId: 'cacao', mode: 'emphasize', shift: 'stronger', level: 'inferred',
+        text: 'カカオ香味の総説では、西アフリカのフォラステロは「強い基本的なカカオ感」を持つ標準的なカカオ香味の源と特徴づけられました。その西アフリカの植栽は主に Amelonado 型（本集団）であると遺伝集団の研究に記録されています。総説の特徴づけを集団へ読み替えた推測として、カカオを一段強めに示します（集団自体の官能実測ではありません）。',
+        sourceIds: ['afoakwa-2008-cocoa-flavour-review', 'motamayor-2008-cacao-populations'],
+      },
+      {
+        noteId: 'fruit-general', mode: 'add', level: 'inferred',
+        text: '同じ総説の起源別表で、西アフリカのフォラステロには果実の含み（fruity notes）が特徴として挙げられました。同様の読み替え推測として、果実全般を弱く示します。',
+        sourceIds: ['afoakwa-2008-cocoa-flavour-review'],
+      },
+    ],
+    tasteEffects: [],
+  },
+  {
+    id: 'axl-amelonado-xkind-inf',
+    axis: 'lineage', entityId: 'gen-amelonado', lineageLayer: 'genetic', kinds: ['milk', 'ruby'],
+    noteEffects: [
+      {
+        noteId: 'cacao', mode: 'add', level: 'inferred',
+        text: 'カカオ香味の総説では、西アフリカのフォラステロは「強い基本的なカカオ感」を持つ標準的なカカオ香味の源と特徴づけられ、その西アフリカの植栽は主に Amelonado 型（本集団）であると記録されています。ミルク／ルビーの土台にはカカオのノートが無いため、総説の特徴づけを集団へ読み替えた推測として、カカオを弱く追加します（集団自体の官能実測ではありません）。',
+        sourceIds: ['afoakwa-2008-cocoa-flavour-review', 'motamayor-2008-cacao-populations'],
+      },
+      {
+        noteId: 'fruit-general', mode: 'add', level: 'inferred',
+        text: '同じ総説の起源別表で、西アフリカのフォラステロには果実の含み（fruity notes）が特徴として挙げられました。同様の読み替え推測として、果実全般を弱く示します。',
+        sourceIds: ['afoakwa-2008-cocoa-flavour-review'],
+      },
+    ],
+    tasteEffects: [],
+  },
+  {
+    id: 'axl-contamana-inf',
+    axis: 'lineage', entityId: 'gen-contamana', lineageLayer: 'genetic', kinds: ['dark', 'milk', 'ruby', 'blond'],
+    noteEffects: [
+      {
+        noteId: 'floral-general', mode: 'add', level: 'inferred',
+        text: 'コンタマナ集団そのものの香味実測は未確認です。同集団に属する個別遺伝子型 SCA6 では、果実パルプと種子の GC-MS 実測でモノテルペン類（β-リナロール等）が特徴的でした。リナロールは花様の香りの成分として知られます。集団に属する1遺伝子型の実測からの読み替え推測として、花様を弱く示します（集団自体の実測ではありません）。',
+        sourceIds: ['kadow-2013-fine-flavour-genotypes', 'motamayor-2008-cacao-populations'],
+      },
+    ],
     tasteEffects: [],
   },
   {
@@ -1248,6 +1466,11 @@ export const chocoAxisRules: ChocoAxisRule[] = [
       {
         noteId: 'floral-general', mode: 'add', level: 'inferred',
         text: 'ブラジル産の発酵済み未焙煎豆の判別分析で、IMC-67 のリナロールは供試5遺伝子型の中で最も高濃度でした。リナロールは花様の香りの成分として知られます。確認された成分の既知の香りからの推論として、花様を弱く示す推測です（官能による寄与の実証ではありません）。',
+        sourceIds: ['collin-2023-cocoa-bean-genotypes-aroma'],
+      },
+      {
+        noteId: 'citrus', mode: 'add', level: 'inferred',
+        text: '同じ実測で最も高濃度だったリナロールは、成分データでは柑橘様の香りにも結びつけられています。確認された成分の既知の香りからの推論として、柑橘を弱く示す推測です。',
         sourceIds: ['collin-2023-cocoa-bean-genotypes-aroma'],
       },
     ],
@@ -1479,15 +1702,15 @@ export const axisNoEffects: AxisNoEffect[] = [
   // ---- お茶：品種 ----
 
   { axis: 'cultivar', entityId: 'benifuuki', category: 'composition-only',
-    text: '「べにふうき」の所見は、機能性成分 EGCG3″Me の含有に関するもので、香り・味への寄与を示すものではありません（紅茶に加工すると消失する成分でもあります）。そのためホイールには反映していません。' },
+    text: '「べにふうき」の所見は、機能性成分 EGCG3″Me の含有に関するもので、香り・味への寄与を示すものではありません（紅茶に加工すると消失する成分でもあります）。紅茶では交配親（べにほまれ）の知見からの推測を、半発酵茶では農研機構の品種特性（軽く萎凋するとダージリン様のフレーバーが発揚する）からの推測を反映しています。この分類については、香味の方向を示す所見がないため、ホイールには反映していません。' },
   { axis: 'cultivar', entityId: 'qingxin-oolong', category: 'condition-variation',
     text: '「青心烏龍」の所見は、市販試料で焙煎度によって主要な香気活性成分が変わるという知見です。烏龍茶では、未〜中焙煎で主体だった花様成分の方向を推測として反映しています。この分類については、香味の方向を示す所見がないため、ホイールには反映していません。' },
   { axis: 'cultivar', entityId: 'jinxuan', category: 'composition-only',
-    text: '「金萱（台茶12号）」の所見は、烏龍茶の製程でミルク様の香りに関連する成分がどう動くかという形成機構の研究です。烏龍茶では、そのミルク様の香りを推測として反映しています。この分類については、香味の方向を示す所見がないため、ホイールには反映していません。' },
+    text: '「金萱（台茶12号）」の所見は、烏龍茶の製程でミルク様の香りに関連する成分がどう動くかという形成機構の研究です。烏龍茶では、そのミルク様の香りを推測として反映しています。紅茶では、販売事業者の金萱紅茶の製品説明（参考情報）に基づき、果実の方向を推測として反映しています。この分類については、香味の方向を示す所見がないため、ホイールには反映していません。' },
   { axis: 'cultivar', entityId: 'hongyu', category: 'composition-only',
     text: '「紅玉（台茶18号）」の所見は、学位論文による揮発成分の同定と、製法比較での組成の知見です。紅茶では、著者自身が寄与を推測した成分（リナロール・サリチル酸メチル）の方向を推測として反映しています。この分類については、香味の方向を示す所見がないため、ホイールには反映していません。' },
   { axis: 'cultivar', entityId: 'av2', category: 'composition-only',
-    text: '「AV2」の所見は、季節によるフェノール類・カテキン類の変動を遺伝子型ごとに比べた代謝成分の研究が中心です。紅茶では、生産者（茶園）の品種解説に挙げられた花様・蜂蜜様・果実様の記述を参考情報として、推測で反映しています。その他の分類については、香味の方向を示す所見がないため、ホイールには反映していません。' },
+    text: '「AV2」の所見は、季節によるフェノール類・カテキン類の変動を遺伝子型ごとに比べた代謝成分の研究が中心です。紅茶では、生産者（茶園）の品種解説に挙げられた花様・蜂蜜様・果実様の記述を参考情報として、推測で反映しています。半発酵茶では、同じ解説のムスカテルの記述を読み替えた推測を反映しています。その他の分類については、香味の方向を示す所見がないため、ホイールには反映していません。' },
   { axis: 'cultivar', entityId: 'tri-2023', category: 'composition-only',
     text: '「TRI 2023」の所見は、茶カテキンの分析法の研究で供試試料に含まれたという分析化学の実測です。香味のデータではないため、ホイールには反映していません。' },
   { axis: 'cultivar', entityId: 'tri-2025', category: 'composition-only',

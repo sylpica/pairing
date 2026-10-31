@@ -26,7 +26,8 @@ export const textWidthAt = (s: string, fs: number): number => emWidthOf(s) * fs
 
 export interface FittedLine { text: string; fs: number }
 
-const roundFs = (fs: number) => Math.round(fs * 100) / 100
+// 収まるサイズとして使うため、丸めは必ず切り捨て（切り上げると幅が avail を超える）
+const roundFs = (fs: number) => Math.floor(fs * 100) / 100
 
 /** 末尾を「…」で省略する。先頭は必ず残す（最低でも先頭1文字＋…） */
 function truncateHead(text: string, avail: number, fs: number): string {
@@ -83,7 +84,44 @@ export function fitLabelLines(text: string, avail: number, baseFs: number = WHEE
     return [chars.slice(0, best.i).join(''), chars.slice(best.i).join('')]
       .map((t) => ({ text: t, fs: Math.min(baseFs, roundFs(avail / emWidthOf(t))) }))
   }
+  // 第29弾: 2行でも収まらない非常に長い名前（20em級の化合物名等）は
+  // 3〜4行に割る。「…」で隠すより、行数を増やしてでも全文を出す。
+  for (const k of [3, 4]) {
+    const parts = splitBalanced(text, k)
+    if (parts && Math.max(...parts.map(emWidthOf)) * minFs <= avail) {
+      return parts.map((t) => ({ text: t, fs: Math.min(baseFs, roundFs(avail / emWidthOf(t))) }))
+    }
+  }
   return [fitOneLine(text, avail, baseFs, minFs)]
+}
+
+/** text を k 個の部分に割り、各部分の em 幅の最大値が最小になる分割を返す */
+function splitBalanced(text: string, k: number): string[] | null {
+  const chars = [...text]
+  if (chars.length < k) return null
+  const widths = chars.map((c) => emWidthOf(c))
+  const total = widths.reduce((a, b) => a + b, 0)
+  // 上限 cap で貪欲に詰めたときの部分数を数え、k 以下になる最小の cap を探す
+  const countParts = (cap: number) => {
+    let parts = 1; let cur = 0
+    for (const w of widths) {
+      if (cur + w > cap && cur > 0) { parts++; cur = w } else cur += w
+    }
+    return parts
+  }
+  let lo = total / k; let hi = total
+  for (let it = 0; it < 24; it++) {
+    const mid = (lo + hi) / 2
+    if (countParts(mid) <= k) hi = mid; else lo = mid
+  }
+  const parts: string[] = []
+  let cur = ''
+  for (let idx = 0; idx < chars.length; idx++) {
+    if (cur && emWidthOf(cur) + widths[idx] > hi && parts.length < k - 1) { parts.push(cur); cur = '' }
+    cur += chars[idx]
+  }
+  if (cur) parts.push(cur)
+  return parts.length <= k ? parts : null
 }
 
 /** names を「・」区切りで最大 maxLines 行に詰める（指定フォントでの従来の作法） */
@@ -115,12 +153,36 @@ export function packScaledLines(names: string[], avail: number, maxLines: number
   // （大きいフォントで大きく省略するより、小さいフォントで多く見せる方を優先する。
   //   同点なら大きいフォントを残す）
   let best: { lines: string[]; fs: number; score: number } | null = null
+  let bestClean: { lines: string[]; fs: number; score: number } | null = null
   for (let fs = baseFs; fs >= minFs; fs -= 0.5) {
     const lines = packAt(names, avail, maxLines, fs)
     if (lines.length === 0) continue
     const score = lines.reduce((a, t) => a + [...t.replace(/…| ほか/g, '')].length, 0)
     if (!best || score > best.score) best = { lines, fs, score }
+    // 第29弾: 「…」省略のない詰め込みが存在すれば、文字数で劣ってもそちらを優先する
+    if (!lines.some((t) => t.includes('…')) && (!bestClean || score > bestClean.score)) bestClean = { lines, fs, score }
   }
-  if (best) return best.lines.map((t) => ({ text: t, fs: best!.fs }))
-  return [fitOneLine(names[0], avail, baseFs, minFs)]
+  if (bestClean) return bestClean.lines.map((t) => ({ text: t, fs: bestClean!.fs }))
+  if (best && !best.lines.some((t) => t.includes('…'))) return best.lines.map((t) => ({ text: t, fs: best!.fs }))
+  // 第29弾: 化学物質名を「…」で隠さない。省略が必要になった行は出さず、
+  // 表示できていた行は残して「ほか」で省略の存在を示す。先頭の名前自体が
+  // 最小フォントでも1行に入らない場合は、折り返して全文を出す。
+  if (best && textWidthAt(names[0], minFs) <= avail) {
+    const kept = best.lines.filter((t) => !t.includes('…'))
+    if (kept.length > 0) {
+      const out = kept.map((t) => ({ text: t, fs: best!.fs }))
+      const last = out[out.length - 1]
+      if (!last.text.endsWith('ほか') && textWidthAt(`${last.text} ほか`, last.fs) <= avail) {
+        out[out.length - 1] = { text: `${last.text} ほか`, fs: last.fs }
+      }
+      return out
+    }
+  }
+  const wrapped = fitLabelLines(names[0], avail, baseFs, minFs)
+  if (names.length === 1) return wrapped
+  const out = [...wrapped]
+  const last = out[out.length - 1]
+  if (textWidthAt(`${last.text} ほか`, last.fs) <= avail) out[out.length - 1] = { text: `${last.text} ほか`, fs: last.fs }
+  else out.push({ text: 'ほか', fs: minFs })
+  return out
 }

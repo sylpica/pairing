@@ -20,12 +20,14 @@ describe('調べる（お茶）：産地・品種を変えると直下のホイ�
     const preview = document.querySelector('.combo-preview')
     expect(preview).toBeTruthy()
     expect(preview!.textContent).toContain('村上 × 香駿 × 緑茶')
+    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 第33弾: 既定は味。香りの顔ぶれを見る
     // 香駿の所見（読み替え推測）で花様が一段強まる
     expect(preview!.textContent).toContain('花様（強い）')
     // 産地（村上）は反映されない理由がプレビューにも出る
     expect(preview!.textContent).toContain('反映していません')
     // 品種だけを変えると、プレビューがその場で描き直される
     fireEvent.change(screen.getByLabelText('品種で絞り込み'), { target: { value: 'yabukita' } })
+    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 選択変更で既定の味に戻るため再切替
     const preview2 = document.querySelector('.combo-preview')
     expect(preview2!.textContent).toContain('村上 × やぶきた × 緑茶')
     expect(preview2!.textContent).toContain('花様（普通）')
@@ -46,6 +48,7 @@ describe('調べる（チョコ）：系統を変えると直下のホイール�
     const preview = document.querySelector('.combo-preview')
     expect(preview).toBeTruthy()
     expect(preview!.textContent).toContain('マダガスカル × ICS-95 × ダークチョコレート')
+    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 第33弾: 既定は味。香りの顔ぶれを見る
     expect(preview!.textContent).toContain('花様（弱い）')
     expect(preview!.textContent).toContain('果実全般（弱い）')
   })
@@ -187,7 +190,7 @@ describe('ホイールの配置（系統・品種ページは上部、アイテ�
   it('お茶のアイテム詳細（煎茶）：ホイールは従来どおり最上部にある', () => {
     location.hash = '#/tea/sencha'
     render(<App />)
-    const wheel = screen.getByLabelText('フレーバーホイール')
+    const wheel = screen.getByLabelText(/フレーバーホイール/)
     const temporal = screen.getByText('香味の移り変わり')
     expect(isBefore(wheel, temporal)).toBe(true)
     // 第7弾・課題B: アイテム詳細にも「香り／味」切り替えがホイールの近くにある

@@ -4,13 +4,15 @@ import {
   compoundById, compoundsForNote, compoundsForTaste, compoundTier, type CompoundContext,
 } from '../data/compounds'
 import { inferencesFor, noteInferences } from '../data/inferences'
+import { NOTE_TASTE } from '../data/noteTastes'
 import { teaItems } from '../data/teas'
 import { chocolateItems } from '../data/chocolates'
 
 // フレーバーホイールの3階層化（第8弾）のデータ層。
 // 香り: 大分類（香味カテゴリ）→ 中分類（具体名）→ 小分類（寄与する化学物質）→ 成分詳細。
-// 味: 大分類（基本味／口当たり・収れん感）→ 中分類（個々の味）→ 小分類（寄与する
-//   物質）→ 成分詳細（第10弾で香りと同じ3階層に統一。味の大分類は2つだけ）。
+// 味: 第34弾で全面改修。第1階層＝味そのもの（甘味・酸味・苦味・うま味・渋味）→
+//   第2階層＝具体名（その味に対応づく香味ノート。対応づけは data/noteTastes.ts）→
+//   第3階層＝寄与する化学物質。旧構造（基本味／口当たり・収れん感の2グループ）は廃止。
 //
 // 中分類（具体名）の作り方:
 // - 漠然としていないノート（柑橘・ベリー・バラ等の具体的な香味ノート）そのもの。
@@ -270,8 +272,8 @@ export function buildAromaTiers(notes: ComboNote[], context?: WheelContexts): Ca
   return out
 }
 
-// ===== 味の3階層（第10弾） =====
-// 味の大分類は2つだけ:
+// ===== 味の分類グループ（第10弾の旧構造。第34弾で画面表示には使わない） =====
+// 味の大分類は2つだけだった:
 // - 基本味: 舌の味蕾にある味覚受容体で感じる基本の味（甘味・酸味・苦味・うま味。
 //   塩味のデータが将来出ればこちらに入れる）。
 // - 口当たり・収れん感: 味覚ではなく口の中の感覚として感じるもの。渋味は
@@ -348,4 +350,72 @@ export function buildTasteCompounds(taste: TasteKey, context?: WheelContexts): T
   const ctxs = ctxListOf(context)
   const filtered = ctxs.length > 0 ? linked.filter((c) => tierInContexts(c, ctxs) <= 2) : linked
   return tierCompounds(filtered, context)
+}
+
+// ===== 味の3階層（第34弾で全面改修） =====
+// 第1階層＝味そのもの（甘味・酸味・苦味・うま味・渋味。存在する味だけ）、
+// 第2階層＝具体名（その味に対応づく香味ノート。対応づけは data/noteTastes.ts）、
+// 第3階層＝その具体名に寄与する化学物質。
+// 旧構造（基本味／口当たり・収れん感の2グループ）は廃止した。
+// buildTasteTiers / TASTE_GROUP_OF は旧構造の分類ユーティリティとして残すが、
+// 画面表示には使わない。
+// 対応づく具体名が無い味（例：渋味）は、第2階層に寄与物質を直接出す
+// （fallbackCompounds）。具体名も物質も無い味は、根拠説明にフォールバックする。
+
+export interface TasteNoteEntry {
+  noteId: string
+  label: string
+  note: ComboNote
+  level: ComboNote['level']
+  /** 小分類（その具体名に寄与する化学物質）。香りホイールと同じ材料 */
+  compounds: TierCompound[]
+  weight: number
+  /** この味の中での割合（％、合計100） */
+  percent: number
+}
+
+export interface TasteNoteTier {
+  key: TasteKey
+  taste: ComboTaste
+  /** 第1階層の大きさ（味の強さの重み） */
+  weight: number
+  /** 第1階層の割合（％、合計100） */
+  percent: number
+  /** 第2階層の具体名（この味に対応づき、対象に存在するノートだけ） */
+  entries: TasteNoteEntry[]
+  /** 具体名が無い味で第2階層に直接出す寄与物質 */
+  fallbackCompounds: TierCompound[]
+}
+
+export function buildTasteNoteTiers(notes: ComboNote[], tastes: ComboTaste[], context?: WheelContexts): TasteNoteTier[] {
+  const known = tastes.filter((t) => rank(t.intensity) > 0)
+  const out: TasteNoteTier[] = []
+  for (const taste of known) {
+    const mapped = notes.filter((n) => NOTE_TASTE[n.noteId] === taste.key && rank(n.intensity) > 0 && noteById(n.noteId))
+    const entries: TasteNoteEntry[] = mapped.map((n) => {
+      const compounds = tierCompounds(noteCompounds(n.noteId, context), context)
+      return {
+        noteId: n.noteId,
+        label: noteById(n.noteId)!.name,
+        note: n,
+        level: n.level,
+        compounds,
+        weight: compounds.length > 0 ? compounds.reduce((a, c) => a + c.weight, 0) : rank(n.intensity),
+        percent: 0,
+      }
+    })
+    const percents = allocatePercents(entries.map((e) => e.weight))
+    entries.forEach((e, i) => { e.percent = percents[i] })
+    out.push({
+      key: taste.key,
+      taste,
+      weight: rank(taste.intensity),
+      percent: 0,
+      entries,
+      fallbackCompounds: entries.length === 0 ? buildTasteCompounds(taste.key, context) : [],
+    })
+  }
+  const percents = allocatePercents(out.map((g) => g.weight))
+  out.forEach((g, i) => { g.percent = percents[i] })
+  return out
 }

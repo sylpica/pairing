@@ -161,9 +161,11 @@ export const teaCultivars: TeaCultivar[] = [
     parentCultivarIds: ['sayamamidori'],
     regions: ['埼玉県', '東北・高冷地'],
     verification: { existence: 'confirmed', classification: 'partial', science: 'partial' },
-    scienceNote: '日本茶業中央会の試飲調査（2014）で「ウッディな中にスパイシーさが広がる香り」と記録されたが、査読論文ではなく、本実装では出典リンクを検証できなかったため所見の登録は見送った。品種固有の成分分析データは未確認。',
-    findings: [],
-    sourceIds: [NARO],
+    scienceNote: '日本茶業中央会の試飲調査（2014）で「ウッディな中にスパイシーさが広がる香り」と記録された。当初は出典リンクを検証できなかったため所見の登録を見送ったが、2026-10-31 に農研機構が公開する茶品種ハンドブック第6版への収録を確認できたため、所見として登録した（第28弾）。査読論文ではない。品種固有の成分分析データは未確認。',
+    findings: [
+      { kind: 'sensory', statement: '日本茶業中央会の試飲調査（茶品種ハンドブック第6版に収録）では、ほくめい は「ウッディな中にスパイシーさが広がる香り」と記録された。', conditions: '公的・業界団体（日本茶業中央会、日本茶インストラクター協会協力）の試飲調査の記述であり、査読済みの官能実測ではない。', sourceIds: ['cha-hinshu-handbook-6'] },
+    ],
+    sourceIds: [NARO, 'cha-hinshu-handbook-6'],
     note: '花粉親の表記に資料間の相違がある（茶農林登録品種一覧表では「5507（藪北自然実生）」）。育成論文での追加確認が必要なため分類確認は「一部確認」とする。',
   },
   {
@@ -481,10 +483,12 @@ export const teaCultivars: TeaCultivar[] = [
     registration: '台茶21号（台湾・茶及飲料作物改良場 魚池分場育成、2008年命名）',
     breeding: 'FKK-1（印度大葉種 Kyang × 祁門 Kimen の交配後裔として1953年命名）の天然交雑後代から得た第22号種子を起源とし、40年余の選抜を経て命名。大葉〜中葉型・早生種。',
     regions: ['南投県魚池郷', '嘉義県番路郷'],
-    verification: { existence: 'confirmed', classification: 'confirmed', science: 'unconfirmed' },
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
     scienceNote: '柑橘類の花に似た花香が特徴とされるのは TBRS 公式解説による。品種発表論文（台湾茶業研究彙報 28巻）を除き、品種単独の査読済み香気・呈味論文は未確認。出典は調査記録で TBRS 公式品種解説・国家文化記憶庫により確認した。',
-    findings: [],
-    sourceIds: [],
+    findings: [
+      { kind: 'sensory', statement: '台湾・茶及飲料作物改良場（TBRS）の公式品種解説では、紅韻（台茶21号）の成茶の香気は柑橘類の花に似た花香を持ち、濃い花果香の高香な紅茶用品種とされる。', conditions: '公的機関の品種解説（査読論文ではない）。品種単独の香気成分の査読済み実測ではない。', sourceIds: ['tbrs-tea-breeding-cultivars'] },
+    ],
+    sourceIds: ['tbrs-tea-breeding-cultivars'],
   },
   {
     id: 'yingzhi-hongxin', name: '硬枝紅心', originalName: '硬枝紅心', aliases: ['Ying Zhi Hong Xin'],

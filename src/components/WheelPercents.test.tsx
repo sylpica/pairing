@@ -41,7 +41,16 @@ describe('ホイールの％表示（第27弾・表示検証）', () => {
     const a = analyzeTeaCombo({ kindId: 'green', regionId: 'nagasaki', cultivarId: 'yabukita' })
     const { container } = render(<ComboWheelPanel notes={a.notes} tastes={a.tastes} context={a.context} resetKey={a.title} />)
     const root = container as HTMLElement
+    // 第33弾: 既定は味。味・第1階層（味そのもの）
+    expectTierPercents(root, '味第1階層')
+    // 味・第2階層（甘味→具体名）
+    fireEvent.click(screen.getByLabelText(/甘味を開く/))
+    expectTierPercents(root, '味第2階層')
+    // 味・第3階層（蜂蜜→化合物）
+    fireEvent.click(screen.getByLabelText(/蜂蜜（\d+%）に寄与する化学物質を見る/))
+    expectTierPercents(root, '味第3階層')
     // 香り・第1階層
+    fireEvent.click(screen.getByRole('tab', { name: '香り' }))
     expectTierPercents(root, '香り第1階層')
     // 香り・第2階層（花系）
     fireEvent.click(screen.getByLabelText(/花系を開く/))
@@ -49,27 +58,17 @@ describe('ホイールの％表示（第27弾・表示検証）', () => {
     // 香り・第3階層（ジャスミン→化合物）
     fireEvent.click(screen.getByLabelText(/ジャスミン（\d+%）に寄与する化学物質を見る/))
     expectTierPercents(root, '香り第3階層')
-    // 味・第1階層
-    fireEvent.click(screen.getByRole('button', { name: '← 中分類に戻る' }))
-    fireEvent.click(screen.getByRole('button', { name: '← 大分類に戻る' }))
-    fireEvent.click(screen.getByRole('tab', { name: '味' }))
-    expectTierPercents(root, '味第1階層')
-    // 味・第2階層（基本味）
-    fireEvent.click(screen.getByLabelText(/基本味を開く/))
-    expectTierPercents(root, '味第2階層')
-    // 味・第3階層（苦味→物質）
-    fireEvent.click(screen.getByRole('button', { name: /^苦味（.+）に寄与する物質を見る$/ }))
-    expectTierPercents(root, '味第3階層')
   })
 
   it('アイテム詳細ホイール（プロファイル）でも第1階層に％がある', () => {
     const item = teaById('sencha')!
     const { container } = render(<ProfileWheelPanel profile={item.profile} context={{ side: 'tea', kindId: item.kindId, itemName: item.name, itemId: item.id }} />)
     const root = container as HTMLElement
-    expectTierPercents(root, 'アイテム香り第1階層')
-    fireEvent.click(screen.getByRole('tab', { name: '味' }))
+    // 第33弾: 既定は味
     expectTierPercents(root, 'アイテム味第1階層')
-    fireEvent.click(screen.getByLabelText(/基本味を開く/))
+    fireEvent.click(screen.getByLabelText(/苦味を開く/))
     expectTierPercents(root, 'アイテム味第2階層')
+    fireEvent.click(screen.getByRole('tab', { name: '香り' }))
+    expectTierPercents(root, 'アイテム香り第1階層')
   })
 })

@@ -68,6 +68,7 @@ describe('組み合わせページ（産地×品種×分類）', () => {
   it('大分類には中分類（具体名）が併記され、小分類で化合物名が出る（裏付けのある香りだけ・指示3・第8弾）', () => {
     location.hash = '#/combo/tea/green.nagasaki.yabukita'
     render(<App />)
+    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 第33弾: 既定は味
     // 大分類セグメントの小さな文字は中分類（具体名）：緑茶の花様への推測＝バラ・ジャスミン
     const subs = [...document.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '')
     expect(subs.length).toBeGreaterThan(0)
@@ -82,6 +83,7 @@ describe('組み合わせページ（産地×品種×分類）', () => {
   it('階層を辿ると根拠の内訳と成分がシートで開く（指示2・3・第8弾）', () => {
     location.hash = '#/combo/tea/green.nagasaki.yabukita'
     render(<App />)
+    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 第33弾: 既定は味
     expect(screen.queryByRole('dialog')).toBeNull()
     fireEvent.click(screen.getByLabelText(/花系を開く/))
     fireEvent.click(screen.getByRole('button', { name: '「花様」の根拠を見る' }))
@@ -102,6 +104,7 @@ describe('組み合わせページ（産地×品種×分類）', () => {
   it('チップからも階層を辿って同じシートが開く（第8弾）', () => {
     location.hash = '#/combo/tea/green.nagasaki.yabukita'
     render(<App />)
+    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 第33弾: 既定は味
     const chip = [...document.querySelectorAll('.wheel-note-index .chip')].find((el) => el.textContent?.includes('花様'))
     expect(chip).toBeTruthy()
     fireEvent.click(chip!)

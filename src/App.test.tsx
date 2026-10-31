@@ -88,7 +88,7 @@ describe('画面の基本動作（§16相当のローカル検証）', () => {
     const grid = document.querySelector('.compare-grid')!
     const card = screen.getByText('同じ生葉から作った6つの茶（原著研究）').closest('section')!
     expect(grid.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(screen.getAllByLabelText('フレーバーホイール').length).toBe(2)
+    expect(screen.getAllByLabelText(/フレーバーホイール/).length).toBe(2)
     // 出典リンクつきの解説内容は移動後も残っている
     expect(screen.getByText(/揮発性成分の総濃度は 紅茶が最も高く/)).toBeTruthy()
     // リセット：両プルダウンを変えてから押すと、開いた直後の既定（teaItems[1]／teaItems[7]）に戻る
@@ -129,16 +129,17 @@ describe('画面の基本動作（§16相当のローカル検証）', () => {
       expect(badge).toBeTruthy()
       expect(['実測・官能評価あり', '一般的な知見', '探索的な予想', '情報不足']).toContain(badge!.textContent)
     }
-    // ドリルダウン：パネル1で大分類を開くと中分類（具体名）に進み、戻れる
+    // ドリルダウン：パネル1で香りの大分類を開くと中分類（具体名）に進み、戻れる
     const panelA = panels[0]
+    fireEvent.click(within(panelA).getByRole('tab', { name: '香り' }))
     const openers = within(panelA).getAllByLabelText(/を開く/)
     expect(openers.length).toBeGreaterThan(0)
     fireEvent.click(openers[0])
     expect(within(panelA).getByRole('button', { name: '← 大分類に戻る' })).toBeTruthy()
     fireEvent.click(within(panelA).getByRole('button', { name: '← 大分類に戻る' }))
-    // 味への切替：パネル1で「味」タブを押すと基本味のホイールになる
+    // 味への切替：パネル1で「味」タブを押すと味そのもののホイールになる（第34弾）
     fireEvent.click(within(panelA).getByRole('tab', { name: '味' }))
-    expect(within(panelA).getByLabelText(/基本味を開く/)).toBeTruthy()
+    expect(within(panelA).getAllByLabelText(/甘味を開く|苦味を開く|うま味を開く/).length).toBeGreaterThan(0)
   })
   it('出典・論文一覧では方法論の解説3件が出典リストの下（ページ下部）にある（第22弾）', () => {
     location.hash = '#/sources'; render(<App />)
@@ -160,17 +161,17 @@ describe('画面の基本動作（§16相当のローカル検証）', () => {
   })
   it('ミルクチョコ詳細ではホイールと出典が表示される', () => {
     location.hash = '#/choco/milk-chocolate'; render(<App />)
-    expect(screen.getByLabelText('フレーバーホイール')).toBeTruthy()
+    expect(screen.getByLabelText(/フレーバーホイール/)).toBeTruthy()
     expect(screen.getAllByText(/Schnermann/).length).toBeGreaterThan(0)
   })
   it('ホワイトチョコ詳細ではモデル系の注意書きが表示される', () => {
     location.hash = '#/choco/white-chocolate'; render(<App />)
-    expect(screen.getByLabelText('フレーバーホイール')).toBeTruthy()
+    expect(screen.getByLabelText(/フレーバーホイール/)).toBeTruthy()
     expect(screen.getAllByText(/モデル/).length).toBeGreaterThan(0)
   })
   it('煎茶の詳細が出典つきで表示される', () => {
     location.hash = '#/tea/sencha'; render(<App />)
-    expect(screen.getByLabelText('フレーバーホイール')).toBeTruthy()
+    expect(screen.getByLabelText(/フレーバーホイール/)).toBeTruthy()
     expect(screen.getAllByText(/Tan/).length).toBeGreaterThan(0)
   })
   it('鳳凰単叢では余韻（カップアロマ）が表示される', () => {
@@ -179,7 +180,7 @@ describe('画面の基本動作（§16相当のローカル検証）', () => {
   })
   it('お茶詳細でホイールと出典リンクが出る', () => {
     location.hash = '#/tea/black-tea'; render(<App />)
-    expect(screen.getByLabelText('フレーバーホイール')).toBeTruthy()
+    expect(screen.getByLabelText(/フレーバーホイール/)).toBeTruthy()
     expect(screen.getAllByText(/Zeng/).length).toBeGreaterThan(0)
   })
 })
@@ -390,7 +391,7 @@ describe('UI改善：絞り込みのメイン化・チョコ種類追加・系�
   })
   it('ルビー詳細ではホイールと官能研究の出典が出て、系統ではなく種類として説明される', () => {
     location.hash = '#/choco/ruby-chocolate'; render(<App />)
-    expect(screen.getByLabelText('フレーバーホイール')).toBeTruthy()
+    expect(screen.getByLabelText(/フレーバーホイール/)).toBeTruthy()
     expect(screen.getAllByText(/Šeremet/).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/遺伝的な系統ではなく/).length).toBeGreaterThan(0)
   })
@@ -576,7 +577,7 @@ describe('実機フィードバック第2弾：保存ボタン位置・タブ・
     location.hash = '#/pair'; render(<App />)
     spy.mockClear() // 初期表示時のルートスクロールは対象外
     fireEvent.click(screen.getByRole('tab', { name: 'お茶' }))
-    expect(screen.getByLabelText('フレーバーホイール')).toBeTruthy()
+    expect(screen.getAllByLabelText(/フレーバーホイール/).length).toBeGreaterThan(0)
     fireEvent.click(screen.getByRole('tab', { name: 'チョコ' }))
     fireEvent.click(screen.getByRole('tab', { name: '組み合わせの見方' }))
     expect(spy).not.toHaveBeenCalled()
@@ -666,6 +667,8 @@ describe('実機フィードバック第4弾：組み合わせる画面で軸が
     fireEvent.change(screen.getByLabelText('お茶の品種（任意）'), { target: { value: 'fenghuang-dancong-group' } })
     fireEvent.change(screen.getByLabelText('お茶の産地（任意）'), { target: { value: 'region:guangdong' } })
     fireEvent.click(screen.getByRole('tab', { name: 'お茶' }))
+    // 第33弾: 既定は味。蘭は香り側のノートなので、各パネルを香りに切り替える
+    for (const tab of screen.getAllByRole('tab', { name: '香り' })) fireEvent.click(tab)
     // 組み合わせホイールには蘭のノートが出る（素のプロファイルには無い）
     expect(document.body.textContent).toContain('蘭')
   })

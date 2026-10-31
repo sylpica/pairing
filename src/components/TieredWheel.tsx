@@ -53,8 +53,12 @@ export default function TieredWheel({ segments, centerLabel, ariaLabel, onSelect
     const a0 = angle; const a1 = angle + (s.weight / total) * Math.PI * 2; angle = a1
     const mid = (a0 + a1) / 2
     const span = a1 - a0
-    const avail = span >= Math.PI ? 130 : Math.min(2 * LABEL_R * Math.sin(span / 2) * 0.96, 130)
+    const chordAvail = span >= Math.PI ? 130 : Math.min(2 * LABEL_R * Math.sin(span / 2) * 0.96, 130)
     const lx = cx + LABEL_R * Math.cos(mid), ly = cy + LABEL_R * Math.sin(mid)
+    // 第29弾: ホイールの左右端に近いセグメントでは、ラベル中心から SVG の端
+    // までの距離も制約になる。これが無いと端のセグメントで長い成分名
+    // （2,5-ジメチルピラジン等）の両端が viewBox の外に切れていた。
+    const avail = Math.min(chordAvail, 2 * Math.min(lx, size - lx) - 4)
     const lines: (FittedLine & { cls: string })[] = [
       ...fitLabelLines(s.label, avail).map((l) => ({ ...l, cls: 'wheel-label' })),
     ]
