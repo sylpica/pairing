@@ -12,46 +12,54 @@ export interface PairingResult {
 const rank = (i: string) => (i === 'strong' ? 3 : i === 'normal' ? 2 : i === 'weak' ? 1 : 0)
 export const TASTE_LABELS: Record<TasteKey, string> = { sweet: '甘味', sour: '酸味', bitter: '苦味', astringent: '渋味', umami: 'うま味' }
 
+/** ペアの各側の呼び名。full = 本文用（お茶／チョコレート）、short = 見出し用（お茶／チョコ）。
+ *  同種同士のブレンド（第9弾）では、区別のため両方ともアイテム名を使う。 */
+export interface PairingSideLabel { full: string; short: string }
+export const TEA_PAIRING_LABEL: PairingSideLabel = { full: 'お茶', short: 'お茶' }
+export const CHOCO_PAIRING_LABEL: PairingSideLabel = { full: 'チョコレート', short: 'チョコ' }
+
 /**
  * ルールベースのペアリング探索（docs/design/pairing-engine.md）。
  * 香味成分の合算や相性スコアは出さない。共通点と対比の「候補」を、
  * 根拠区分（探索的予想／情報不足）とともに返すだけである。
  * 根拠: Spence 2020 の批判的総説（共有香味分子による予測は支持されていない）。
+ * 第9弾で2つのプロファイル一般（同種同士のブレンド）へ一般化した。
+ * ラベル省略時は従来どおり a=お茶、b=チョコレート として文面を組み立てる。
  */
-export function analyzePairing(tea: FlavorProfile, choco: FlavorProfile): PairingResult {
-  const teaKnown = tea.aromas.filter((a) => rank(a.intensity) >= 2)
-  const chocoKnown = choco.aromas.filter((a) => rank(a.intensity) >= 2)
-  if (teaKnown.length === 0 || chocoKnown.length === 0) {
+export function analyzePairing(a: FlavorProfile, b: FlavorProfile, labels: { a: PairingSideLabel; b: PairingSideLabel } = { a: TEA_PAIRING_LABEL, b: CHOCO_PAIRING_LABEL }): PairingResult {
+  const aKnown = a.aromas.filter((x) => rank(x.intensity) >= 2)
+  const bKnown = b.aromas.filter((x) => rank(x.intensity) >= 2)
+  if (aKnown.length === 0 || bKnown.length === 0) {
     return {
       level: 'insufficient', sharedNotes: [], sharedCategories: [], contrasts: [],
       message: 'どちらかの香味データが不足しているため、組み合わせの特徴を示せません。これは相性が悪いのではなく、根拠が足りないという意味です。',
     }
   }
-  const chocoNoteIds = new Set(chocoKnown.map((a) => a.noteId))
-  const sharedNotes = teaKnown
-    .filter((a) => chocoNoteIds.has(a.noteId))
-    .map((a) => ({ noteId: a.noteId, name: noteById(a.noteId)?.name ?? a.noteId }))
+  const bNoteIds = new Set(bKnown.map((x) => x.noteId))
+  const sharedNotes = aKnown
+    .filter((x) => bNoteIds.has(x.noteId))
+    .map((x) => ({ noteId: x.noteId, name: noteById(x.noteId)?.name ?? x.noteId }))
 
-  const teaCats = new Map(teaKnown.map((a) => [noteById(a.noteId)?.categoryId ?? '', a]))
-  const chocoCats = new Map(chocoKnown.map((a) => [noteById(a.noteId)?.categoryId ?? '', a]))
-  const sharedCategories = [...teaCats.keys()].filter((c) => c && chocoCats.has(c) && !sharedNotes.some((s) => noteById(s.noteId)?.categoryId === c)).map((categoryId) => ({ categoryId }))
+  const aCats = new Map(aKnown.map((x) => [noteById(x.noteId)?.categoryId ?? '', x]))
+  const bCats = new Map(bKnown.map((x) => [noteById(x.noteId)?.categoryId ?? '', x]))
+  const sharedCategories = [...aCats.keys()].filter((c) => c && bCats.has(c) && !sharedNotes.some((s) => noteById(s.noteId)?.categoryId === c)).map((categoryId) => ({ categoryId }))
 
   const contrasts: PairingResult['contrasts'] = []
-  for (const [cat, entry] of teaCats) {
-    if (cat && !chocoCats.has(cat) && rank(entry.intensity) === 3) {
-      contrasts.push({ label: 'お茶だけの特徴', noteId: entry.noteId, detail: `お茶には「${noteById(entry.noteId)?.name}」を含む分類の香りが際立ち、チョコレートには見られません。並べて味わうと違いが感じられる可能性があります（未検証の探索的な見方です）。` })
+  for (const [cat, entry] of aCats) {
+    if (cat && !bCats.has(cat) && rank(entry.intensity) === 3) {
+      contrasts.push({ label: `${labels.a.short}だけの特徴`, noteId: entry.noteId, detail: `${labels.a.full}には「${noteById(entry.noteId)?.name}」を含む分類の香りが際立ち、${labels.b.full}には見られません。並べて味わうと違いが感じられる可能性があります（未検証の探索的な見方です）。` })
     }
   }
-  for (const [cat, entry] of chocoCats) {
-    if (cat && !teaCats.has(cat) && rank(entry.intensity) === 3) {
-      contrasts.push({ label: 'チョコだけの特徴', noteId: entry.noteId, detail: `チョコレートには「${noteById(entry.noteId)?.name}」を含む分類の香りが際立ち、お茶には見られません。並べて味わうと違いが感じられる可能性があります（未検証の探索的な見方です）。` })
+  for (const [cat, entry] of bCats) {
+    if (cat && !aCats.has(cat) && rank(entry.intensity) === 3) {
+      contrasts.push({ label: `${labels.b.short}だけの特徴`, noteId: entry.noteId, detail: `${labels.b.full}には「${noteById(entry.noteId)?.name}」を含む分類の香りが際立ち、${labels.a.full}には見られません。並べて味わうと違いが感じられる可能性があります（未検証の探索的な見方です）。` })
     }
   }
   // 味覚の対比は「合成」せず、両方にデータがある場合だけ並置として示す
   ;(Object.keys(TASTE_LABELS) as TasteKey[]).forEach((k) => {
-    const t = tea.tastes[k], c = choco.tastes[k]
+    const t = a.tastes[k], c = b.tastes[k]
     if (rank(t.intensity) >= 2 && rank(c.intensity) >= 2 && t.intensity !== c.intensity) {
-      contrasts.push({ label: `味覚の違い：${TASTE_LABELS[k]}`, detail: `お茶は${label(t.intensity)}、チョコレートは${label(c.intensity)}と記録されています。組み合わせたときの変化は検証されていません。` })
+      contrasts.push({ label: `味覚の違い：${TASTE_LABELS[k]}`, detail: `${labels.a.full}は${label(t.intensity)}、${labels.b.full}は${label(c.intensity)}と記録されています。組み合わせたときの変化は検証されていません。` })
     }
   })
 

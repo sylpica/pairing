@@ -3,15 +3,22 @@ import {
   analyzeTeaCombo, analyzeChocoCombo, comboProfileOf,
   type ChocoComboSel, type ComboAnalysis, type TeaComboSel,
 } from './combo'
-import { analyzePairing, type PairingResult } from './pairing'
-import { analyzeInteractions } from './interactions'
-import { analyzePairingCharacter } from './pairingCharacter'
+import { analyzePairing, CHOCO_PAIRING_LABEL, TEA_PAIRING_LABEL, type PairingResult, type PairingSideLabel } from './pairing'
+import { analyzeInteractionsForSides, type InteractionSide } from './interactions'
+import { analyzePairingCharacterForSides, type CharacterSide } from './pairingCharacter'
 
 // ペアリング（第3層）の組み立て（課題C, 2026-10-31）。
 // ユーザーの階層モデルでは、第3層は「組み合わせの推測（第2層）同士の統合」。
 // そのため産地・品種・系統が指定された側は、アイテム素のプロファイルではなく
 // 組み合わせ分析（軸効果適用後）のノート集合を入力プロファイルに使う。
 // 組み合わせ分析は選択空間単位（お茶 2,266 通り・チョコ 1,224 通り）でメモ化する。
+//
+// 第9弾（自家ブレンド対応）で、両側が任意の種別（お茶/チョコ）の組み立て
+// assembleBlend へ一般化した。異種ペアではエンジンの入力順を従来どおり
+// （お茶，チョコレート）に正規化するため、従来の assemblePairing と
+// 結果（共通点・対比・相互作用・性格）が一致する。
+// 文面の呼び名は、異種ペアでは「お茶」「チョコレート」、同種ペアでは
+// 区別のため各側のアイテム名を使う。
 
 const teaComboCache = new Map<string, ComboAnalysis>()
 const chocoComboCache = new Map<string, ComboAnalysis>()
@@ -32,6 +39,96 @@ export function chocoComboCached(sel: ChocoComboSel): ComboAnalysis {
   const analysis = analyzeChocoCombo(sel)
   chocoComboCache.set(key, analysis)
   return analysis
+}
+
+export type BlendSideType = 'tea' | 'chocolate'
+
+export interface BlendSideInput {
+  type: BlendSideType
+  /** 土台アイテム（素のプロファイルの出所） */
+  item: TeaItem | ChocolateItem
+  /** 軸指定がある場合の組み合わせ選択。null の側は素のプロファイルのまま */
+  sel: TeaComboSel | ChocoComboSel | null
+}
+
+export interface BlendSideResult {
+  type: BlendSideType
+  /** 軸指定がある側は profile を組み合わせ分析由来に差し替えた合成アイテム */
+  item: TeaItem | ChocolateItem
+  analysis: ComboAnalysis | null
+  /** 文面での呼び名（異種ペアは種別名、同種ペアはアイテム名） */
+  label: string
+}
+
+export interface BlendAssembly {
+  a: BlendSideResult
+  b: BlendSideResult
+  /** 両側が同じ種別（お茶同士・チョコ同士の自家ブレンド）か */
+  sameType: boolean
+  result: PairingResult
+  interactions: InteractionAnalysis
+  characters: PairingCharacterAnalysis
+}
+
+function resolveBlendSide(input: BlendSideInput, sameType: boolean): BlendSideResult {
+  const analysis = input.sel
+    ? (input.type === 'tea' ? teaComboCached(input.sel as TeaComboSel) : chocoComboCached(input.sel as ChocoComboSel))
+    : null
+  const item = analysis
+    ? { ...input.item, profile: comboProfileOf(analysis, input.item.profile) }
+    : input.item
+  const label = sameType
+    ? input.item.name
+    : input.type === 'tea' ? TEA_PAIRING_LABEL.full : CHOCO_PAIRING_LABEL.full
+  return { type: input.type, item, analysis, label }
+}
+
+const pairingLabelOf = (side: BlendSideResult, sameType: boolean): PairingSideLabel =>
+  sameType
+    ? { full: side.item.name, short: side.item.name }
+    : side.type === 'tea' ? TEA_PAIRING_LABEL : CHOCO_PAIRING_LABEL
+
+const interactionSideOf = (side: BlendSideResult): InteractionSide => ({
+  type: side.type,
+  label: side.label,
+  profile: side.item.profile,
+  itemId: side.item.id,
+  chocoKind: side.type === 'chocolate' ? (side.item as ChocolateItem).kind : undefined,
+})
+
+const characterSideOf = (side: BlendSideResult): CharacterSide => ({
+  item: side.item,
+  type: side.type,
+  label: side.label,
+})
+
+/**
+ * ペアリング画面と全数検証が共有する組み立て（2側一般版）。
+ * sel がある側は、その選択が viable であることが呼び出し側の前提
+ * （画面は ComboSelectors が viable な選択だけを保持する）。
+ * 同じアイテム同士のペアもそのまま組み立てる（自分自身とのブレンドは
+ * そのアイテムのプロファイルとして扱う）。
+ */
+export function assembleBlend(aIn: BlendSideInput, bIn: BlendSideInput): BlendAssembly {
+  const sameType = aIn.type === bIn.type
+  const a = resolveBlendSide(aIn, sameType)
+  const b = resolveBlendSide(bIn, sameType)
+  // 異種ペアではエンジン入力順を（お茶，チョコレート）に正規化し、
+  // 従来の assemblePairing と同一の結果にする。同種ペアでは選択した順（a, b）。
+  const ordered: [BlendSideResult, BlendSideResult] =
+    !sameType && a.type === 'chocolate' ? [b, a] : [a, b]
+  const [f, s] = ordered
+  return {
+    a,
+    b,
+    sameType,
+    result: analyzePairing(f.item.profile, s.item.profile, {
+      a: pairingLabelOf(f, sameType),
+      b: pairingLabelOf(s, sameType),
+    }),
+    interactions: analyzeInteractionsForSides(interactionSideOf(f), interactionSideOf(s)),
+    characters: analyzePairingCharacterForSides(characterSideOf(f), characterSideOf(s)),
+  }
 }
 
 export interface PairingAssembly {
@@ -57,21 +154,17 @@ export function assemblePairing(
   teaSel: TeaComboSel | null,
   chocoSel: ChocoComboSel | null,
 ): PairingAssembly {
-  const teaAnalysis = teaSel ? teaComboCached(teaSel) : null
-  const chocoAnalysis = chocoSel ? chocoComboCached(chocoSel) : null
-  const teaItem: TeaItem = teaAnalysis
-    ? { ...tea, profile: comboProfileOf(teaAnalysis, tea.profile) }
-    : tea
-  const chocoItem: ChocolateItem = chocoAnalysis
-    ? { ...choco, profile: comboProfileOf(chocoAnalysis, choco.profile) }
-    : choco
+  const blend = assembleBlend(
+    { type: 'tea', item: tea, sel: teaSel },
+    { type: 'chocolate', item: choco, sel: chocoSel },
+  )
   return {
-    teaItem,
-    chocoItem,
-    teaAnalysis,
-    chocoAnalysis,
-    result: analyzePairing(teaItem.profile, chocoItem.profile),
-    interactions: analyzeInteractions(teaItem, chocoItem),
-    characters: analyzePairingCharacter(teaItem, chocoItem),
+    teaItem: blend.a.item as TeaItem,
+    chocoItem: blend.b.item as ChocolateItem,
+    teaAnalysis: blend.a.analysis,
+    chocoAnalysis: blend.b.analysis,
+    result: blend.result,
+    interactions: blend.interactions,
+    characters: blend.characters,
   }
 }

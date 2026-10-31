@@ -1,8 +1,10 @@
 import { useMemo } from 'react'
 import type { ComboLevel, ComboTaste, FlavorProfile, TasteKey } from '../types'
+import type { CompoundContext } from '../data/compounds'
 import { COMBO_LEVEL_LABEL, COMBO_TASTE_LABEL } from '../engine/combo'
+import { buildTasteCompounds } from '../engine/wheelTiers'
 import { COMBO_INT_LABEL } from './ComboWheel'
-import { fitLabelLines } from './wheelText'
+import { fitLabelLines, packScaledLines } from './wheelText'
 
 // 味モードのホイール（第7弾・課題B）。組み合わせの味プロファイル
 // （ComboAnalysis.tastes＝土台アイテムの味覚プロファイルに、製法ルールと
@@ -13,6 +15,10 @@ import { fitLabelLines } from './wheelText'
 // - inferred（推測）: 薄く表示（0.38）＋破線の輪郭
 // - セグメントの大きさ＝強さ（弱い1・普通2・強い3 の重み）。数値スコアは出さない。
 // - 全セグメントに必ずラベルを出す（細い場合はフォント縮小・2行割り）。
+// - 第1階層の各次元には、第2階層の中身（寄与する物質名）を小さく併記する
+//   （香りの大分類に中分類名を併記する作法と揃える。追加指示B）。
+//   寄与物質の裏付けが無い次元は「成分データなし」と併記し、併記が無い
+//   セグメントを作らない（香りの中分類で成分が無い場合の作法と同じ文言）。
 // 味のデータが無い次元は無理に作らず、ある次元だけで構成する。
 
 const rank = (i: string) => (i === 'strong' ? 3 : i === 'normal' ? 2 : i === 'weak' ? 1 : 0)
@@ -48,14 +54,27 @@ function arcPath(cx: number, cy: number, r0: number, r1: number, a0: number, a1:
   return `M ${x0} ${y0} A ${r1} ${r1} 0 ${large} 1 ${x1} ${y1} L ${x2} ${y2} A ${r0} ${r0} 0 ${large} 0 ${x3} ${y3} Z`
 }
 
-export default function TasteWheel({ tastes, onSelectTaste, selectedTasteKey }: {
+export default function TasteWheel({ tastes, onSelectTaste, selectedTasteKey, context }: {
   tastes: ComboTaste[]
   onSelectTaste: (key: TasteKey) => void
   selectedTasteKey?: TasteKey | null
+  /** 寄与物質の絞り込みに使う文脈（第2階層の表示と揃える） */
+  context?: CompoundContext
 }) {
   const ordered = useMemo(
     () => TASTE_ORDER.flatMap((k) => tastes.filter((t) => t.key === k && rank(t.intensity) > 0)),
     [tastes])
+  // 各次元に寄与する物質名（第2階層の中身）。重みの大きい順に並べる。
+  const compoundNamesByKey = useMemo(() => {
+    const m = new Map<TasteKey, string[]>()
+    for (const t of ordered) {
+      m.set(t.key, buildTasteCompounds(t.key, context)
+        .slice()
+        .sort((a, b) => b.percent - a.percent)
+        .map((tc) => tc.compound.name))
+    }
+    return m
+  }, [ordered, context])
 
   if (ordered.length === 0) {
     return <p className="unknown-box">この組み合わせでは、根拠のある味のデータがまだ示せません（土台の味覚プロファイル、製法ルールや産地・品種・系統の味への作用が未収録のため）。根拠なく味を並べることはしません。</p>
@@ -70,7 +89,13 @@ export default function TasteWheel({ tastes, onSelectTaste, selectedTasteKey }: 
     const span = a1 - a0
     const avail = span >= Math.PI ? 130 : Math.min(2 * LABEL_R * Math.sin(span / 2) * 0.96, 130)
     const lx = cx + LABEL_R * Math.cos(mid), ly = cy + LABEL_R * Math.sin(mid)
-    const lines = fitLabelLines(COMBO_TASTE_LABEL[t.key], avail).map((l) => ({ ...l, cls: 'wheel-label' }))
+    const names = compoundNamesByKey.get(t.key) ?? []
+    const subMax = span >= 0.65 ? 2 : 1
+    const lines = [
+      ...fitLabelLines(COMBO_TASTE_LABEL[t.key], avail).map((l) => ({ ...l, cls: 'wheel-label' })),
+      ...packScaledLines(names.length > 0 ? names : ['成分データなし'], avail, subMax)
+        .map((l) => ({ ...l, cls: 'wheel-sub' })),
+    ]
     const totalH = lines.reduce((a, l) => a + l.fs * 1.35, 0)
     let y = ly - totalH / 2
     const placed = lines.map((l) => { const yy = y + (l.fs * 1.35) / 2; y += l.fs * 1.35; return { ...l, y: yy } })
@@ -105,7 +130,7 @@ export default function TasteWheel({ tastes, onSelectTaste, selectedTasteKey }: 
           <li><span className="legend-swatch" style={{ background: '#8d7b68', opacity: LEVEL_OPACITY.general }} />一般的な知見</li>
           <li><span className="legend-swatch legend-inferred" style={{ background: '#8d7b68', opacity: LEVEL_OPACITY.inferred }} />推測（未検証）：薄い表示＋破線の輪郭</li>
         </ul>
-        <p className="note-small">セグメントの大きさは強さの目安（弱い・普通・強い）です。根拠のある味の次元だけを表示しています（データの無い次元は作りません）。味を押すと根拠の内訳が見えます。渋味は基本味ではなく、口の中の収れん感です。</p>
+        <p className="note-small">セグメントの大きさは強さの目安（弱い・普通・強い）です。根拠のある味の次元だけを表示しています（データの無い次元は作りません）。セグメント内の小さな文字は、その味に寄与する物質です（寄与する物質の裏付けが無い味は「成分データなし」と示します）。味を押すと、その味に寄与する物質と根拠の内訳が見えます。渋味は基本味ではなく、口の中の収れん感です。</p>
       </div>
       <ul className="wheel-list">
         {ordered.map((t) => (

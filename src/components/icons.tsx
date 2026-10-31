@@ -88,14 +88,3 @@ export function HistoryIcon({ className }: IconProps) {
     </svg>
   )
 }
-
-export function PercentIcon({ className }: IconProps) {
-  return (
-    <svg viewBox="0 0 48 48" className={className} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="24" cy="24" r="18" />
-      <path d="M33 15L15 33" />
-      <circle cx="17.5" cy="17.5" r="2.6" />
-      <circle cx="30.5" cy="30.5" r="2.6" />
-    </svg>
-  )
-}

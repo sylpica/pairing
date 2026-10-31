@@ -273,7 +273,7 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
       )}
 
       {mode === 'taste' && !tasteKey && (
-        <TasteWheel tastes={tastes} selectedTasteKey={null}
+        <TasteWheel tastes={tastes} selectedTasteKey={null} context={context}
           onSelectTaste={(k) => nav(() => setTasteKey(k))} />
       )}
 

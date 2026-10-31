@@ -430,3 +430,42 @@ describe('実機フィードバック第4弾：組み合わせる画面で軸が
     expect(document.body.textContent).toContain('蘭')
   })
 })
+
+describe('実機フィードバック第9弾・追加指示A：カカオ含有率フィルターの削除（2026-10-31）', () => {
+  beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
+  const cardTexts = () => [...document.querySelectorAll('.item-card')].map((el) => el.textContent ?? '')
+
+  it('チョコ一覧に含有率の入力欄が無く、絞り込みは3つのプルダウンだけ', () => {
+    location.hash = '#/choco'; render(<App />)
+    expect(screen.queryByLabelText('カカオ含有率で絞り込み')).toBeNull()
+    expect(document.querySelector('.filter-hero input[type="number"]')).toBeNull()
+    expect(document.querySelectorAll('.filter-hero .big-select').length).toBe(3)
+    // 下部の説明文にも含有率への言及が無い
+    expect(document.body.textContent).not.toContain('含有率')
+  })
+
+  it('含有率を削除しても、分類・産地・系統の絞り込みは従来どおり働く', () => {
+    location.hash = '#/choco'; render(<App />)
+    // 分類で絞る（従来の不変条件：ルビーを選ぶとルビーだけ）
+    fireEvent.change(screen.getByLabelText('分類（種類）で絞り込み'), { target: { value: 'ruby' } })
+    let texts = cardTexts()
+    expect(texts.some((t) => t.includes('ルビーチョコレート'))).toBe(true)
+    expect(texts.some((t) => t.includes('ミルクチョコレート'))).toBe(false)
+    cleanup(); localStorage.clear()
+    location.hash = '#/choco'; render(<App />)
+    // 産地で絞る（プロファイルは出ない・産地と関連系統が出る）
+    fireEvent.change(screen.getByLabelText('産地で絞り込み'), { target: { value: 'venezuela' } })
+    texts = cardTexts()
+    expect(texts.some((t) => t.includes('ベネズエラ'))).toBe(true)
+    expect(texts.some((t) => t.includes('ミルクチョコレート'))).toBe(false)
+  })
+
+  it('旧仕様の保存値（pairing.chocoList.percent）が残っていても一覧は通常表示される', () => {
+    localStorage.setItem('pairing.chocoList.percent', JSON.stringify('100'))
+    location.hash = '#/choco'; render(<App />)
+    // 含有率100%の記録があるアイテムだけに絞られたりしない（全プロファイルが出る）
+    const texts = cardTexts()
+    expect(texts.some((t) => t.includes('ミルクチョコレート'))).toBe(true)
+    expect(texts.some((t) => t.includes('ルビーチョコレート'))).toBe(true)
+  })
+})

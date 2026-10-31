@@ -139,9 +139,7 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 .filter-grid { display: grid; gap: 12px; }
 @media (min-width: 640px) {
   .filter-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
-  .filter-grid.cols-4 { grid-template-columns: repeat(2, 1fr); }
 }
-@media (min-width: 880px) { .filter-grid.cols-4 { grid-template-columns: repeat(4, 1fr); } }
 .filter-field { display: grid; gap: 6px; min-width: 0; }
 .filter-label { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 1rem; }
 .filter-icon { width: 24px; height: 24px; flex: none; }
@@ -150,9 +148,7 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 .filter-icon.pin { color: #c26d4d; }
 .filter-icon.sprout { color: #6d9c4f; }
 .filter-icon.lineage { color: #8d7b68; }
-.filter-icon.percent { color: #c99a3a; }
 .big-select, .big-input { font: inherit; font-size: 1.05rem; padding: 12px; min-height: 54px; border-radius: 12px; border: 2px solid var(--line); background: #fff; width: 100%; max-width: 100%; }
-.percent-wrap { display: flex; align-items: center; gap: 6px; font-size: 1.05rem; }
 /* 結果カードのアイコンとバッジ配置 */
 .card-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; color: #fff; flex: none; }
 .card-icon svg { width: 24px; height: 24px; }
@@ -161,6 +157,10 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 /* 組み合わせ画面の見出しアイコン */
 .col-head { display: flex; align-items: center; gap: 8px; }
 .col-icon { width: 26px; height: 26px; flex: none; }
+/* 見出し自体が種別切り替えボタン（第9弾）。ボタンであることが伝わる見た目にする */
+.col-head-switch { display: flex; align-items: center; gap: 8px; font: inherit; color: inherit; background: none; border: none; border-bottom: 2px dotted var(--line); padding: 2px 2px 4px; cursor: pointer; text-align: left; }
+.col-head-switch:hover, .col-head-switch:focus-visible { border-bottom-color: var(--accent, #b5654d); }
+.col-head-switch-hint { font-size: 0.72rem; font-weight: normal; color: var(--accent, #b5654d); white-space: nowrap; }
 .pair-col select { font-size: 0.95rem; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 /* 狭幅ではヘッダーと見出しを詰め、本文（特に組み合わせる画面の要約）を

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { usePersistedState } from './hooks/usePersistedState'
+import { usePersistedState, readPersisted } from './hooks/usePersistedState'
 import { teaItems, teaKinds, teaById } from './data/teas'
 import { chocolateItems, chocolateById } from './data/chocolates'
 import { sources } from './data/sources'
@@ -8,15 +8,15 @@ import FlavorWheel from './components/FlavorWheel'
 import { recommend, TASTE_LABELS } from './engine/pairing'
 import { hasAnyInteraction } from './engine/interactions'
 import { CHARACTER_RULE_LABELS } from './engine/pairingCharacter'
-import { assemblePairing } from './engine/pairingCombo'
-import type { InteractionStatement, PairingCharacter } from './types'
+import { assembleBlend, type BlendSideResult } from './engine/pairingCombo'
+import type { ChocolateItem, InteractionStatement, PairingCharacter, TeaItem } from './types'
 import { categoryById } from './data/flavors'
-import { loadSaved, persistSaved, pushHistory, validateSaved, type SavedData } from './storage'
+import { loadSaved, persistSaved, pushHistory, validateSaved, pairIdOf, parsePairId, type SavedData } from './storage'
 import { go, scrollTop, trackRoute } from './nav'
 import NoteDetail from './components/NoteDetail'
 import { CollapsibleSheet } from './components/Sheet'
 import CompoundCard from './components/CompoundCard'
-import { PairNoteCompounds, PairCategoryCompounds } from './components/PairCompounds'
+import { PairNoteCompounds, PairCategoryCompounds, type PairCompoundSide } from './components/PairCompounds'
 import { compounds, compoundById } from './data/compounds'
 import { noteById } from './data/flavors'
 import { CultivarsPage, TeaCultivarDetail, CacaoDetail, OriginDetail, RANK_LABEL } from './components/CultivarPages'
@@ -25,7 +25,7 @@ import CultivarComparePage from './components/CultivarCompare'
 import { teaCultivarById, cultivarsForKind, teaCultivars, usesForCultivar } from './data/cultivars'
 import { cacaoTraditionalGroups, cacaoGeneticGroups, cacaoClones, traditionalGroupById, geneticGroupById, cacaoCloneById } from './data/cacao'
 import { cacaoOrigins, cacaoOriginById, originsForLineage } from './data/origins'
-import { teaCultivarPairingNote, cacaoPairingNote, cacaoOriginPairingNote, teaOriginPairingNote, teaRegionPairingNote, DATA_LEVEL_LABEL, CACAO_LAYER_LABEL, type CacaoLayer } from './engine/pairingContext'
+import { teaCultivarPairingNote, cacaoPairingNote, cacaoOriginPairingNote, teaOriginPairingNote, teaRegionPairingNote, DATA_LEVEL_LABEL, CACAO_LAYER_LABEL, type CacaoLayer, type PairingContextNote } from './engine/pairingContext'
 import { teaRegions, teaRegionById } from './data/teaRegions'
 import {
   teaComboPath, teaComboBaseItem, teaComboCategoryOf, chocoRepresentativeItem,
@@ -38,7 +38,7 @@ import { COMBO_INT_LABEL } from './components/ComboWheel'
 import ComboWheelPanel from './components/ComboWheelPanel'
 import ProfileWheelPanel from './components/ProfileWheelPanel'
 import { FindingsList, SCIENCE_LABEL } from './components/EntityViews'
-import { TeaLeafIcon, TeaCupIcon, MapPinIcon, SproutIcon, CacaoPodIcon, ChocoBarIcon, LineageIcon, PercentIcon, StarIcon, HistoryIcon } from './components/icons'
+import { TeaLeafIcon, TeaCupIcon, MapPinIcon, SproutIcon, CacaoPodIcon, ChocoBarIcon, LineageIcon, StarIcon, HistoryIcon } from './components/icons'
 import BackButton from './components/BackButton'
 import { TeaComboSelects, ChocoComboSelects, type TeaSelectsState, type ChocoSelectsState } from './components/ComboSelectors'
 import type { ChocolateKind } from './types'
@@ -336,11 +336,10 @@ function TeaDetail({ id, saved, toggleFav, addHistory }: { id: string; saved: Sa
 }
 
 type LineageSel = { layer: CacaoLayer; id: string }
-type ChocoListFilters = { q: string; kind: string; percent: string; originId: string; lineage: LineageSel | null }
+type ChocoListFilters = { q: string; kind: string; originId: string; lineage: LineageSel | null }
 function ChocoList() {
   const [q, setQ] = useState('')
   const [kindRaw, setKindRaw] = usePersistedState('pairing.chocoList.kind', 'all')
-  const [percent, setPercent] = usePersistedState('pairing.chocoList.percent', '')
   const [originRaw, setOriginRaw] = usePersistedState('pairing.chocoList.originId', 'all')
   const [lineageRaw, setLineageRaw] = usePersistedState<unknown>('pairing.chocoList.lineage', 'all')
   // プルダウンの値の約束は「組み合わせる」画面と共通（ComboSelectors）：
@@ -360,17 +359,16 @@ function ChocoList() {
   const profilesFor = (f: ChocoListFilters) => chocolateItems.filter((c) =>
     matches(f.q, [c.name, ...c.searchNames])
     && (f.kind === '' || (isItemValue(f.kind) ? c.id === f.kind : c.kind === f.kind))
-    && (f.percent === '' || c.cacaoPercent === Number(f.percent))
     && f.originId === ''
     && f.lineage === null)
   const originsFor = (f: ChocoListFilters) => cacaoOrigins.filter((o) =>
-    f.kind === '' && f.percent === ''
+    f.kind === ''
     && matches(f.q, [o.name, o.country, ...o.regions.map((r) => r.name), ...o.tradeNames.map((t) => t.name)])
     && (f.originId === '' || o.id === f.originId)
     // 選んだ産地そのものは、系統との記録上の結びつきが無くても結果から消さない
     && (f.lineage === null || o.id === f.originId || originsForLineage(f.lineage.layer, f.lineage.id).some((x) => x.id === o.id)))
   const lineagesFor = (f: ChocoListFilters): { traditional: typeof cacaoTraditionalGroups; genetic: typeof cacaoGeneticGroups; clones: typeof cacaoClones } => {
-    if (!(f.kind === '' && f.percent === '')) return { traditional: [], genetic: [], clones: [] }
+    if (f.kind !== '') return { traditional: [], genetic: [], clones: [] }
     const origin = f.originId === '' ? undefined : cacaoOriginById(f.originId)
     const inOrigin = (layer: CacaoLayer, id: string) => !origin
       || (layer === 'traditional' ? origin.relatedTraditionalIds.includes(id)
@@ -387,7 +385,7 @@ function ChocoList() {
     }
   }
   const lineageCountOf = (f: ChocoListFilters) => { const l = lineagesFor(f); return l.traditional.length + l.genetic.length + l.clones.length }
-  const current: ChocoListFilters = { q, kind, percent, originId, lineage }
+  const current: ChocoListFilters = { q, kind, originId, lineage }
   const profiles = profilesFor(current)
   const origins = originsFor(current)
   const lineageEntities = lineagesFor(current)
@@ -409,7 +407,7 @@ function ChocoList() {
       <input className="search" type="search" placeholder="名前・種類・産地で探す（例：ダーク、ベネズエラ）" value={q} onChange={(e) => setQ(e.target.value)} aria-label="チョコレートを検索" />
       <section className="filter-hero" role="group" aria-label="条件で絞り込み">
         <h3 className="filter-hero-title"><ChocoBarIcon className="hero-icon choco" />分類・産地・系統で探す</h3>
-        <div className="filter-grid cols-4">
+        <div className="filter-grid cols-3">
           <ChocoComboSelects value={selects} onChange={applySelects} variant="hero"
             labels={{ kind: '分類（種類）で絞り込み', origin: '産地で絞り込み', cultivar: '系統で絞り込み' }}
             heads={{
@@ -417,10 +415,6 @@ function ChocoList() {
               origin: <><CacaoPodIcon className="filter-icon pin" />産地</>,
               cultivar: <><LineageIcon className="filter-icon lineage" />系統</>,
             }} />
-          <label className="filter-field">
-            <span className="filter-label"><PercentIcon className="filter-icon percent" />カカオ含有率</span>
-            <span className="percent-wrap"><input className="big-input" type="number" min={0} max={100} value={percent} onChange={(e) => setPercent(e.target.value)} placeholder="数値入力" aria-label="カカオ含有率で絞り込み" />%</span>
-          </label>
         </div>
       </section>
       {chocoPreviewAnalysis && chocoPreviewSel && <ComboPreview analysis={chocoPreviewAnalysis} path={chocoComboPath(chocoPreviewSel)} note={chocoPreviewNote} />}
@@ -475,7 +469,7 @@ function ChocoList() {
           ))}
         </ul>
       </>}
-      <p className="note-small">条件は組み合わせて絞り込めます（すべて満たすものだけを表示）。プルダウンは「組み合わせる」画面と共通です。チョコレートは種類・産地・系統を相互に制限しないため、存在する組み合わせは必ず選べます（例外はクローンで、記録のある産地だけが選択肢に出ます）。プロファイルは種類レベルの情報で産地・系統を持たないため、産地や系統を選ぶと結果に出ません。含有率は、収録データに記録がある場合のみ絞り込めます。含有率だけで甘味・苦味は決まりません。</p>
+      <p className="note-small">条件は組み合わせて絞り込めます（すべて満たすものだけを表示）。プルダウンは「組み合わせる」画面と共通です。チョコレートは種類・産地・系統を相互に制限しないため、存在する組み合わせは必ず選べます（例外はクローンで、記録のある産地だけが選択肢に出ます）。プロファイルは種類レベルの情報で産地・系統を持たないため、産地や系統を選ぶと結果に出ません。</p>
     </div>
   )
 }
@@ -537,118 +531,259 @@ function InteractionGroup({ title, items }: { title: string; items: InteractionS
   )
 }
 
+// ===== 組み合わせる画面（第9弾：自家ブレンド対応） =====
+// 両側それぞれが種別（お茶／チョコ）を持ち、見出しのボタンで切り替えられる。
+// 各側の選択は種別ごとに保持し、切り替えて戻しても選択が残る。
+type PairSideType = 'tea' | 'chocolate'
+type CacaoSel = { layer: CacaoLayer; id: string }
+const PAIR_TYPE_NAME: Record<PairSideType, string> = { tea: 'お茶', chocolate: 'チョコレート' }
+
+interface ResolvedPairSide {
+  item?: TeaItem | ChocolateItem
+  sel: TeaComboSel | ChocoComboSel | null
+}
+
+/** お茶側の選択（分類・産地・品種）から土台アイテムと組み合わせ選択を決める。
+ *  分類が未指定でも産地・品種の指定があれば、成立する分類を補完する（第5弾・要件6）。 */
+function resolveTeaPairSide(kindValue: string, origin: string, cultivarId: string): ResolvedPairSide {
+  const originComboId = teaOriginComboRegionIdOfValue(origin)
+  const completed = !kindValue && (origin || cultivarId)
+    ? completeTeaComboSel({ kindId: '', regionId: originComboId, cultivarId })
+    : null
+  const item = kindValue ? teaComboBaseItem(kindValue)
+    : completed ? teaComboBaseItem(completed.sel.kindId) : undefined
+  const sel: TeaComboSel | null = completed ? completed.sel
+    : item && (origin || cultivarId || TEA_COMBO_KINDS.includes(kindValue))
+      ? { kindId: kindValue, regionId: originComboId, cultivarId }
+      : null
+  return { item, sel }
+}
+
+/** チョコ側の選択（種類・産地・系統）から土台アイテムと組み合わせ選択を決める（同上）。 */
+function resolveChocoPairSide(kindValue: string, originId: string, cacaoSel: CacaoSel | null): ResolvedPairSide {
+  const completed = !kindValue && (originId || cacaoSel)
+    ? completeChocoComboSel({ kind: '', originId, lineage: cacaoSel })
+    : null
+  const item = kindValue ? (chocolateById(kindValue) ?? chocoRepresentativeItem(kindValue))
+    : completed ? chocoRepresentativeItem(completed.sel.kind) : undefined
+  const sel: ChocoComboSel | null = completed ? completed.sel
+    : item && (originId || cacaoSel || CHOCO_COMBO_KINDS.includes(kindValue))
+      ? { kind: (item as ChocolateItem).kind, originId, lineage: cacaoSel }
+      : null
+  return { item, sel }
+}
+
+/** 画面の1側分の表示モデル */
+interface PairSideView {
+  pos: 'left' | 'right'
+  posJa: '左' | '右'
+  type: PairSideType
+  item?: TeaItem | ChocolateItem
+  /** 組み合わせ分析を適用したアイテム（ホイールの土台） */
+  appliedItem?: TeaItem | ChocolateItem
+  analysis: ComboAnalysis | null
+  title: string
+}
+
 function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFav: (k: 'pairings', id: string) => void; addHistory: (k: 'pairings', id: string) => void }) {
   // 選択は「調べる」画面と共通の3軸プルダウン（ComboSelectors）で持つ。
   // 分類の値は茶類・種類ID（大分類）かアイテムID（具体的なお茶・チョコ）で、
   // 大分類を選んだ場合は組み合わせエンジンと同じ代表アイテムをペア対象にする。
-  const [teaKindValue, setTeaKindValue] = usePersistedState('pairing.pair.teaSel', () => teaItems.find((t) => t.id === 'oolong-tea')?.id ?? teaItems[0].id)
-  const [teaOrigin, setTeaOrigin] = usePersistedState('pairing.pair.teaOrigin', '')
-  const [cultivarId, setCultivarId] = usePersistedState('pairing.pair.cultivarId', '')
-  const [chocoKindValue, setChocoKindValue] = usePersistedState('pairing.pair.chocoSel', chocolateItems[0].id)
-  const [cacaoSel, setCacaoSel] = usePersistedState<{ layer: CacaoLayer; id: string } | null>('pairing.pair.cacaoSel', null)
-  const [originId, setOriginId] = usePersistedState('pairing.pair.originId', '')
-  const [tab, setTab] = useState<'tea' | 'choco' | 'pair'>('pair')
+  // 第9弾: 両側が種別を持ち、各側の選択は種別ごとに保持する。
+  // 既定の並び（左チョコ・右お茶）と従来の選択は、旧キーからの読み替えで引き継ぐ。
+  const defaultTeaKindValue = () => teaItems.find((t) => t.id === 'oolong-tea')?.id ?? teaItems[0].id
+  const [leftType, setLeftType] = usePersistedState<PairSideType>('pairing.pair.leftType', 'chocolate')
+  const [rightType, setRightType] = usePersistedState<PairSideType>('pairing.pair.rightType', 'tea')
+  const [leftTeaKind, setLeftTeaKind] = usePersistedState('pairing.pair.left.teaKind', defaultTeaKindValue)
+  const [leftTeaOrigin, setLeftTeaOrigin] = usePersistedState('pairing.pair.left.teaOrigin', '')
+  const [leftTeaCultivar, setLeftTeaCultivar] = usePersistedState('pairing.pair.left.cultivarId', '')
+  const [leftChocoKind, setLeftChocoKind] = usePersistedState('pairing.pair.left.chocoKind', () => readPersisted('pairing.pair.chocoSel', chocolateItems[0].id))
+  const [leftChocoOrigin, setLeftChocoOrigin] = usePersistedState('pairing.pair.left.originId', () => readPersisted('pairing.pair.originId', ''))
+  const [leftCacaoSel, setLeftCacaoSel] = usePersistedState<CacaoSel | null>('pairing.pair.left.cacaoSel', () => readPersisted<CacaoSel | null>('pairing.pair.cacaoSel', null))
+  const [rightTeaKind, setRightTeaKind] = usePersistedState('pairing.pair.right.teaKind', () => readPersisted('pairing.pair.teaSel', defaultTeaKindValue()))
+  const [rightTeaOrigin, setRightTeaOrigin] = usePersistedState('pairing.pair.right.teaOrigin', () => readPersisted('pairing.pair.teaOrigin', ''))
+  const [rightTeaCultivar, setRightTeaCultivar] = usePersistedState('pairing.pair.right.cultivarId', () => readPersisted('pairing.pair.cultivarId', ''))
+  const [rightChocoKind, setRightChocoKind] = usePersistedState('pairing.pair.right.chocoKind', chocolateItems[0].id)
+  const [rightChocoOrigin, setRightChocoOrigin] = usePersistedState('pairing.pair.right.originId', '')
+  const [rightCacaoSel, setRightCacaoSel] = usePersistedState<CacaoSel | null>('pairing.pair.right.cacaoSel', null)
+  const [tab, setTab] = useState<'a' | 'b' | 'pair'>('pair')
   const [pairNote, setPairNote] = useState<string | null>(null)
   const [pairCat, setPairCat] = useState<string | null>(null)
-  const teaSelects: TeaSelectsState = { kind: teaKindValue, origin: teaOrigin, cultivar: cultivarId }
-  const applyTeaSelects = (next: TeaSelectsState) => { setTeaKindValue(next.kind); setTeaOrigin(next.origin); setCultivarId(next.cultivar) }
-  const chocoSelects: ChocoSelectsState = {
-    kind: chocoKindValue, origin: originId,
-    lineage: cacaoSel ? `${cacaoSel.layer}:${cacaoSel.id}` : '',
+
+  interface SideCfg {
+    pos: 'left' | 'right'
+    posJa: '左' | '右'
+    type: PairSideType
+    setType: (t: PairSideType) => void
+    tea: { kind: string; origin: string; cultivar: string }
+    choco: { kind: string; origin: string; cacaoSel: CacaoSel | null }
+    applyTea: (next: TeaSelectsState) => void
+    applyChoco: (next: ChocoSelectsState) => void
+    resolved: ResolvedPairSide
   }
-  const applyChocoSelects = (next: ChocoSelectsState) => {
-    setChocoKindValue(next.kind)
-    setOriginId(next.origin)
-    if (!next.lineage) setCacaoSel(null)
-    else { const [layer, id] = next.lineage.split(':') as [CacaoLayer, string]; setCacaoSel({ layer, id }) }
+  const applyChocoOf = (
+    setKind: (v: string) => void, setOrigin: (v: string) => void, setSel: (v: CacaoSel | null) => void,
+  ) => (next: ChocoSelectsState) => {
+    setKind(next.kind)
+    setOrigin(next.origin)
+    if (!next.lineage) setSel(null)
+    else { const [layer, id] = next.lineage.split(':') as [CacaoLayer, string]; setSel({ layer, id }) }
   }
-  // 第5弾・要件6の一般化: 各側は軸の部分指定でも組み立てられる。
-  // 分類・種類が未指定でも産地・品種（系統）の指定があれば、成立する分類を
-  // 補完して土台アイテムと組み合わせ選択を決める。分類だけの指定（カテゴリ
-  // 選択）でも第2層の分析を通す。アイテム単独の指定は従来どおり素のプロファイル。
-  const teaOriginComboId = teaOriginComboRegionIdOfValue(teaOrigin)
-  const teaCompleted = !teaKindValue && (teaOrigin || cultivarId)
-    ? completeTeaComboSel({ kindId: '', regionId: teaOriginComboId, cultivarId })
-    : null
-  const tea = teaKindValue ? teaComboBaseItem(teaKindValue)
-    : teaCompleted ? teaComboBaseItem(teaCompleted.sel.kindId) : undefined
-  const chocoCompleted = !chocoKindValue && (originId || cacaoSel)
-    ? completeChocoComboSel({ kind: '', originId, lineage: cacaoSel })
-    : null
-  const choco = chocoKindValue ? (chocolateById(chocoKindValue) ?? chocoRepresentativeItem(chocoKindValue))
-    : chocoCompleted ? chocoRepresentativeItem(chocoCompleted.sel.kind) : undefined
+  const sideCfgs: SideCfg[] = [
+    {
+      pos: 'left', posJa: '左', type: leftType, setType: setLeftType,
+      tea: { kind: leftTeaKind, origin: leftTeaOrigin, cultivar: leftTeaCultivar },
+      choco: { kind: leftChocoKind, origin: leftChocoOrigin, cacaoSel: leftCacaoSel },
+      applyTea: (next) => { setLeftTeaKind(next.kind); setLeftTeaOrigin(next.origin); setLeftTeaCultivar(next.cultivar) },
+      applyChoco: applyChocoOf(setLeftChocoKind, setLeftChocoOrigin, setLeftCacaoSel),
+      resolved: leftType === 'tea'
+        ? resolveTeaPairSide(leftTeaKind, leftTeaOrigin, leftTeaCultivar)
+        : resolveChocoPairSide(leftChocoKind, leftChocoOrigin, leftCacaoSel),
+    },
+    {
+      pos: 'right', posJa: '右', type: rightType, setType: setRightType,
+      tea: { kind: rightTeaKind, origin: rightTeaOrigin, cultivar: rightTeaCultivar },
+      choco: { kind: rightChocoKind, origin: rightChocoOrigin, cacaoSel: rightCacaoSel },
+      applyTea: (next) => { setRightTeaKind(next.kind); setRightTeaOrigin(next.origin); setRightTeaCultivar(next.cultivar) },
+      applyChoco: applyChocoOf(setRightChocoKind, setRightChocoOrigin, setRightCacaoSel),
+      resolved: rightType === 'tea'
+        ? resolveTeaPairSide(rightTeaKind, rightTeaOrigin, rightTeaCultivar)
+        : resolveChocoPairSide(rightChocoKind, rightChocoOrigin, rightCacaoSel),
+    },
+  ]
+  const [leftCfg, rightCfg] = sideCfgs
+  const sameType = leftType === rightType
   // 課題C（2026-10-31）: 産地・品種・系統が指定された側は、素のプロファイルではなく
   // 組み合わせ分析（第2層・軸効果適用後）のノート集合をペアリング（第3層）の入力にする。
-  const teaSel: TeaComboSel | null = teaCompleted ? teaCompleted.sel
-    : tea && (teaOrigin || cultivarId || TEA_COMBO_KINDS.includes(teaKindValue))
-      ? { kindId: teaKindValue, regionId: teaOriginComboId, cultivarId }
-      : null
-  const chocoSel: ChocoComboSel | null = chocoCompleted ? chocoCompleted.sel
-    : choco && (originId || cacaoSel || CHOCO_COMBO_KINDS.includes(chocoKindValue))
-      ? { kind: choco.kind, originId, lineage: cacaoSel }
-      : null
-  const assembly = tea && choco ? assemblePairing(tea, choco, teaSel, chocoSel) : null
+  const assembly = leftCfg.resolved.item && rightCfg.resolved.item
+    ? assembleBlend(
+      { type: leftType, item: leftCfg.resolved.item, sel: leftCfg.resolved.sel },
+      { type: rightType, item: rightCfg.resolved.item, sel: rightCfg.resolved.sel })
+    : null
+  const sideViewOf = (cfg: SideCfg, blendSide: BlendSideResult | undefined): PairSideView => ({
+    pos: cfg.pos,
+    posJa: cfg.posJa,
+    type: cfg.type,
+    item: cfg.resolved.item,
+    appliedItem: blendSide?.item ?? cfg.resolved.item,
+    analysis: blendSide?.analysis ?? null,
+    title: blendSide?.analysis ? blendSide.analysis.title : (cfg.resolved.item?.name ?? ''),
+  })
+  const leftView = sideViewOf(leftCfg, assembly?.a)
+  const rightView = sideViewOf(rightCfg, assembly?.b)
+  const bothSelected = !!(leftView.item && rightView.item)
   const result = assembly?.result ?? null
   const interactions = assembly?.interactions ?? null
   const characters = assembly?.characters ?? null
-  const teaAnalysis = assembly?.teaAnalysis ?? null
-  const chocoAnalysis = assembly?.chocoAnalysis ?? null
-  const teaForPair = assembly?.teaItem ?? tea
-  const chocoForPair = assembly?.chocoItem ?? choco
-  const teaSideTitle = teaAnalysis ? teaAnalysis.title : (tea?.name ?? '')
-  const chocoSideTitle = chocoAnalysis ? chocoAnalysis.title : (choco?.name ?? '')
   const allCharacters = characters ? [...characters.aroma, ...characters.tasteMouthfeel] : []
   const [charSel, setCharSel] = useState<string | null>(null)
   const selCharacter = allCharacters.find((c) => c.id === charSel) ?? null
+  // 品種・系統・産地の指定についての文脈ノート（側ごと・種別ごとに組み立てる）。
   // 品種の追加指定は、組み合わせとして存在するものだけが選択肢に出る（ComboSelectors が担保）。
-  const cultivar = cultivarId ? teaCultivarById(cultivarId) : undefined
-  const teaNote = cultivar && tea ? teaCultivarPairingNote(cultivar, tea.kindId) : null
-  const cacaoEntity = cacaoSel
-    ? (cacaoSel.layer === 'traditional' ? traditionalGroupById(cacaoSel.id) : cacaoSel.layer === 'genetic' ? geneticGroupById(cacaoSel.id) : cacaoCloneById(cacaoSel.id))
-    : undefined
-  // 系統名の表示はカタカナを主表記にする（伝統的分類・遺伝的分類）。クローンは記号名のまま。
-  const cacaoDisplayName = cacaoEntity
-    ? ('nameJa' in cacaoEntity && cacaoEntity.nameJa ? `${cacaoEntity.nameJa}（${cacaoEntity.name}）` : cacaoEntity.name)
+  interface SideNote { heading: string; note: PairingContextNote }
+  const sideNotesOf = (cfg: SideCfg): SideNote[] => {
+    const item = cfg.resolved.item
+    if (!item) return []
+    const out: SideNote[] = []
+    if (cfg.type === 'tea') {
+      const kindId = (item as TeaItem).kindId
+      const cultivar = cfg.tea.cultivar ? teaCultivarById(cfg.tea.cultivar) : undefined
+      if (cultivar) out.push({ heading: `お茶の品種：${cultivar.name}`, note: teaCultivarPairingNote(cultivar, kindId) })
+      if (cfg.tea.origin) {
+        const regionEntity = cfg.tea.origin.startsWith('region:') ? teaRegionById(cfg.tea.origin.slice('region:'.length)) : undefined
+        const note = regionEntity ? teaRegionPairingNote(regionEntity, kindId) : teaOriginPairingNote(cfg.tea.origin, kindId)
+        out.push({ heading: `お茶の産地：${teaOriginLabelOfValue(cfg.tea.origin)}`, note })
+      }
+    } else {
+      const sel = cfg.choco.cacaoSel
+      const entity = sel
+        ? (sel.layer === 'traditional' ? traditionalGroupById(sel.id) : sel.layer === 'genetic' ? geneticGroupById(sel.id) : cacaoCloneById(sel.id))
+        : undefined
+      if (sel && entity) {
+        // 系統名の表示はカタカナを主表記にする（伝統的分類・遺伝的分類）。クローンは記号名のまま。
+        const displayName = 'nameJa' in entity && entity.nameJa ? `${entity.nameJa}（${entity.name}）` : entity.name
+        out.push({ heading: `カカオの系統：${displayName}`, note: cacaoPairingNote(sel.layer, { ...entity, name: displayName }) })
+      }
+      const origin = cfg.choco.origin ? cacaoOriginById(cfg.choco.origin) : undefined
+      if (origin) out.push({ heading: `カカオの産地：${origin.name}`, note: cacaoOriginPairingNote(origin) })
+    }
+    return out
+  }
+  const sideNotes = [...sideNotesOf(leftCfg), ...sideNotesOf(rightCfg)]
+  const pairId = bothSelected
+    ? pairIdOf({ type: leftType, id: leftView.item!.id }, { type: rightType, id: rightView.item!.id })
     : ''
-  const cacaoNote = cacaoSel && cacaoEntity ? cacaoPairingNote(cacaoSel.layer, { ...cacaoEntity, name: cacaoDisplayName }) : null
-  const origin = originId ? cacaoOriginById(originId) : undefined
-  const originNote = origin ? cacaoOriginPairingNote(origin) : null
-  const teaRegionEntity = teaOrigin.startsWith('region:') ? teaRegionById(teaOrigin.slice('region:'.length)) : undefined
-  const teaOriginNote = teaOrigin && tea
-    ? (teaRegionEntity ? teaRegionPairingNote(teaRegionEntity, tea.kindId) : teaOriginPairingNote(teaOrigin, tea.kindId))
-    : null
-  const pairId = tea && choco ? `${tea.id}+${choco.id}` : ''
   useEffect(() => { if (pairId) addHistory('pairings', pairId) }, [pairId])
   useEffect(() => { setCharSel(null) }, [pairId])
   // ※タブ切り替えではスクロールしない（その場で内容だけが切り替わる）。
   //   以前はタブ変更のたびに先頭へスクロールする不具合があった（2026-10-31 指示9）。
   const fav = saved.favorites.pairings.includes(pairId)
+  // タブ: 異種ペアでは従来どおり「お茶」「チョコ」の順。同種ペアでは側ごとのアイテム名で区別する。
+  const teaView = leftType === 'tea' ? leftView : rightView
+  const chocoView = leftType === 'chocolate' ? leftView : rightView
+  const tabSides: { key: 'a' | 'b'; label: string; view: PairSideView }[] = sameType
+    ? [
+      { key: 'a', label: leftView.item?.name ?? '左', view: leftView },
+      { key: 'b', label: rightView.item?.name ?? '右', view: rightView },
+    ]
+    : [
+      { key: teaView.pos === 'left' ? 'a' : 'b', label: 'お茶', view: teaView },
+      { key: chocoView.pos === 'left' ? 'a' : 'b', label: 'チョコ', view: chocoView },
+    ]
+  const activeView = tab === 'a' ? leftView : tab === 'b' ? rightView : null
+  const axisLabelOf = (v: PairSideView) => (sameType ? `${PAIR_TYPE_NAME[v.type]}（${v.posJa}）` : v.type === 'tea' ? 'お茶' : 'チョコ')
+  // 成分パネルの側の順序は、異種ペアでは従来どおり（お茶，チョコレート）
+  const compoundSideOf = (v: PairSideView): PairCompoundSide => ({
+    label: PAIR_TYPE_NAME[v.type],
+    side: v.type,
+    // 未選択の側では使われない（パネルは両側選択時のみ開く）が、算出自体は安全にする
+    kindId: !v.item ? '' : v.type === 'tea' ? (v.item as TeaItem).kindId : (v.item as ChocolateItem).kind,
+  })
+  const pairCompoundSides = (sameType ? [leftView, rightView] : [teaView, chocoView]).map(compoundSideOf) as [PairCompoundSide, PairCompoundSide]
   return (
     <div>
       <h2>組み合わせる</h2>
       <div className="pair-layout">
-        <div className="pair-col">
-          <h3 className="col-head"><ChocoBarIcon className="col-icon choco" />チョコレート</h3>
-          <ChocoComboSelects value={chocoSelects} onChange={applyChocoSelects} variant="pair" emptyKindLabel="選んでください"
-            labels={{ kind: 'チョコレート', origin: 'カカオの産地（任意）', cultivar: 'カカオの系統（任意）' }}
-            heads={{ kind: '分類（種類）', origin: '産地（任意）', cultivar: '系統（任意）' }} />
-        </div>
-        <div className="pair-col">
-          <h3 className="col-head"><TeaCupIcon className="col-icon tea" />お茶</h3>
-          <TeaComboSelects value={teaSelects} onChange={applyTeaSelects} variant="pair" emptyKindLabel="選んでください"
-            labels={{ kind: 'お茶', origin: 'お茶の産地（任意）', cultivar: 'お茶の品種（任意）' }}
-            heads={{ kind: '分類（茶類）', origin: '産地（任意）', cultivar: '品種（任意）' }} />
-        </div>
+        {sideCfgs.map((cfg) => {
+          const typeName = PAIR_TYPE_NAME[cfg.type]
+          const otherName = PAIR_TYPE_NAME[cfg.type === 'tea' ? 'chocolate' : 'tea']
+          // 同種同士では、両側のプルダウンのラベルを左右で区別する
+          const suffix = sameType ? `${cfg.posJa}：` : ''
+          return (
+            <div className="pair-col" key={cfg.pos}>
+              <h3 className="col-head">
+                <button type="button" className="col-head-switch" onClick={() => cfg.setType(cfg.type === 'tea' ? 'chocolate' : 'tea')}
+                  aria-label={`${cfg.posJa}の種類を切り替える（現在：${typeName}）`} title="タップでお茶とチョコレートを切り替え">
+                  {cfg.type === 'tea' ? <TeaCupIcon className="col-icon tea" /> : <ChocoBarIcon className="col-icon choco" />}
+                  <span>{typeName}</span>
+                  <span className="col-head-switch-hint">⇄ {otherName}に切替</span>
+                </button>
+              </h3>
+              {cfg.type === 'chocolate' ? (
+                <ChocoComboSelects value={{ kind: cfg.choco.kind, origin: cfg.choco.origin, lineage: cfg.choco.cacaoSel ? `${cfg.choco.cacaoSel.layer}:${cfg.choco.cacaoSel.id}` : '' }} onChange={cfg.applyChoco} variant="pair" emptyKindLabel="選んでください"
+                  labels={{ kind: `${suffix}チョコレート`, origin: `${suffix}カカオの産地（任意）`, cultivar: `${suffix}カカオの系統（任意）` }}
+                  heads={{ kind: '分類（種類）', origin: '産地（任意）', cultivar: '系統（任意）' }} />
+              ) : (
+                <TeaComboSelects value={{ kind: cfg.tea.kind, origin: cfg.tea.origin, cultivar: cfg.tea.cultivar }} onChange={cfg.applyTea} variant="pair" emptyKindLabel="選んでください"
+                  labels={{ kind: `${suffix}お茶`, origin: `${suffix}お茶の産地（任意）`, cultivar: `${suffix}お茶の品種（任意）` }}
+                  heads={{ kind: '分類（茶類）', origin: '産地（任意）', cultivar: '品種（任意）' }} />
+              )}
+            </div>
+          )
+        })}
       </div>
       <section className="pair-summary" aria-live="polite" aria-label="組み合わせの結果（要約）">
-        {tea && choco && result ? (
+        {bothSelected && result ? (
           <>
             <div className="pair-summary-head">
-              <h3>{chocoSideTitle} × {teaSideTitle}</h3>
+              <h3>{leftView.title} × {rightView.title}</h3>
             </div>
             <p className="pair-summary-line"><span className="badge">{LEVEL_LABEL[result.level]}</span></p>
-            {(teaAnalysis || chocoAnalysis) && (
-              <p className="pair-summary-line note-small">指定した産地・品種・系統は、組み合わせの推測（第2層）としてこの結果の土台になっています{teaAnalysis && <>／お茶：<span className="badge">{COMBO_LEVEL_LABEL[teaAnalysis.overallLevel]}</span></>}{chocoAnalysis && <>／チョコ：<span className="badge">{COMBO_LEVEL_LABEL[chocoAnalysis.overallLevel]}</span></>}</p>
+            {sameType && (
+              <p className="pair-summary-line note-small">{PAIR_TYPE_NAME[leftType]}同士のブレンドを直接調べた官能研究は確認できていないため、この結果は両者のプロファイルと一般的な味覚・嗅覚の機序からの推測です。</p>
+            )}
+            {(leftView.analysis || rightView.analysis) && (
+              <p className="pair-summary-line note-small">指定した産地・品種・系統は、組み合わせの推測（第2層）としてこの結果の土台になっています{[leftView, rightView].map((v) => v.analysis ? <span key={v.pos}>／{axisLabelOf(v)}：<span className="badge">{COMBO_LEVEL_LABEL[v.analysis.overallLevel]}</span></span> : null)}</p>
             )}
             {characters && (allCharacters.length > 0 ? (
               <div className="pair-character">
@@ -676,28 +811,26 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
             {result.sharedNotes.length === 0 && result.sharedCategories.length === 0 && result.contrasts.length === 0 && <p className="pair-summary-line">{result.message}</p>}
           </>
         ) : (
-          <p className="pair-summary-line">{tea || choco ? 'もう一方を選ぶと結果が出ます。' : 'お茶とチョコレートを選ぶと、ここに結果が出ます。'}</p>
+          <p className="pair-summary-line">{leftView.item || rightView.item ? 'もう一方を選ぶと結果が出ます。' : '両方を選ぶと、ここに結果が出ます。'}</p>
         )}
       </section>
-      {tea && choco && result && (<>
+      {bothSelected && result && (<>
       <div className="tabs" role="tablist" aria-label="ホイールの切り替え">
-        <button role="tab" aria-selected={tab === 'tea'} onClick={() => setTab('tea')}>お茶</button>
-        <button role="tab" aria-selected={tab === 'choco'} onClick={() => setTab('choco')}>チョコ</button>
+        {tabSides.map((t) => (
+          <button key={t.key} role="tab" aria-selected={tab === t.key} onClick={() => setTab(t.key)}>{t.label}</button>
+        ))}
         <button role="tab" aria-selected={tab === 'pair'} onClick={() => setTab('pair')}>組み合わせの見方</button>
       </div>
-      {tab === 'tea' && (teaAnalysis
-        ? <ComboWheelPanel notes={teaAnalysis.notes} tastes={teaAnalysis.tastes} context={teaAnalysis.context} resetKey={`tea:${teaAnalysis.title}`} />
-        : <ProfileWheelPanel profile={tea.profile} context={{ side: 'tea', kindId: tea.kindId, itemName: tea.name, itemId: tea.id }} />)}
-      {tab === 'choco' && (chocoAnalysis
-        ? <ComboWheelPanel notes={chocoAnalysis.notes} tastes={chocoAnalysis.tastes} context={chocoAnalysis.context} resetKey={`choco:${chocoAnalysis.title}`} />
-        : <ProfileWheelPanel profile={choco.profile} context={{ side: 'chocolate', kindId: choco.kind, itemName: choco.name, itemId: choco.id }} />)}
+      {activeView && (activeView.analysis
+        ? <ComboWheelPanel notes={activeView.analysis.notes} tastes={activeView.analysis.tastes} context={activeView.analysis.context} resetKey={`${activeView.pos}:${activeView.analysis.title}`} />
+        : activeView.item && <ProfileWheelPanel profile={activeView.item.profile} context={{ side: activeView.type, kindId: activeView.type === 'tea' ? (activeView.item as TeaItem).kindId : (activeView.item as ChocolateItem).kind, itemName: activeView.item.name, itemId: activeView.item.id }} />)}
       {tab === 'pair' && (
         <section>
           <p><span className="badge">{LEVEL_LABEL[result.level]}</span></p>
           <p>{result.message}</p>
           {result.sharedNotes.length > 0 && <>
             <h3>共通する香り（調和の候補）</h3>
-            <p className="note-small">香りを押すと、その香りに関係する成分を、お茶側・チョコレート側に分けて確認できます。</p>
+            <p className="note-small">香りを押すと、その香りに関係する成分を、両側に分けて確認できます。</p>
             <div className="filter-row">{result.sharedNotes.map((s) => <button key={s.noteId} className="chip" onClick={() => { setPairNote(s.noteId); setPairCat(null) }}>{s.name}の成分を見る</button>)}</div>
           </>}
           {result.sharedCategories.length > 0 && <>
@@ -711,8 +844,8 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
               {c.noteId && <button className="chip" onClick={() => { setPairNote(c.noteId as string); setPairCat(null) }}>{noteById(c.noteId)?.name ?? c.noteId}の成分を見る</button>}
             </div>)}
           </>}
-          {pairNote && <PairNoteCompounds noteId={pairNote} teaKindId={tea.kindId} chocoKindId={choco.kind} />}
-          {pairCat && <PairCategoryCompounds categoryId={pairCat} tea={(teaForPair ?? tea).profile} choco={(chocoForPair ?? choco).profile} onPickNote={(id) => { setPairNote(id); setPairCat(null) }} />}
+          {pairNote && <PairNoteCompounds noteId={pairNote} sides={pairCompoundSides} />}
+          {pairCat && <PairCategoryCompounds categoryId={pairCat} profiles={[leftView.appliedItem!.profile, rightView.appliedItem!.profile]} onPickNote={(id) => { setPairNote(id); setPairCat(null) }} />}
           {characters && allCharacters.length > 0 && <>
             <h3>組み合わせの味わいの性格（推測）</h3>
             <p className="note-small">両アイテムで確認されている成分・香味・味覚の顔ぶれと、下記の相互作用の発火状況から、組み合わせ全体がどのような味わいになるかを推測したものです。根拠のある性格だけを示し、根拠のない性格は出しません。推測の方法と限界は調査記録（docs/research/pairing-character-inference.md）にあります。</p>
@@ -736,61 +869,34 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
               <p className="unknown-box">相互作用の観点では、現在の収録データで示せる特記事項はありません。これは相性が悪いという意味ではなく、根拠のある相互作用の条件がデータ上で揃っていないという意味です。</p>
             )}
           </>}
-          {(teaAnalysis || chocoAnalysis) && <>
+          {(leftView.analysis || rightView.analysis) && <>
             <h3>指定した軸の反映（組み合わせの推測）</h3>
-            <p className="note-small">産地・品種・系統の指定は、組み合わせページと同じ組み合わせ分析（第2層）を通じてこの結果の土台になっています。各軸がホイール・味覚にどう反映されたか（または反映されなかった理由）は以下のとおりです。お茶／チョコのタブのホイールも、この組み合わせの推測と一致しています。</p>
-            {teaAnalysis && (
-              <div className="temporal-card">
-                <h4>お茶：{teaAnalysis.title}</h4>
-                <p><span className="badge">{COMBO_LEVEL_LABEL[teaAnalysis.overallLevel]}</span></p>
-                {teaAnalysis.axisSummaries.map((s, i) => <p key={i}>{s.text}</p>)}
+            <p className="note-small">産地・品種・系統の指定は、組み合わせページと同じ組み合わせ分析（第2層）を通じてこの結果の土台になっています。各軸がホイール・味覚にどう反映されたか（または反映されなかった理由）は以下のとおりです。両側のタブのホイールも、この組み合わせの推測と一致しています。</p>
+            {[leftView, rightView].map((v) => v.analysis && (
+              <div className="temporal-card" key={v.pos}>
+                <h4>{axisLabelOf(v)}：{v.analysis.title}</h4>
+                <p><span className="badge">{COMBO_LEVEL_LABEL[v.analysis.overallLevel]}</span></p>
+                {v.analysis.axisSummaries.map((s, i) => <p key={i}>{s.text}</p>)}
               </div>
-            )}
-            {chocoAnalysis && (
-              <div className="temporal-card">
-                <h4>チョコ：{chocoAnalysis.title}</h4>
-                <p><span className="badge">{COMBO_LEVEL_LABEL[chocoAnalysis.overallLevel]}</span></p>
-                {chocoAnalysis.axisSummaries.map((s, i) => <p key={i}>{s.text}</p>)}
-              </div>
-            )}
+            ))}
           </>}
-          {(teaNote || cacaoNote || originNote || teaOriginNote) && <>
+          {sideNotes.length > 0 && <>
             <h3>品種・系統・産地の指定について</h3>
-            {teaNote && cultivar && (
-              <div className="temporal-card">
-                <h4>お茶の品種：{cultivar.name}</h4>
-                <p><span className="badge">{DATA_LEVEL_LABEL[teaNote.level]}</span></p>
-                <p>{teaNote.text}</p>
-                <FindingsList findings={teaNote.findings} />
+            {sideNotes.map((sn, i) => (
+              <div className="temporal-card" key={`${sn.heading}-${i}`}>
+                <h4>{sn.heading}</h4>
+                <p><span className="badge">{DATA_LEVEL_LABEL[sn.note.level]}</span></p>
+                <p>{sn.note.text}</p>
+                <FindingsList findings={sn.note.findings} />
               </div>
-            )}
-            {teaOriginNote && (
-              <div className="temporal-card">
-                <h4>お茶の産地：{teaOriginLabelOfValue(teaOrigin)}</h4>
-                <p><span className="badge">{DATA_LEVEL_LABEL[teaOriginNote.level]}</span></p>
-                <p>{teaOriginNote.text}</p>
-                <FindingsList findings={teaOriginNote.findings} />
-              </div>
-            )}
-            {cacaoNote && cacaoEntity && (
-              <div className="temporal-card">
-                <h4>カカオの系統：{cacaoDisplayName}</h4>
-                <p><span className="badge">{DATA_LEVEL_LABEL[cacaoNote.level]}</span></p>
-                <p>{cacaoNote.text}</p>
-                <FindingsList findings={cacaoNote.findings} />
-              </div>
-            )}
-            {originNote && origin && (
-              <div className="temporal-card">
-                <h4>カカオの産地：{origin.name}</h4>
-                <p><span className="badge">{DATA_LEVEL_LABEL[originNote.level]}</span></p>
-                <p>{originNote.text}</p>
-                <FindingsList findings={originNote.findings} />
-              </div>
-            )}
+            ))}
           </>}
           <h3>食べる・飲む順序について（一般的な知見）</h3>
-          <p>連続して食べたり飲んだりすると、前のものの影響で後のものの時間的な感じ方が変わることが、チーズとワインの研究で示されています（チーズでワインの渋みの持続が短くなった例など）。お茶とチョコレートの組み合わせでも順序で感じ方が変わる可能性はありますが、特定の組み合わせでどう変わるかを示した研究はないため、ここでは一般的な注意としてのみ記します。</p>
+          {sameType ? (
+            <p>連続して食べたり飲んだりすると、前のものの影響で後のものの時間的な感じ方が変わることが、チーズとワインの研究で示されています（チーズでワインの渋みの持続が短くなった例など）。{PAIR_TYPE_NAME[leftType]}同士のブレンドでも、味わう順序や交互に味わうことで感じ方が変わる可能性はありますが、特定の組み合わせでどう変わるかを示した研究はないため、ここでは一般的な注意としてのみ記します。</p>
+          ) : (
+            <p>連続して食べたり飲んだりすると、前のものの影響で後のものの時間的な感じ方が変わることが、チーズとワインの研究で示されています（チーズでワインの渋みの持続が短くなった例など）。お茶とチョコレートの組み合わせでも順序で感じ方が変わる可能性はありますが、特定の組み合わせでどう変わるかを示した研究はないため、ここでは一般的な注意としてのみ記します。</p>
+          )}
           <SourceLinks ids={['galmarini-2016-cheese-wine-tds', 'galmarini-2017-sequence-temporal']} />
           <SourceLinks ids={['spence-2020-flavour-pairing']} />
         </section>
@@ -802,6 +908,7 @@ function PairPage({ saved, toggleFav, addHistory }: { saved: SavedData; toggleFa
       <details className="pair-notes">
         <summary>指定と見方についての注記</summary>
         <p className="note-small">系統・産地は、原料が分かっている場合だけ指定してください。科学データがない場合は、その旨を示して見方には使いません。お茶の産地・品種も同じです。</p>
+        <p className="note-small">各側の見出しを押すと、その側をお茶とチョコレートの間で切り替えられます。お茶同士・チョコ同士の組み合わせ（自家ブレンド）も選べますが、同種同士のブレンドを直接調べた官能研究は確認できていないため、結果は両者のプロファイルと一般的な味覚・嗅覚の機序からの推測として表示します。切り替えた側の選択は種別ごとに保持され、元に戻すと復元されます。</p>
         <p className="note-small">プルダウンは「調べる」画面と共通で、存在しない組み合わせになる選択肢は出ません。お茶は品種×茶類の確認記録と品種・産地の国の一致で判定し、チョコレートは種類・産地・系統を相互に制限しません（例外はクローンで、記録のある産地だけが選択肢に出ます）。お茶の産地は、国全体か、文献で所見のある地域（県・省などの単位）まで選べます。選択を変えて両立しなくなった指定は、自動で「指定しない」に戻ります。</p>
         <p className="note-small">要約の「組み合わせの味わい（推測）」は、両アイテムで確認されている成分・味覚の顔ぶれと、文献に基づく相互作用から推測した「味わいの性格」です。組み合わせ自体を実測したものではありません。性格の名前を押すと根拠が見えます。</p>
         <p className="note-small">組み合わせ後のホイールは、香りを足し算して作ることはしません。共通点と対比に加え、文献に基づく相互作用の一般原理の範囲で、感じ方の変化の可能性を示します。</p>
@@ -850,7 +957,17 @@ function SavedPage({ saved, setSaved }: { saved: SavedData; setSaved: (d: SavedD
   const importJson = (f: File) => {
     f.text().then((t) => { try { setSaved(validateSaved(JSON.parse(t))); setError('') } catch (e) { setError(`読み込めませんでした：${e instanceof Error ? e.message : '不明なエラー'}`) } }).catch(() => setError('ファイルを読み取れませんでした'))
   }
-  const nameOf = (kind: string, id: string) => kind === 'teas' ? teaById(id)?.name ?? id : kind === 'chocolates' ? chocolateById(id)?.name ?? id : id.replace('+', ' × ')
+  const nameOf = (kind: string, id: string) => {
+    if (kind === 'teas') return teaById(id)?.name ?? id
+    if (kind === 'chocolates') return chocolateById(id)?.name ?? id
+    // 組み合わせは種別つきID（旧形式はお茶×チョコとして解釈）から名前を引く
+    const ref = parsePairId(id)
+    if (!ref) return id.replace('+', ' × ')
+    const nm = (s: { type: 'tea' | 'chocolate'; id: string }) => (s.type === 'tea' ? teaById(s.id)?.name : chocolateById(s.id)?.name) ?? s.id
+    return ref.a.type === ref.b.type
+      ? `${nm(ref.a)}（${PAIR_TYPE_NAME[ref.a.type]}） × ${nm(ref.b)}（${PAIR_TYPE_NAME[ref.b.type]}）`
+      : `${nm(ref.a)} × ${nm(ref.b)}`
+  }
   const Section = ({ title, kind, ids }: { title: string; kind: string; ids: string[] }) => (
     <section><h3>{title}</h3>{ids.length === 0 ? <p className="note-small">まだありません。</p> : <ul>{ids.map((id) => <li key={id}>{nameOf(kind, id)}</li>)}</ul>}</section>
   )

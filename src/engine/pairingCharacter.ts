@@ -1,7 +1,7 @@
 import type { ChocolateItem, Compound, InteractionStatement, PairingCharacter, PairingCharacterAnalysis, TasteKey, TeaItem } from '../types'
 import { compounds, compoundTier } from '../data/compounds'
 import { noteById } from '../data/flavors'
-import { analyzeInteractions } from './interactions'
+import { analyzeInteractionsForSides, type InteractionSide } from './interactions'
 import { TASTE_LABELS } from './pairing'
 
 // 組み合わせの味わいの性格の推測（docs/research/pairing-character-inference.md）。
@@ -38,8 +38,17 @@ export const CHARACTER_RULE_LABELS: Record<string, string> = {
   'warmth-and-sweetness': '温かさと甘味の感じ方',
 }
 
+/** 性格推測の1側（第9弾で同種同士のブレンドにも対応するため一般化）。
+ *  label は根拠文の呼び名（異種ペアでは 'お茶'／'チョコレート'、同種ペアではアイテム名）。 */
+export interface CharacterSide {
+  item: TeaItem | ChocolateItem
+  type: 'tea' | 'chocolate'
+  label: string
+}
+
 interface SideData {
   label: string
+  type: 'tea' | 'chocolate'
   kindId: string
   /** 「普通」以上で記録された香味ノート → ランク */
   knownNotes: Map<string, number>
@@ -49,28 +58,29 @@ interface SideData {
   pool: Compound[]
 }
 
-function sideData(item: TeaItem | ChocolateItem, side: 'tea' | 'chocolate'): SideData {
-  const kindId = side === 'tea' ? (item as TeaItem).kindId : (item as ChocolateItem).kind
+function sideData(side: CharacterSide): SideData {
+  const { item, type } = side
+  const kindId = type === 'tea' ? (item as TeaItem).kindId : (item as ChocolateItem).kind
   const knownNotes = new Map(item.profile.aromas.filter((a) => rank(a.intensity) >= 2).map((a) => [a.noteId, rank(a.intensity)]))
   const knownTastes = new Map(TASTE_KEYS.filter((k) => rank(item.profile.tastes[k].intensity) >= 2).map((k) => [k, rank(item.profile.tastes[k].intensity)]))
   const pool = compounds.filter((c) =>
-    compoundTier(c, { side, kindId }) <= 2
+    compoundTier(c, { side: type, kindId }) <= 2
     && (c.noteIds.some((n) => knownNotes.has(n)) || (c.tasteLinks ?? []).some((l) => knownTastes.has(l.taste))))
-  return { label: side === 'tea' ? 'お茶' : 'チョコレート', kindId, knownNotes, knownTastes, pool }
+  return { label: side.label, type, kindId, knownNotes, knownTastes, pool }
 }
 
 interface Ctx {
-  tea: SideData
-  choco: SideData
-  teaItem: TeaItem
-  chocoItem: ChocolateItem
+  a: SideData
+  b: SideData
+  aItem: TeaItem | ChocolateItem
+  bItem: TeaItem | ChocolateItem
   poolAll: Compound[]
   fired: InteractionStatement[]
   firedRuleIds: Set<string>
 }
 
-const noteRank = (ctx: Ctx, id: string) => Math.max(ctx.tea.knownNotes.get(id) ?? 0, ctx.choco.knownNotes.get(id) ?? 0)
-const tasteRankEither = (ctx: Ctx, k: TasteKey) => Math.max(ctx.tea.knownTastes.get(k) ?? 0, ctx.choco.knownTastes.get(k) ?? 0)
+const noteRank = (ctx: Ctx, id: string) => Math.max(ctx.a.knownNotes.get(id) ?? 0, ctx.b.knownNotes.get(id) ?? 0)
+const tasteRankEither = (ctx: Ctx, k: TasteKey) => Math.max(ctx.a.knownTastes.get(k) ?? 0, ctx.b.knownTastes.get(k) ?? 0)
 const hasNote = (ctx: Ctx, id: string) => noteRank(ctx, id) >= 2
 const hasTaste = (ctx: Ctx, k: TasteKey) => tasteRankEither(ctx, k) >= 2
 
@@ -81,7 +91,7 @@ function buildCharacter(ctx: Ctx, id: string, kind: PairingCharacter['kind'], la
   const sourceIds: string[] = []
   const push = (sid: string) => { if (!sourceIds.includes(sid)) sourceIds.push(sid) }
   basis.compounds.forEach((c) => c.sourceIds.forEach(push))
-  for (const item of [ctx.teaItem, ctx.chocoItem]) {
+  for (const item of [ctx.aItem, ctx.bItem]) {
     for (const e of item.profile.aromas) if (basis.notes.includes(e.noteId)) e.sourceIds.forEach(push)
     for (const k of basis.tastes) item.profile.tastes[k].sourceIds.forEach(push)
   }
@@ -163,7 +173,7 @@ function rich(ctx: Ctx): PairingCharacter | null {
   if (!sweet) basis.notes = dairy
   basis.compounds = ctx.poolAll.filter((c) => (c.tasteLinks ?? []).some((l) => l.taste === 'umami'))
   if (ctx.firedRuleIds.has('umami-aroma-interaction')) basis.rules.push('umami-aroma-interaction')
-  const umamiWhere = [ctx.tea.knownTastes.has('umami') ? 'お茶' : null, ctx.choco.knownTastes.has('umami') ? 'チョコレート' : null].filter(Boolean).join('と')
+  const umamiWhere = [ctx.a.knownTastes.has('umami') ? ctx.a.label : null, ctx.b.knownTastes.has('umami') ? ctx.b.label : null].filter(Boolean).join('と')
   const coFactor = sweet ? '甘味の記録' : `乳・クリーム系の香り（「${dairy.map(noteName).join('」「')}」）`
   const rationale = `「コク」は味そのものではなく、うま味や甘味に厚みや持続を感じさせる知覚として研究されています（コク味物質とカルシウム感知受容体の研究など）。この組み合わせでは${umamiWhere}にうま味の記録があり、${coFactor}も揃っているため、全体にコクのある味わいになる可能性があります。`
   return buildCharacter(ctx, 'rich', 'taste-mouthfeel', 'コクがある', rationale, basis, ['ohsu-2010-kokumi-casr'])
@@ -180,17 +190,23 @@ function creamy(ctx: Ctx): PairingCharacter | null {
   return buildCharacter(ctx, 'creamy', 'taste-mouthfeel', 'クリーミー', rationale, basis)
 }
 
-/** すっきり：お茶の爽やかな香り＋締まった味、チョコの甘味が際立ちすぎない */
+/** すっきり：お茶の爽やかな香り＋締まった味、相手の甘味が際立ちすぎない。
+ *  「爽やかさ」の担い手はお茶側の青葉・ハーブ系の香りと締まった味であるため、
+ *  フレッシュ側はお茶の側に限る（お茶同士では両側とも候補になりうる）。 */
 function clean(ctx: Ctx): PairingCharacter | null {
-  const greenNotes = ['green-leaf', 'herb'].filter((n) => ctx.tea.knownNotes.has(n))
-  const teaTastes = (['sour', 'bitter', 'astringent'] as TasteKey[]).filter((k) => ctx.tea.knownTastes.has(k))
-  if (greenNotes.length === 0 || teaTastes.length === 0) return null
-  if ((ctx.choco.knownTastes.get('sweet') ?? 0) >= 3) return null
-  const basis = emptyBasis()
-  basis.notes = greenNotes
-  basis.tastes = teaTastes
-  const rationale = `お茶には「${greenNotes.map(noteName).join('」「')}」のような爽やかな香りがあり、${teaTastes.map((k) => TASTE_LABELS[k]).join('・')}の締まった味の要素も記録されています。チョコレートの甘味が際立つ組み合わせではないため、後味のすっきりした味わいになる可能性があります。`
-  return buildCharacter(ctx, 'clean', 'taste-mouthfeel', 'すっきり', rationale, basis)
+  for (const [fresh, other] of [[ctx.a, ctx.b], [ctx.b, ctx.a]] as const) {
+    if (fresh.type !== 'tea') continue
+    const greenNotes = ['green-leaf', 'herb'].filter((n) => fresh.knownNotes.has(n))
+    const freshTastes = (['sour', 'bitter', 'astringent'] as TasteKey[]).filter((k) => fresh.knownTastes.has(k))
+    if (greenNotes.length === 0 || freshTastes.length === 0) continue
+    if ((other.knownTastes.get('sweet') ?? 0) >= 3) continue
+    const basis = emptyBasis()
+    basis.notes = greenNotes
+    basis.tastes = freshTastes
+    const rationale = `${fresh.label}には「${greenNotes.map(noteName).join('」「')}」のような爽やかな香りがあり、${freshTastes.map((k) => TASTE_LABELS[k]).join('・')}の締まった味の要素も記録されています。${other.label}の甘味が際立つ組み合わせではないため、後味のすっきりした味わいになる可能性があります。`
+    return buildCharacter(ctx, 'clean', 'taste-mouthfeel', 'すっきり', rationale, basis)
+  }
+  return null
 }
 
 /** シャープ：酸味が苦味を強める相互作用、または強い酸味 */
@@ -260,22 +276,38 @@ function byRichness(chars: (PairingCharacter | null)[]): PairingCharacter[] {
     .map((x) => x.c)
 }
 
-/** 組み合わせの味わいの性格を推測する。
+const interactionSideOf = (s: CharacterSide): InteractionSide => ({
+  type: s.type,
+  label: s.label,
+  profile: s.item.profile,
+  itemId: s.item.id,
+  chocoKind: s.type === 'chocolate' ? (s.item as ChocolateItem).kind : undefined,
+})
+
+/** 組み合わせの味わいの性格を推測する（2側一般版）。
  *  どちらか一方でも記録データ（香味・味覚の「普通」以上の記録）が無い組み合わせでは、
  *  組み合わせとしての推測の根拠が揃わないため、性格を出さない。 */
-export function analyzePairingCharacter(teaItem: TeaItem, chocoItem: ChocolateItem): PairingCharacterAnalysis {
-  const tea = sideData(teaItem, 'tea')
-  const choco = sideData(chocoItem, 'chocolate')
+export function analyzePairingCharacterForSides(aSide: CharacterSide, bSide: CharacterSide): PairingCharacterAnalysis {
+  const a = sideData(aSide)
+  const b = sideData(bSide)
   const sideHasData = (s: SideData) => s.knownNotes.size + s.knownTastes.size > 0
-  if (!sideHasData(tea) || !sideHasData(choco)) return { aroma: [], tasteMouthfeel: [] }
-  const poolAll = [...new Map([...tea.pool, ...choco.pool].map((c) => [c.id, c])).values()]
-  const interactions = analyzeInteractions(teaItem, chocoItem)
+  if (!sideHasData(a) || !sideHasData(b)) return { aroma: [], tasteMouthfeel: [] }
+  const poolAll = [...new Map([...a.pool, ...b.pool].map((c) => [c.id, c])).values()]
+  const interactions = analyzeInteractionsForSides(interactionSideOf(aSide), interactionSideOf(bSide))
   const fired = [...interactions.aroma, ...interactions.taste, ...interactions.mouthfeel]
-  const ctx: Ctx = { tea, choco, teaItem, chocoItem, poolAll, fired, firedRuleIds: new Set(fired.map((s) => s.ruleId)) }
+  const ctx: Ctx = { a, b, aItem: aSide.item, bItem: bSide.item, poolAll, fired, firedRuleIds: new Set(fired.map((s) => s.ruleId)) }
   return {
     aroma: byRichness(AROMA_DEFS.map((def) => aromaCharacter(ctx, def))),
     tasteMouthfeel: byRichness([mellow(ctx), rich(ctx), creamy(ctx), clean(ctx), sharp(ctx), heavy(ctx), light(ctx)]),
   }
+}
+
+/** 従来の（お茶，チョコレート）呼び出し。異種ペアでは従来と同一の結果になる。 */
+export function analyzePairingCharacter(teaItem: TeaItem, chocoItem: ChocolateItem): PairingCharacterAnalysis {
+  return analyzePairingCharacterForSides(
+    { item: teaItem, type: 'tea', label: 'お茶' },
+    { item: chocoItem, type: 'chocolate', label: 'チョコレート' },
+  )
 }
 
 export const hasAnyCharacter = (a: PairingCharacterAnalysis) => a.aroma.length + a.tasteMouthfeel.length > 0

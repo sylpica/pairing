@@ -2,6 +2,11 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import ComboWheelPanel from './ComboWheelPanel'
+import TasteWheel, { comboTastesFromProfile } from './TasteWheel'
+import { buildTasteCompounds } from '../engine/wheelTiers'
+import { teaItems } from '../data/teas'
+import { chocolateItems } from '../data/chocolates'
+import type { CompoundContext } from '../data/compounds'
 import { analyzeTeaCombo, analyzeChocoCombo, type ComboAnalysis } from '../engine/combo'
 
 const segs = (container: HTMLElement) => [...container.querySelectorAll('svg g.wheel-seg')]
@@ -102,6 +107,73 @@ describe('3階層ホイール（第8弾）', () => {
     // 味の一覧に戻れる
     fireEvent.click(screen.getByRole('button', { name: '← 味の一覧に戻る' }))
     expect(screen.getByRole('button', { name: /^渋味（.+）の根拠を見る$/ })).toBeTruthy()
+  })
+
+  it('味モード第1階層：各次元に寄与物質名が小さく併記される（追加指示B）', () => {
+    const a = analyzeTeaCombo({ kindId: 'black', regionId: 'nagasaki', cultivarId: 'yabukita' })
+    const { container } = renderPanel(a)
+    fireEvent.click(screen.getByRole('tab', { name: '味' }))
+    // 全セグメントにラベル＋小さな併記（寄与物質名）が必ずある（無地・併記なし禁止）
+    const groups = segs(container)
+    expect(groups.length).toBeGreaterThan(0)
+    for (const g of groups) {
+      const subs = [...g.querySelectorAll('.wheel-sub')]
+      expect(subs.length, `併記なしセグメント: ${g.getAttribute('aria-label')}`).toBeGreaterThan(0)
+      expect(subs.map((s) => s.textContent ?? '').join('').length).toBeGreaterThan(0)
+    }
+    // 苦味には、第2階層で出る寄与物質カフェインが併記される
+    const bitter = screen.getByRole('button', { name: /^苦味（.+）の根拠を見る$/ })
+    const bitterSubs = [...bitter.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')
+    expect(bitterSubs).toContain('カフェイン')
+    // 凡例に併記の説明がある（香り側の凡例と作法を揃える）
+    expect(screen.getByText(/セグメント内の小さな文字は、その味に寄与する物質です/)).toBeTruthy()
+  })
+
+  it('味ホイール第1階層の併記は、全アイテムで第2階層の物質と一致する（追加指示B・全数）', () => {
+    const cases: { name: string; profile: typeof teaItems[number]['profile']; context: CompoundContext }[] = [
+      ...teaItems.map((t) => ({
+        name: t.name, profile: t.profile,
+        context: { side: 'tea' as const, kindId: t.kindId, itemName: t.name, itemId: t.id },
+      })),
+      ...chocolateItems.map((c) => ({
+        name: c.name, profile: c.profile,
+        context: { side: 'chocolate' as const, kindId: c.kind, itemName: c.name, itemId: c.id },
+      })),
+    ]
+    let checked = 0
+    let noCompoundDims = 0
+    for (const item of cases) {
+      const tastes = comboTastesFromProfile(item.profile)
+      if (tastes.length === 0) continue
+      checked++
+      const { container } = render(<TasteWheel tastes={tastes} onSelectTaste={() => {}} context={item.context} />)
+      const groups = segs(container)
+      expect(groups.length, `${item.name}: セグメント数`).toBe(tastes.length)
+      for (const g of groups) {
+        const subText = [...g.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')
+        expect(subText.length, `${item.name}: 併記なしセグメント ${g.getAttribute('aria-label')}`).toBeGreaterThan(0)
+      }
+      // 各次元について、併記の内容が第2階層（buildTasteCompounds）と一致する：
+      // 物質がある次元は最大重みの物質名が併記に含まれ、無い次元は「成分データなし」
+      for (const t of tastes) {
+        const compounds = buildTasteCompounds(t.key, item.context)
+        const seg = groups.find((g) => (g.getAttribute('aria-label') ?? '').startsWith(
+          t.key === 'astringent' ? '渋味（収れん感）' : t.key === 'sweet' ? '甘味' : t.key === 'sour' ? '酸味' : t.key === 'bitter' ? '苦味' : 'うま味'))
+        expect(seg, `${item.name}/${t.key}: セグメント`).toBeTruthy()
+        const subText = [...seg!.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')
+        if (compounds.length === 0) {
+          noCompoundDims++
+          expect(subText, `${item.name}/${t.key}`).toContain('成分データなし')
+        } else {
+          const top = compounds.slice().sort((x, y) => y.percent - x.percent)[0].compound.name
+          expect(subText, `${item.name}/${t.key}: 先頭物質`).toContain(top)
+        }
+      }
+      cleanup()
+    }
+    expect(checked).toBeGreaterThan(0)
+    // 「成分データなし」の経路が実際に存在することも確認する（無ければ検証が空転する）
+    expect(noCompoundDims).toBeGreaterThan(0)
   })
 
   it('自己監査：代表的な組み合わせで全階層に無地セグメントが無い', () => {
