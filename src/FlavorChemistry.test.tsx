@@ -119,8 +119,8 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
   it('8. ペアリング結果の分類（甘い香り）から成分を調べられる', () => {
     location.hash = '#/pair'; render(<App />)
     // 既定の組み合わせ（烏龍茶×ダーク焙煎）では「甘い香り」が共通分類になる。
-    // 要約には味わいの性格のチップにも同名の「甘い香り」があるため、性格ブロック（.pair-character）の外にある分類チップを押す
-    const catBtn = screen.getAllByRole('button', { name: /甘い香り/ }).find((b) => !b.closest('.pair-character'))
+    // 要約のホイール（第26弾: .pair-wheel）にも同名の「甘い香り」を含むボタンがあるため、ホイールの外にある分類チップを押す
+    const catBtn = screen.getAllByRole('button', { name: /甘い香り/ }).find((b) => !b.closest('.pair-wheel'))
     expect(catBtn).toBeTruthy()
     fireEvent.click(catBtn!)
     clickButton(/キャラメル（成分/)

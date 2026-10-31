@@ -40,9 +40,9 @@ describe('組み合わせ画面：自家ブレンド（種別切り替え）', (
     fireEvent.change(screen.getByLabelText('左：お茶'), { target: { value: 'sencha' } })
     expect(screen.getByRole('tab', { name: '煎茶' })).toBeTruthy()
     expect(summaryText()).not.toContain('煎茶 × 烏龍茶（青茶）')
-    // お茶タブ（煎茶側）を開くとホイールが出る
+    // お茶タブ（煎茶側）を開くとホイールが出る（第26弾で要約側にもホイールがあるため複数一致を許す）
     fireEvent.click(screen.getByRole('tab', { name: '煎茶' }))
-    expect(screen.getByLabelText(/フレーバーホイール/)).toBeTruthy()
+    expect(screen.getAllByLabelText(/フレーバーホイール/).length).toBeGreaterThan(0)
   })
 
   it('右をチョコに切り替えるとチョコ同士になり、チョコ用の注記が出る', () => {
@@ -60,7 +60,7 @@ describe('組み合わせ画面：自家ブレンド（種別切り替え）', (
     fireEvent.change(screen.getByLabelText('右：チョコレート'), { target: { value: 'milk-chocolate' } })
     expect(summaryText()).not.toContain('ダークチョコレート（焙煎） × ミルクチョコレート')
     fireEvent.click(screen.getByRole('tab', { name: 'ミルクチョコレート' }))
-    expect(screen.getByLabelText(/フレーバーホイール/)).toBeTruthy()
+    expect(screen.getAllByLabelText(/フレーバーホイール/).length).toBeGreaterThan(0)
   })
 
   it('切り替えた側の選択は種別ごとに保持され、戻すと復元される', () => {
@@ -211,8 +211,8 @@ describe('組み合わせ画面：見出しの横書き一列（第11弾）', ()
     // バッジは狭幅で内部折り返しを許可する
     const badgeMq = css.slice(css.indexOf('@media (max-width: 400px)'))
     expect(badgeMq.slice(0, 160)).toContain('.badge { white-space: normal; }')
-    // 性格チップのタップ高さはアプリ標準の44pxに揃える
-    expect(css).toContain('.pair-character .chip { min-height: 44px;')
+    // 味わいホイール内チップのタップ高さはアプリ標準の44pxに揃える（第26弾で .pair-wheel に改称）
+    expect(css).toContain('.pair-wheel .chip { min-height: 44px;')
     // 第22弾：調べる画面の見出し行（タイトル＋リセット）は340px以下で詰めて、
     // 320px幅でも横にはみ出さない（第19弾のリセット追加で 328px まで広がっていた）
     const narrow340 = css.slice(css.indexOf('@media (max-width: 340px)'))

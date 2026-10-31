@@ -34,6 +34,7 @@ import {
 } from './engine/combo'
 import { COMBO_INT_LABEL } from './components/wheelText'
 import ComboWheelPanel from './components/ComboWheelPanel'
+import PairingWheelPanel from './components/PairingWheelPanel'
 import ProfileWheelPanel from './components/ProfileWheelPanel'
 import { FindingsList, SCIENCE_LABEL } from './components/EntityViews'
 import { TeaLeafIcon, TeaCupIcon, MapPinIcon, SproutIcon, CacaoPodIcon, ChocoBarIcon, LineageIcon } from './components/icons'
@@ -696,8 +697,9 @@ function PairPage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'pair
   const interactions = assembly?.interactions ?? null
   const characters = assembly?.characters ?? null
   const allCharacters = characters ? [...characters.aroma, ...characters.tasteMouthfeel] : []
-  const [charSel, setCharSel] = useState<string | null>(null)
-  const selCharacter = allCharacters.find((c) => c.id === charSel) ?? null
+  const wheel = assembly?.wheel ?? null
+  // ホイールの表示リセット用キー（選択が変わればタイトルかアイテムが変わる）
+  const wheelResetKey = bothSelected ? `${leftView.item!.id}:${leftView.title}|${rightView.item!.id}:${rightView.title}` : ''
   // 品種・系統・産地の指定についての文脈ノート（側ごと・種別ごとに組み立てる）。
   // 品種の追加指定は、組み合わせとして存在するものだけが選択肢に出る（ComboSelectors が担保）。
   interface SideNote { heading: string; note: PairingContextNote }
@@ -734,7 +736,6 @@ function PairPage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'pair
     ? pairIdOf({ type: leftType, id: leftView.item!.id }, { type: rightType, id: rightView.item!.id })
     : ''
   // 第15弾: ペアリングの履歴記録は廃止した（「最近試した組み合わせ」の削除に伴う）。
-  useEffect(() => { setCharSel(null) }, [pairId])
   // ※タブ切り替えではスクロールしない（その場で内容だけが切り替わる）。
   //   以前はタブ変更のたびに先頭へスクロールする不具合があった（2026-10-31 指示9）。
   const fav = saved.favorites.pairings.includes(pairId)
@@ -811,22 +812,16 @@ function PairPage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'pair
                 プルダウン／タブのすぐ下に置く。選択内容を繰り返す大きな見出し
                 （○○ × ○○）はプルダウンで設定済みのため出さない。根拠区分チップ・
                 同種ペア注記・第2層の土台注記はメタ情報として下部の注記群へ移した。 */}
-            {characters && (allCharacters.length > 0 ? (
-              <div className="pair-character">
-                <p className="pair-character-head"><strong>組み合わせの味わい（推測）</strong> <span className="badge badge-inferred">推測（未検証）</span></p>
-                <div className="filter-row">
-                  {allCharacters.map((c) => (
-                    <button key={c.id} className="chip" aria-expanded={charSel === c.id} onClick={() => setCharSel(charSel === c.id ? null : c.id)}>{c.label}</button>
-                  ))}
-                </div>
-                {selCharacter && (
-                  <div className="pair-character-detail">
-                    <p><strong>{selCharacter.label}</strong> <span className="badge badge-inferred">推測（未検証）</span></p>
-                    <p>{selCharacter.rationale}</p>
-                    <CharacterBasis c={selCharacter} />
-                    <SourceLinks ids={selCharacter.sourceIds} />
-                  </div>
-                )}
+            {/* 第26弾（2026-10-31 実機FB）: 味わいの表示を性格チップ（約10種の粗い
+                分類で、産地・品種を変えても顔ぶれが変わらなかった）から、ノート単位で
+                統合した3階層ホイールに置き換えた。代表ノートは最大7種類に絞り、
+                相互作用で重みを調整してから選ぶ（engine/pairingWheel.ts）。
+                「推測（未検証）」の明示は凡例ボックス内へ集約（第19弾の原則）。
+                性格の分析そのものは「組み合わせの見方」タブに残している。 */}
+            {wheel && (wheel.notes.length + wheel.tastes.length > 0 ? (
+              <div className="pair-wheel">
+                <p className="pair-wheel-head"><strong>組み合わせの味わい（推測）</strong></p>
+                <PairingWheelPanel data={wheel} resetKey={wheelResetKey} />
               </div>
             ) : (
               <p className="pair-summary-line note-small">組み合わせの味わいの推測は、根拠のある条件が揃わないため表示できません。</p>
@@ -942,7 +937,7 @@ function PairPage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'pair
         <p className="note-small">系統・産地は、原料が分かっている場合だけ指定してください。科学データがない場合は、その旨を示して見方には使いません。お茶の産地・品種も同じです。</p>
         <p className="note-small">各側の見出しを押すと、その側をお茶とチョコレートの間で切り替えられます。お茶同士・チョコ同士の組み合わせ（自家ブレンド）も選べますが、同種同士のブレンドを直接調べた官能研究は確認できていないため、結果は両者のプロファイルと一般的な味覚・嗅覚の機序からの推測として表示します。切り替えた側の選択は種別ごとに保持され、元に戻すと復元されます。</p>
         <p className="note-small">プルダウンは「調べる」画面と共通で、存在しない組み合わせになる選択肢は出ません。お茶は品種×茶類の確認記録と品種・産地の国の一致で判定し、チョコレートは種類・産地・系統を相互に制限しません（例外はクローンで、記録のある産地だけが選択肢に出ます）。お茶の産地は、国全体か、文献で所見のある地域（県・省などの単位）まで選べます。選択を変えて両立しなくなった指定は、自動で「指定しない」に戻ります。</p>
-        <p className="note-small">要約の「組み合わせの味わい（推測）」は、両アイテムで確認されている成分・味覚の顔ぶれと、文献に基づく相互作用から推測した「味わいの性格」です。組み合わせ自体を実測したものではありません。性格の名前を押すと根拠が見えます。</p>
+        <p className="note-small">要約の「組み合わせの味わい（推測）」のホイールは、両側の組み合わせプロファイル（第2層）の香味ノートをノート単位の重みで統合し、文献に基づく相互作用（強まる・弱まる）で調整したうえで、代表的な味わいを最大7種類に絞った推測です。組み合わせ自体を実測したものではありません。ホイールの各部分を押すと、その味わいの根拠（各側の記録と相互作用の調整）が見えます。「組み合わせの見方」タブには、味わいの性格（まろやか、コクがある等）の推測も残しています。</p>
         <p className="note-small">組み合わせ後のホイールは、香りを足し算して作ることはしません。共通点と対比に加え、文献に基づく相互作用の一般原理の範囲で、感じ方の変化の可能性を示します。</p>
       </details>
     </div>
@@ -1165,8 +1160,9 @@ function SourcesPage() {
         <p>「花様」「トロピカル」「果実全般」のように具体名のない香りについては、そのアイテム（またはその茶類・種類の試料）で実際に確認されている香気成分の顔ぶれと、各成分について出典で確認済みの香りの記述から、具体的な花・果物への類似を「推測（未検証）」と明示して併記している場合があります。実測でその花・果物と確認されたものではなく、根拠に使った成分と推論の過程は各ノートの詳細に示しています。具体名の香り記述の一部に記事・データベース等の参考情報を含む場合は、その旨を明記しています。推測の方法と、推測を付けなかった項目の理由は調査記録（docs/research/floral-fruit-inference.md）にまとめています。</p>
       </article>
       <article className="temporal-card">
-        <h3>組み合わせの「味わいの性格」の推測について</h3>
-        <p>組み合わせ画面の「組み合わせの味わい（推測）」は、両アイテムで確認されている成分・香味・味覚の顔ぶれと、文献に基づく相互作用（甘味が渋味を和らげる、渋味と脂肪が互いを和らげる等）の発火状況から、組み合わせ全体がどのような味わい（アーシー、スパイシー、まろやか、コクがある等）になるかを推測したものです。根拠（成分・香り・味覚・相互作用）を必ず併記し、根拠のない性格は表示しません。成分の量を足し算して予測するものではなく、組み合わせ自体を官能評価した実測でもありません。「コク」の知覚については、コク味物質とカルシウム感知受容体の研究（Ohsu et al. 2010）を概念の根拠にしています。推測の方法と限界は調査記録（docs/research/pairing-character-inference.md）にまとめています。</p>
+        <h3>組み合わせの「味わい」の推測について</h3>
+        <p>組み合わせ画面の「組み合わせの味わい（推測）」のホイールは、両側の組み合わせプロファイル（産地・品種・系統まで統合した第2層の推測）の香味ノートを、ノート単位の重み（強さの合計）で統合し、文献に基づく相互作用（甘味が渋味を和らげる、甘味が相手の香りを際立たせる、強い香りが穏やかな香りを覆う等）の発火状況で重みを調整したうえで、代表的な味わいを最大7種類に絞って示したものです。産地や品種を変えると第2層のノートの顔ぶれが変わるため、代表的な味わいと割合も組み合わせごとに変わります。割合は裏付けデータから算出した目安で、実測の含有率ではなく、組み合わせ自体を官能評価した実測でもありません。各味わいの根拠（各側の記録と、どの相互作用で調整したか）は、ホイールの詳細に必ず併記しています。</p>
+        <p>「組み合わせの見方」タブの「味わいの性格」の推測は、両アイテムで確認されている成分・香味・味覚の顔ぶれと相互作用の発火状況から、組み合わせ全体がどのような味わい（アーシー、スパイシー、まろやか、コクがある等）になるかを推測したものです。根拠（成分・香り・味覚・相互作用）を必ず併記し、根拠のない性格は表示しません。「コク」の知覚については、コク味物質とカルシウム感知受容体の研究（Ohsu et al. 2010）を概念の根拠にしています。推測の方法と限界は調査記録（docs/research/pairing-character-inference.md）にまとめています。</p>
       </article>
     </div>
   )

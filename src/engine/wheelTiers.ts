@@ -70,9 +70,30 @@ export interface TierCompound {
   percent: number
 }
 
-function tierCompounds(compounds: Compound[], context?: CompoundContext): TierCompound[] {
+/** ホイールの文脈。第26弾でペアリング（2側の統合）に対応するため、複数の文脈を
+ *  和集合として扱えるようにした（単一文脈・文脈なしの既存の呼び出しの挙動は不変）。
+ *  化合物の tier は全ての文脈の中で最も近いもの（最小値）を採り、化合物の集合は
+ *  「いずれかの文脈で tier 2 以内」の和集合とする。 */
+export type WheelContexts = CompoundContext | CompoundContext[] | undefined
+
+const ctxListOf = (context: WheelContexts): CompoundContext[] =>
+  context === undefined ? [] : Array.isArray(context) ? context : [context]
+
+/** 化合物の根拠の近さ（複数文脈では最も近い文脈での tier） */
+export function tierInContexts(c: Compound, context: WheelContexts): 1 | 2 | 3 {
+  const ctxs = ctxListOf(context)
+  if (ctxs.length === 0) return 2
+  let best: 1 | 2 | 3 = 3
+  for (const ctx of ctxs) {
+    const t = compoundTier(c, ctx)
+    if (t < best) best = t
+  }
+  return best
+}
+
+function tierCompounds(compounds: Compound[], context?: WheelContexts): TierCompound[] {
   const base = compounds.map((c) => {
-    const tier = context ? compoundTier(c, context) : (2 as const)
+    const tier = tierInContexts(c, context)
     return { compound: c, tier, weight: tierWeight(tier), percent: 0 }
   })
   const percents = allocatePercents(base.map((b) => b.weight))
@@ -150,17 +171,35 @@ export interface CategoryTier {
   entries: MidEntry[]
   /** 大分類セグメントの大きさ（属するノートの強さの合計） */
   weight: number
+  /** 第27弾: 大分類内での割合（％）。重みを正規化した目安で、実測の含有率ではない */
+  percent: number
   drillable: boolean
 }
 
-const noteCompounds = (noteId: string, context?: CompoundContext): Compound[] => {
+const noteCompounds = (noteId: string, context?: WheelContexts): Compound[] => {
   const linked = compoundsForNote(noteId)
-  if (!context) return linked
-  return linked.filter((c) => compoundTier(c, context) <= 2)
+  const ctxs = ctxListOf(context)
+  if (ctxs.length === 0) return linked
+  return linked.filter((c) => tierInContexts(c, ctxs) <= 2)
+}
+
+/** 漠然としたノートへの具体名の推測を、全ての文脈について和集合で集める。
+ *  同じ具体名が複数の文脈で得られた場合は、根拠成分を和集合にする。 */
+function specificsInContexts(ctxs: CompoundContext[], noteId: string): InferredSpecific[] {
+  const byLabel = new Map<string, InferredSpecific>()
+  for (const ctx of ctxs) {
+    for (const spec of comboSpecificsFor(ctx, noteId)) {
+      const prev = byLabel.get(spec.label)
+      if (!prev) { byLabel.set(spec.label, { ...spec, basisCompoundIds: [...spec.basisCompoundIds] }); continue }
+      prev.basisCompoundIds = [...new Set([...prev.basisCompoundIds, ...spec.basisCompoundIds])]
+      if (prev.basisGrading !== spec.basisGrading) prev.basisGrading = 'reference-assisted'
+    }
+  }
+  return [...byLabel.values()]
 }
 
 /** 香りの3階層データ（大分類→中分類）を組み合わせノートから構築する */
-export function buildAromaTiers(notes: ComboNote[], context?: CompoundContext): CategoryTier[] {
+export function buildAromaTiers(notes: ComboNote[], context?: WheelContexts): CategoryTier[] {
   const known = notes.filter((n) => rank(n.intensity) > 0 && noteById(n.noteId))
   const out: CategoryTier[] = []
   for (const cat of flavorCategories) {
@@ -186,10 +225,11 @@ export function buildAromaTiers(notes: ComboNote[], context?: CompoundContext): 
     }
     // 漠然としたノートへの推測（具体名）。具体的なノートと名前が重なるものは
     // ノート側を優先して落とす（例：柑橘ノートがある場合の「柑橘類」推測）。
-    if (context) {
+    const ctxs = ctxListOf(context)
+    if (ctxs.length > 0) {
       for (const n of catNotes) {
         if (!VAGUE_NOTE_IDS.includes(n.noteId)) continue
-        for (const spec of comboSpecificsFor(context, n.noteId)) {
+        for (const spec of specificsInContexts(ctxs, n.noteId)) {
           const dup = entries.some((e) => e.kind === 'note'
             && (e.label === spec.label || `${e.label}類` === spec.label || e.label === `${spec.label}類`))
           if (dup) continue
@@ -220,9 +260,13 @@ export function buildAromaTiers(notes: ComboNote[], context?: CompoundContext): 
       notes: catNotes,
       entries,
       weight: catNotes.reduce((a, n) => a + rank(n.intensity), 0),
+      percent: 0,
       drillable: entries.length > 0,
     })
   }
+  // 第27弾: 第1階層にも％を出す（重みの正規化。合計は必ず100）
+  const catPercents = allocatePercents(out.map((t) => t.weight))
+  out.forEach((t, i) => { t.percent = catPercents[i] })
   return out
 }
 
@@ -265,6 +309,10 @@ export interface TasteGroupTier {
   tastes: ComboTaste[]
   /** 大分類セグメントの大きさ（属する味の強さの合計） */
   weight: number
+  /** 第27弾: 大分類の割合（％）。重みを正規化した目安で、実測の含有率ではない */
+  percent: number
+  /** 第27弾: 大分類の中での各味の割合（％）。強さの重みを正規化した目安 */
+  tastePercents: Partial<Record<TasteKey, number>>
 }
 
 /** 味の3階層データ（大分類→中分類）を組み合わせの味から構築する */
@@ -274,20 +322,30 @@ export function buildTasteTiers(tastes: ComboTaste[]): TasteGroupTier[] {
   for (const g of TASTE_GROUPS) {
     const members = g.keys.flatMap((k) => known.filter((t) => t.key === k))
     if (members.length === 0) continue
+    // 第27弾: 大分類の中での各味の割合（強さの重みの正規化。合計は必ず100）
+    const memberPercents = allocatePercents(members.map((t) => rank(t.intensity)))
+    const tastePercents: Partial<Record<TasteKey, number>> = {}
+    members.forEach((t, i) => { tastePercents[t.key] = memberPercents[i] })
     out.push({
       groupId: g.id,
       name: g.name,
       color: g.color,
       tastes: members,
       weight: members.reduce((a, t) => a + rank(t.intensity), 0),
+      percent: 0,
+      tastePercents,
     })
   }
+  // 第27弾: 第1階層の割合（重みの正規化。合計は必ず100）
+  const groupPercents = allocatePercents(out.map((g) => g.weight))
+  out.forEach((g, i) => { g.percent = groupPercents[i] })
   return out
 }
 
 /** 味（中分類）に寄与する物質（小分類）。文脈がある場合は tier 2 以内に限る */
-export function buildTasteCompounds(taste: TasteKey, context?: CompoundContext): TierCompound[] {
+export function buildTasteCompounds(taste: TasteKey, context?: WheelContexts): TierCompound[] {
   const linked = compoundsForTaste(taste)
-  const filtered = context ? linked.filter((c) => compoundTier(c, context) <= 2) : linked
+  const ctxs = ctxListOf(context)
+  const filtered = ctxs.length > 0 ? linked.filter((c) => tierInContexts(c, ctxs) <= 2) : linked
   return tierCompounds(filtered, context)
 }

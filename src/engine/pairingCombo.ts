@@ -6,6 +6,7 @@ import {
 import { analyzePairing, CHOCO_PAIRING_LABEL, TEA_PAIRING_LABEL, type PairingResult, type PairingSideLabel } from './pairing'
 import { analyzeInteractionsForSides, type InteractionSide } from './interactions'
 import { analyzePairingCharacterForSides, type CharacterSide } from './pairingCharacter'
+import { buildPairingWheel, type PairingWheelData, type PairingWheelSideInput } from './pairingWheel'
 
 // ペアリング（第3層）の組み立て（課題C, 2026-10-31）。
 // ユーザーの階層モデルでは、第3層は「組み合わせの推測（第2層）同士の統合」。
@@ -68,6 +69,8 @@ export interface BlendAssembly {
   result: PairingResult
   interactions: InteractionAnalysis
   characters: PairingCharacterAnalysis
+  /** 第26弾: 結果先頭の3階層ホイール用データ（ノート単位の統合＋相互作用の反映） */
+  wheel: PairingWheelData
 }
 
 function resolveBlendSide(input: BlendSideInput, sameType: boolean): BlendSideResult {
@@ -103,6 +106,24 @@ const characterSideOf = (side: BlendSideResult): CharacterSide => ({
 })
 
 /**
+ * 第26弾: 軸指定によって土台（同じ分類・種類で軸なし）から変わったノート。
+ * ホイールの代表選定で「その組み合わせを特徴づける香り」として優先的に
+ * 残すために使う（選定ルールは pairingWheel.ts の冒頭コメント参照）。
+ */
+function distinctiveNotesOf(input: BlendSideInput, resolved: BlendSideResult): Set<string> {
+  if (!input.sel || !resolved.analysis) return new Set()
+  const base = input.type === 'tea'
+    ? teaComboCached({ ...(input.sel as TeaComboSel), regionId: '', cultivarId: '' })
+    : chocoComboCached({ ...(input.sel as ChocoComboSel), originId: '', lineage: null })
+  const baseMap = new Map(base.notes.map((n) => [n.noteId, n.intensity]))
+  const out = new Set<string>()
+  for (const n of resolved.analysis.notes) {
+    if (!baseMap.has(n.noteId) || baseMap.get(n.noteId) !== n.intensity) out.add(n.noteId)
+  }
+  return out
+}
+
+/**
  * ペアリング画面と全数検証が共有する組み立て（2側一般版）。
  * sel がある側は、その選択が viable であることが呼び出し側の前提
  * （画面は ComboSelectors が viable な選択だけを保持する）。
@@ -117,7 +138,10 @@ export function assembleBlend(aIn: BlendSideInput, bIn: BlendSideInput): BlendAs
   // 従来の assemblePairing と同一の結果にする。同種ペアでは選択した順（a, b）。
   const ordered: [BlendSideResult, BlendSideResult] =
     !sameType && a.type === 'chocolate' ? [b, a] : [a, b]
+  const orderedIn: [BlendSideInput, BlendSideInput] =
+    !sameType && a.type === 'chocolate' ? [bIn, aIn] : [aIn, bIn]
   const [f, s] = ordered
+  const interactions = analyzeInteractionsForSides(interactionSideOf(f), interactionSideOf(s))
   return {
     a,
     b,
@@ -126,8 +150,16 @@ export function assembleBlend(aIn: BlendSideInput, bIn: BlendSideInput): BlendAs
       a: pairingLabelOf(f, sameType),
       b: pairingLabelOf(s, sameType),
     }),
-    interactions: analyzeInteractionsForSides(interactionSideOf(f), interactionSideOf(s)),
+    interactions,
     characters: analyzePairingCharacterForSides(characterSideOf(f), characterSideOf(s)),
+    // ホイールの重み調整は相互作用の発火状況に条件付けるため、interactions を渡す。
+    // 側の順序は相互作用エンジンに渡した順（f, s）と揃える。
+    wheel: buildPairingWheel(
+      ordered.map((side, i) => ({
+        type: side.type, label: side.label, item: side.item, analysis: side.analysis,
+        distinctiveNoteIds: distinctiveNotesOf(orderedIn[i], side),
+      })) as [PairingWheelSideInput, PairingWheelSideInput],
+      interactions),
   }
 }
 
@@ -140,6 +172,7 @@ export interface PairingAssembly {
   result: PairingResult
   interactions: InteractionAnalysis
   characters: PairingCharacterAnalysis
+  wheel: PairingWheelData
 }
 
 /**
@@ -166,5 +199,6 @@ export function assemblePairing(
     result: blend.result,
     interactions: blend.interactions,
     characters: blend.characters,
+    wheel: blend.wheel,
   }
 }

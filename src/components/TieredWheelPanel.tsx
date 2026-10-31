@@ -22,7 +22,8 @@ import { CollapsibleSheet } from './Sheet'
 //   理由と漠然とした香りの根拠をシートで説明する。
 // 味: 大分類（基本味／口当たり・収れん感の2つだけ）→ 中分類（個々の味）→
 //   小分類（寄与する物質・％つき）→ 成分詳細シート（第10弾で香りと同じ3階層に）。
-//   中分類のセグメントの大きさは強さ（弱い・普通・強い）の重み（％ではない）。
+//   第27弾で全階層に％を統一表示する: 味の大分類・中分類の％は、強さ
+//   （弱い・普通・強い）の重みを正規化した目安（実測の含有率ではない）。
 //   物質の無い味（チョコの甘味＝配合糖由来など）は小分類ホイールを作らず、
 //   根拠の説明をその場に出す。
 // ％は実測の含有率ではなく裏付けデータからの算出値であり、各階層に明記する。
@@ -31,6 +32,8 @@ import { CollapsibleSheet } from './Sheet'
 
 const MID_PERCENT_NOTE = '割合は裏付けデータから算出した目安で、実測の含有率ではありません。各割合は、その具体名を裏付ける化合物の数と根拠の近さ（この分類・種類の試料での研究例ほど大きく）から算出しています。化合物の裏付けが無い具体名は、香りの強さ（弱い・普通・強い）で重み付けしています。'
 const SMALL_PERCENT_NOTE = '割合は裏付けデータから算出した目安で、実測の含有率ではありません。各割合は、化合物の根拠の近さ（この分類・種類の試料での研究例ほど大きく、お茶・チョコレート全般の研究例は中ほど）から算出しています。'
+const CAT_PERCENT_NOTE = '割合は裏付けデータから算出した目安で、実測の含有率ではありません。各割合は、その大分類に属する香りの強さ（弱い・普通・強い）の合計の重みから算出しています。'
+const TASTE_PERCENT_NOTE = '割合は裏付けデータから算出した目安で、実測の含有率ではありません。各割合は、味の強さ（弱い・普通・強い）の重みから算出しています。'
 
 type SheetState =
   | { type: 'compound'; tc: TierCompound; percent: number; tasteFocus?: TasteKey }
@@ -56,7 +59,7 @@ function AromaLegend({ level, extra }: { level: 0 | 1; extra?: ReactNode }) {
         <li><span className="legend-swatch legend-inferred" style={{ background: '#8d7b68', opacity: TIER_LEVEL_OPACITY.inferred }} />推測（未検証）：薄い表示＋破線の輪郭</li>
       </ul>
       {level === 0
-        ? <p className="note-small">大分類のセグメントの大きさは、その分類に属する香りの強さの合計の目安です。濃さと輪郭による根拠の区別は、中分類以降で表示します。セグメント内の小さな文字は、その大分類の中分類（具体名）です。</p>
+        ? <p className="note-small">大分類のセグメントの大きさと割合は、その分類に属する香りの強さの合計の重みから算出した目安です（実測の含有率ではありません）。濃さと輪郭による根拠の区別は、中分類以降で表示します。セグメント内の小さな文字は、その大分類の中分類（具体名）です。</p>
         : <p className="note-small">中分類のセグメントの大きさと割合は、その具体名の裏付けの大きさの目安です（実測の含有率ではありません）。</p>}
       {extra}
     </div>
@@ -73,8 +76,8 @@ function TasteLegend({ level, extra }: { level: 0 | 1; extra?: ReactNode }) {
         <li><span className="legend-swatch legend-inferred" style={{ background: '#8d7b68', opacity: TIER_LEVEL_OPACITY.inferred }} />推測（未検証）：薄い表示＋破線の輪郭</li>
       </ul>
       {level === 0
-        ? <p className="note-small">味の大分類は2つだけです。基本味（甘味・酸味・苦味・うま味）は舌で感じる基本の味、口当たり・収れん感は口の中の感覚として感じるものです（渋味は基本味ではなく、収れん感です）。大分類のセグメントの大きさは、その分類に属する味の強さの合計の目安です。濃さと輪郭による根拠の区別は、中分類以降で表示します。セグメント内の小さな文字は、その大分類の中分類（個々の味）です。</p>
-        : <p className="note-small">セグメントの大きさは強さの目安（弱い・普通・強い）です。根拠のある味だけを表示しています（データの無い味は作りません）。セグメント内の小さな文字は、その味に寄与する物質です（寄与する物質の裏付けが無い味は「成分データなし」と示します）。味を押すと、その味に寄与する物質が見えます。</p>}
+        ? <p className="note-small">味の大分類は2つだけです。基本味（甘味・酸味・苦味・うま味）は舌で感じる基本の味、口当たり・収れん感は口の中の感覚として感じるものです（渋味は基本味ではなく、収れん感です）。大分類のセグメントの大きさと割合は、その分類に属する味の強さの合計の重みから算出した目安です（実測の含有率ではありません）。濃さと輪郭による根拠の区別は、中分類以降で表示します。セグメント内の小さな文字は、その大分類の中分類（個々の味）です。</p>
+        : <p className="note-small">セグメントの大きさと割合は、味の強さ（弱い・普通・強い）の重みから算出した目安です（実測の含有率ではありません）。根拠のある味だけを表示しています（データの無い味は作りません）。セグメント内の小さな文字は、その味に寄与する物質です（寄与する物質の裏付けが無い味は「成分データなし」と示します）。味を押すと、その味に寄与する物質が見えます。</p>}
       {extra}
     </div>
   )
@@ -96,12 +99,12 @@ function LegendExtraFallback({ extra }: { extra?: ReactNode }) {
   )
 }
 
-function CompoundLegend({ extra }: { extra?: ReactNode }) {
+function CompoundLegend({ extra, pair }: { extra?: ReactNode; pair?: boolean }) {
   return (
     <div className="combo-legend" role="note" aria-label="ホイールの凡例">
       <p className="note-small"><strong>凡例（濃さ＝根拠の近さ）</strong></p>
       <ul className="combo-legend-list">
-        <li><span className="legend-swatch" style={{ background: '#8d7b68', opacity: 0.95 }} />この分類・種類の試料での研究例</li>
+        <li><span className="legend-swatch" style={{ background: '#8d7b68', opacity: 0.95 }} />{pair ? 'どちらか一方の分類・種類の試料での研究例' : 'この分類・種類の試料での研究例'}</li>
         <li><span className="legend-swatch" style={{ background: '#8d7b68', opacity: 0.62 }} />お茶・チョコレート全般の研究例</li>
       </ul>
       {extra}
@@ -109,10 +112,19 @@ function CompoundLegend({ extra }: { extra?: ReactNode }) {
   )
 }
 
-export default function TieredWheelPanel({ notes, tastes, context, resetKey, ariaLabel, detailNoun = '根拠情報', legendExtra, renderNoteDetail, renderTasteDetail }: {
+/** ペアリング（2側の文脈の和集合）での化合物の根拠の近さの見出し */
+const PAIR_TIER_HEADING: Record<1 | 2 | 3, string> = {
+  1: 'どちらか一方の分類・種類の試料での研究例',
+  2: 'お茶・チョコレート全般の研究例',
+  3: '他の食品・茶類での研究例',
+}
+
+export default function TieredWheelPanel({ notes, tastes, context, contexts, resetKey, ariaLabel, detailNoun = '根拠情報', legendExtra, renderNoteDetail, renderTasteDetail }: {
   notes: ComboNote[]
   tastes: ComboTaste[]
   context?: CompoundContext
+  /** 第26弾: ペアリング用に2側の文脈を和集合で使う場合に渡す（context より優先） */
+  contexts?: CompoundContext[]
   resetKey?: string
   /** 第19弾：画面側の根拠・状態系の注意書き（バッジ類）を凡例ボックス内に集約するための差し込み口 */
   legendExtra?: ReactNode
@@ -133,14 +145,16 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
     setMode('aroma'); setCatId(null); setEntryKey(null); setTasteGroupId(null); setTasteKey(null); setSheet(null)
   }, [resetKey])
 
-  const tiers = useMemo(() => buildAromaTiers(notes, context), [notes, context])
+  const wheelContext = contexts ?? context
+  const isPairContext = (contexts?.length ?? 0) >= 2
+  const tiers = useMemo(() => buildAromaTiers(notes, wheelContext), [notes, wheelContext])
   const tier = tiers.find((t) => t.categoryId === catId) ?? null
   const entry: MidEntry | null = tier?.entries.find((e) => e.key === entryKey) ?? null
   const tasteTiers = useMemo(() => buildTasteTiers(tastes), [tastes])
   const tasteGroup = tasteTiers.find((g) => g.groupId === tasteGroupId) ?? null
   const tasteCompounds = useMemo(
-    () => (tasteKey ? buildTasteCompounds(tasteKey, context) : []),
-    [tasteKey, context])
+    () => (tasteKey ? buildTasteCompounds(tasteKey, wheelContext) : []),
+    [tasteKey, wheelContext])
   const drilledTaste = tasteKey ? tastes.find((t) => t.key === tasteKey) ?? null : null
 
   const nav = (fn: () => void) => { setSheet(null); fn() }
@@ -151,10 +165,11 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
     label: t.name,
     color: t.color,
     weight: t.weight,
+    percent: t.percent,
     drillable: t.drillable,
     subLabels: t.drillable ? t.entries.map((e) => e.label) : ['具体名の裏付けなし'],
-    ariaLabel: t.drillable ? `${t.name}を開く（中分類を表示）` : `${t.name}（具体名の中分類はありません）`,
-    chip: <>{t.name}{t.drillable ? ' ›' : '（中分類なし）'}</>,
+    ariaLabel: t.drillable ? `${t.name}を開く（${t.percent}%・中分類を表示）` : `${t.name}（${t.percent}%・具体名の中分類はありません）`,
+    chip: <>{t.name} {t.percent}%{t.drillable ? ' ›' : '（中分類なし）'}</>,
   }))
   const onSelectCategory = (key: string) => {
     const t = tiers.find((x) => x.categoryId === key)
@@ -213,9 +228,10 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
     label: g.name,
     color: g.color,
     weight: g.weight,
+    percent: g.percent,
     subLabels: g.tastes.map((t) => tasteLabel(t.key)),
-    ariaLabel: `${g.name}を開く（中分類を表示）`,
-    chip: <>{g.name} ›</>,
+    ariaLabel: `${g.name}を開く（${g.percent}%・中分類を表示）`,
+    chip: <>{g.name} {g.percent}% ›</>,
   }))
   const onSelectTasteGroup = (key: string) => {
     nav(() => { setTasteGroupId(key as TasteGroupId); setTasteKey(null) })
@@ -223,19 +239,21 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
 
   // ===== 味・中分類（第2階層：個々の味） =====
   const tasteMidSegments: TierSeg[] = tasteGroup ? tasteGroup.tastes.map((t) => {
-    const compounds = buildTasteCompounds(t.key, context)
+    const compounds = buildTasteCompounds(t.key, wheelContext)
     const names = compounds.slice().sort((a, b) => b.percent - a.percent).map((tc) => tc.compound.name)
+    const percent = tasteGroup.tastePercents[t.key] ?? 0
     return {
       key: t.key,
       label: tasteLabel(t.key),
       color: TASTE_COLORS[t.key],
       weight: tasteRank(t.intensity),
+      percent,
       level: t.level,
       subLabels: names.length > 0 ? names : ['成分データなし'],
       ariaLabel: compounds.length > 0
-        ? `${tasteLabel(t.key)}（${COMBO_INT_LABEL[t.intensity]}・${COMBO_LEVEL_LABEL[t.level]}）に寄与する物質を見る`
-        : `${tasteLabel(t.key)}（${COMBO_INT_LABEL[t.intensity]}・${COMBO_LEVEL_LABEL[t.level]}）の根拠を見る`,
-      chip: <>{tasteLabel(t.key)}（{COMBO_INT_LABEL[t.intensity]}） <LevelBadge level={t.level} /></>,
+        ? `${tasteLabel(t.key)}（${percent}%・${COMBO_INT_LABEL[t.intensity]}・${COMBO_LEVEL_LABEL[t.level]}）に寄与する物質を見る`
+        : `${tasteLabel(t.key)}（${percent}%・${COMBO_INT_LABEL[t.intensity]}・${COMBO_LEVEL_LABEL[t.level]}）の根拠を見る`,
+      chip: <>{tasteLabel(t.key)} {percent}%（{COMBO_INT_LABEL[t.intensity]}） <LevelBadge level={t.level} /></>,
     }
   }) : []
 
@@ -271,6 +289,7 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
         <>
           <p className="note-small wheel-hint">大分類のセグメントを押すと、中分類（具体名）が表示されます。</p>
           <TieredWheel segments={catSegments} centerLabel="香り" ariaLabel={ariaLabel} onSelect={onSelectCategory} />
+          <p className="note-small wheel-percent-note">{CAT_PERCENT_NOTE}</p>
           <AromaLegend level={0} extra={legendExtra} />
           <div className="wheel-note-index">
             <p className="note-small"><strong>この組み合わせの香り一覧</strong>（押すと、その香りの成分または根拠へ進みます）</p>
@@ -330,7 +349,7 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
               if (tc) setSheet({ type: 'compound', tc, percent: tc.percent })
             }} />
           <p className="note-small wheel-percent-note">{SMALL_PERCENT_NOTE}</p>
-          <CompoundLegend extra={legendExtra} />
+          <CompoundLegend extra={legendExtra} pair={isPairContext} />
           <div className="wheel-entry-head">
             {entry.kind === 'note' && entry.note && (
               <p><strong>{entry.label}</strong> <span className="badge">{COMBO_INT_LABEL[entry.note.intensity]}・{COMBO_LEVEL_LABEL[entry.note.level]}</span>{' '}
@@ -363,6 +382,7 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
         <>
           <p className="note-small wheel-hint">味の大分類のセグメントを押すと、その大分類に属する味（中分類）が表示されます。</p>
           <TieredWheel segments={tasteGroupSegments} centerLabel="味" ariaLabel={`${ariaLabel}（味の大分類）`} onSelect={onSelectTasteGroup} />
+          <p className="note-small wheel-percent-note">{TASTE_PERCENT_NOTE}</p>
           <TasteLegend level={0} extra={legendExtra} />
         </>
       )}
@@ -376,6 +396,7 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
           <p className="note-small wheel-hint">味のセグメントを押すと、その味に寄与する物質が表示されます。</p>
           <TieredWheel segments={tasteMidSegments} centerLabel={tasteGroup.name} ariaLabel={`${ariaLabel}（${tasteGroup.name}の味）`}
             onSelect={(key) => nav(() => setTasteKey(key as TasteKey))} />
+          <p className="note-small wheel-percent-note">{TASTE_PERCENT_NOTE}</p>
           <TasteLegend level={1} extra={legendExtra} />
         </>
       )}
@@ -404,7 +425,7 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
                   if (tc) setSheet({ type: 'compound', tc, percent: tc.percent, tasteFocus: tasteKey })
                 }} />
               <p className="note-small wheel-percent-note">{SMALL_PERCENT_NOTE}</p>
-              <CompoundLegend extra={legendExtra} />
+              <CompoundLegend extra={legendExtra} pair={isPairContext} />
             </>
           )}
         </>
@@ -413,7 +434,7 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
       {sheet?.type === 'compound' && (
         <CollapsibleSheet resetKey={`compound:${sheet.tc.compound.id}:${sheet.tasteFocus ?? ''}`} title={sheet.tc.compound.name}
           onDismiss={() => setSheet(null)}>
-          <p className="note-small">この文脈での割合：約{sheet.percent}%（裏付けデータから算出した目安で、実測の含有率ではありません）。根拠の近さ：{tierHeading(sheet.tc.tier, context)}。</p>
+          <p className="note-small">この文脈での割合：約{sheet.percent}%（裏付けデータから算出した目安で、実測の含有率ではありません）。根拠の近さ：{isPairContext ? PAIR_TIER_HEADING[sheet.tc.tier] : tierHeading(sheet.tc.tier, Array.isArray(wheelContext) ? wheelContext[0] : wheelContext)}。</p>
           <CompoundCard compound={sheet.tc.compound} tasteFocus={sheet.tasteFocus} />
         </CollapsibleSheet>
       )}

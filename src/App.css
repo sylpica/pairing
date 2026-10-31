@@ -66,7 +66,7 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 .pair-col .advanced { margin: 0; }
 .pair-col .advanced label { margin-top: 8px; }
 .pair-summary { background: var(--card); border: 2px solid #eec9a8; border-radius: 16px; padding: 8px 12px; margin: 8px 0 10px; }
-.pair-character .chip { min-height: 44px; padding: 4px 10px; font-size: 0.9rem; }
+.pair-wheel .chip { min-height: 44px; padding: 4px 10px; font-size: 0.9rem; }
 .pair-notes { margin-top: 20px; }
 .pair-notes summary { cursor: pointer; font-weight: 700; font-size: 0.9rem; min-height: 32px; }
 /* 第12弾: 結果エリア下部の注記群（根拠区分チップ・同種ペア注記・第2層の土台注記）。
@@ -110,15 +110,16 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 /* 詳細・組み合わせページ冒頭の「戻る」ボタン */
 .back-btn { margin: 4px 0 2px; min-height: 44px; }
 .pair-summary-line { margin: 4px 0; }
-.pair-character {
+/* 第26弾: 結果先頭の味わい表示はホイールの箱。推測であることが一目で分かるよう、
+   旧・性格チップの箱と同じ破線＋淡色の作法を引き継ぐ。 */
+.pair-wheel {
   border: 1.5px dashed #b5491f;
   border-radius: 12px;
   background: #fdf3ec;
   padding: 8px 10px;
   margin: 8px 0;
 }
-.pair-character-head { margin: 2px 0 8px; }
-.pair-character-detail { margin-top: 10px; }
+.pair-wheel-head { margin: 2px 0 8px; }
 .pair-selects { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; margin: 12px 0; }
 .pair-selects select, .percent-input input { font: inherit; padding: 10px; border-radius: 10px; border: 1.5px solid var(--line); min-height: 44px; }
 .tabs { display: flex; gap: 6px; margin: 10px 0; }

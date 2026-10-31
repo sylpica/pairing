@@ -149,7 +149,7 @@ describe('画面の基本動作（§16相当のローカル検証）', () => {
     expect(heads.slice(-3)).toEqual([
       expect.stringContaining('香味の時間変化について'),
       expect.stringContaining('花・果物の具体名の「推測」について'),
-      expect.stringContaining('組み合わせの「味わいの性格」の推測について'),
+      expect.stringContaining('組み合わせの「味わい」の推測について'),
     ])
     // 内容は不変
     expect(screen.getByText(/TDS（時間的優位性評価）/)).toBeTruthy()
@@ -199,7 +199,8 @@ describe('組み合わせ画面のレイアウト（左チョコ・右お茶＋�
     location.hash = '#/pair'; render(<App />)
     const summary = screen.getByLabelText('組み合わせの結果（要約）')
     // 第12弾: 要約の先頭は「組み合わせの味わい」で、選択内容を繰り返す見出し（○○ × ○○）は出ない
-    expect(summary.querySelector('.pair-character-head')?.textContent).toContain('組み合わせの味わい（推測）')
+    // 第26弾: 味わいの表示は性格チップから3階層ホイール（.pair-wheel）に置き換わった
+    expect(summary.querySelector('.pair-wheel-head')?.textContent).toContain('組み合わせの味わい（推測）')
     expect(summary.querySelector('h3')).toBeNull()
     expect(summary.textContent).not.toContain('×')
     // 要約はタブ（詳細）より前に配置されている
@@ -233,11 +234,11 @@ describe('実機フィードバック第12弾：結果エリアの並び（味�
     fireEvent.change(screen.getByLabelText('カカオの産地（任意）'), { target: { value: 'ecuador' } })
     fireEvent.change(screen.getByLabelText('カカオの系統（任意）'), { target: { value: 'genetic:gen-amelonado' } })
     const summary = screen.getByLabelText('組み合わせの結果（要約）')
-    const character = summary.querySelector('.pair-character')
+    const character = summary.querySelector('.pair-wheel')
     expect(character).toBeTruthy()
     // 結果エリアの先頭要素が味わいセクション（間に見出し・チップ・注記を挟まない）
     expect(summary.firstElementChild).toBe(character)
-    expect(character!.querySelector('.pair-character-head')?.textContent).toContain('組み合わせの味わい（推測）')
+    expect(character!.querySelector('.pair-wheel-head')?.textContent).toContain('組み合わせの味わい（推測）')
     // 選択内容を繰り返す見出しは無い
     expect(summary.querySelector('h3')).toBeNull()
     expect(summary.textContent).not.toContain('×')
@@ -254,7 +255,7 @@ describe('実機フィードバック第12弾：結果エリアの並び（味�
     // 左をお茶に切り替えてお茶同士にする
     fireEvent.click(screen.getByRole('button', { name: /左の種類を切り替える/ }))
     const summary = screen.getByLabelText('組み合わせの結果（要約）')
-    const character = summary.querySelector('.pair-character')
+    const character = summary.querySelector('.pair-wheel')
     expect(character).toBeTruthy()
     expect(summary.firstElementChild).toBe(character)
     expect(summary.querySelector('h3')).toBeNull()

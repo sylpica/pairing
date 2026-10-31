@@ -125,7 +125,7 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
   it('中分類の無い大分類は薄く表示され、押すと理由が説明される（緑茶 × 鹿児島の果実系）', () => {
     const a = analyzeTeaCombo({ kindId: 'green', regionId: 'kagoshima', cultivarId: '' })
     const { container } = renderPanel(a)
-    const seg = screen.getByLabelText(/果実系（具体名の中分類はありません）/)
+    const seg = screen.getByLabelText(/果実系（\d+%・具体名の中分類はありません）/)
     expect(seg).toBeTruthy()
     fireEvent.click(seg)
     const dialog = screen.getByRole('dialog')
