@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { allocatePercents, buildAromaTiers, buildTasteCompounds, comboSpecificsFor, VAGUE_NOTE_IDS } from './wheelTiers'
+import { allocatePercents, buildAromaTiers, buildTasteCompounds, buildTasteTiers, comboSpecificsFor, TASTE_GROUP_OF, VAGUE_NOTE_IDS } from './wheelTiers'
 import { analyzeTeaCombo, analyzeChocoCombo, TEA_COMBO_KINDS, CHOCO_COMBO_KINDS, type ComboAnalysis } from './combo'
 import { teaRegions } from '../data/teaRegions'
 import { cacaoOrigins } from '../data/origins'
@@ -67,7 +67,32 @@ describe('組み合わせ文脈の具体名（comboSpecificsFor）', () => {
   })
 })
 
+function auditTastes(a: ComboAnalysis) {
+  const tiers = buildTasteTiers(a.tastes)
+  // 味の大分類は最大2つ（基本味／口当たり・収れん感）
+  expect(tiers.length, `${a.title}: 味の大分類数`).toBeLessThanOrEqual(2)
+  const seen = new Set<string>()
+  for (const g of tiers) {
+    expect(g.tastes.length).toBeGreaterThan(0)
+    for (const t of g.tastes) {
+      // 中分類の味は正しい大分類に属する
+      expect(TASTE_GROUP_OF[t.key], `${a.title}/${t.key} の所属`).toBe(g.groupId)
+      seen.add(t.key)
+    }
+  }
+  // 強さの記録がある味は、漏れなくいずれかの大分類に入る
+  for (const t of a.tastes) {
+    if (t.intensity !== 'unknown') expect(seen.has(t.key), `${a.title}/${t.key} の大分類`).toBe(true)
+  }
+  // 小分類（寄与する物質）の％合計は100
+  for (const t of a.tastes) {
+    const cs = buildTasteCompounds(t.key, a.context)
+    if (cs.length > 0) expect(cs.reduce((s, c) => s + c.percent, 0), `${a.title}/${t.key} の小分類％`).toBe(100)
+  }
+}
+
 function auditAnalysis(a: ComboAnalysis) {
+  auditTastes(a)
   for (const t of buildAromaTiers(a.notes, a.context)) {
     expect(t.drillable).toBe(t.entries.length > 0)
     if (t.entries.length > 0) {
@@ -136,6 +161,30 @@ describe('3階層データの全数監査（％合計・足がかり・重複な
     // チョコレートの甘味にカカオ固有の成分は無い（配合糖由来のため空）
     const choco = analyses[2]
     expect(buildTasteCompounds('sweet', choco.context)).toEqual([])
+  })
+})
+
+describe('味の3階層データ（第10弾）', () => {
+  it('味の大分類の定義：基本味＝甘味・酸味・苦味・うま味、口当たり・収れん感＝渋味', () => {
+    expect(TASTE_GROUP_OF).toEqual({
+      sweet: 'basic', sour: 'basic', bitter: 'basic', umami: 'basic', astringent: 'mouthfeel',
+    })
+  })
+
+  it('あさつゆ（緑茶）：基本味（苦味・うま味）と口当たり・収れん感（渋味）に分かれる', () => {
+    const a = analyzeTeaCombo({ kindId: 'green', regionId: '', cultivarId: 'asatsuyu' })
+    const tiers = buildTasteTiers(a.tastes)
+    expect(tiers.map((g) => [g.name, g.tastes.map((t) => t.key)])).toEqual([
+      ['基本味', ['bitter', 'umami']],
+      ['口当たり・収れん感', ['astringent']],
+    ])
+  })
+
+  it('ミルクチョコ：データのある大分類だけが出る（基本味のみ、甘味に物質は無い）', () => {
+    const a = analyzeChocoCombo({ kind: 'milk', originId: '', lineage: null })
+    const tiers = buildTasteTiers(a.tastes)
+    expect(tiers.map((g) => g.groupId)).toEqual(['basic'])
+    expect(buildTasteCompounds('sweet', a.context)).toEqual([])
   })
 })
 

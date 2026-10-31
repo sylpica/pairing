@@ -56,16 +56,18 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
 
   it('5. 紅茶の苦味からカフェイン、渋味から渋味の科学的区別と成分を確認できる', () => {
     location.hash = '#/tea/black-tea'; render(<App />)
-    // 第7弾・課題B: 味覚は「味」タブでホイール表示になる。第8弾: 次元を押すと寄与成分のホイールが出て、成分から詳細シートを開く
+    // 第7弾・課題B: 味覚は「味」タブでホイール表示になる。第10弾: 味も大分類（基本味／口当たり・収れん感）→中分類（個々の味）→小分類（寄与成分）の3階層になり、成分から詳細シートを開く
     fireEvent.click(screen.getByRole('tab', { name: '味' }))
-    fireEvent.click(screen.getByRole('button', { name: /^苦味（.+）の根拠を見る$/ }))
+    fireEvent.click(screen.getByLabelText(/基本味を開く/))
+    fireEvent.click(screen.getByRole('button', { name: /^苦味（.+）に寄与する物質を見る$/ }))
     expect(wheelText()).toContain('カフェイン')
     fireEvent.click(screen.getByLabelText(/カフェイン（\d+%）の詳細を見る/))
     expectShown(/再構成・除去（オミッション）実験で、苦味の主要呈味化合物/)
     cleanup()
     location.hash = '#/tea/black-tea'; render(<App />)
     fireEvent.click(screen.getByRole('tab', { name: '味' }))
-    fireEvent.click(screen.getByRole('button', { name: /^渋味（収れん感）（.+）の根拠を見る$/ }))
+    fireEvent.click(screen.getByLabelText(/口当たり・収れん感を開く/))
+    fireEvent.click(screen.getByRole('button', { name: /^渋味（収れん感）（.+）に寄与する物質を見る$/ }))
     expect(wheelText()).toContain('ガレート型カテキン類')
     expect(wheelText()).toContain('フラボノール配糖体')
     // 渋味は基本味ではなく収れん感であることが、味の根拠シートで出典つきで示される
@@ -79,7 +81,8 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
   it('5. 抹茶のうま味ではテアニン等の実証成分と、グルタミン酸の未確認の限定が併記される', () => {
     location.hash = '#/tea/matcha'; render(<App />)
     fireEvent.click(screen.getByRole('tab', { name: '味' }))
-    fireEvent.click(screen.getByRole('button', { name: /^うま味（.+）の根拠を見る$/ }))
+    fireEvent.click(screen.getByLabelText(/基本味を開く/))
+    fireEvent.click(screen.getByRole('button', { name: /^うま味（.+）に寄与する物質を見る$/ }))
     expect(wheelText()).toContain('L-テアニン')
     expect(wheelText()).toContain('コハク酸・没食子酸・テオガリン')
     expect(wheelText()).toContain('グルタミン酸')
@@ -91,12 +94,14 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
   it('7. チョコレート側でも味覚から成分を確認でき、甘味は配合糖由来と区別される', () => {
     location.hash = '#/choco/dark-roasted'; render(<App />)
     fireEvent.click(screen.getByRole('tab', { name: '味' }))
-    fireEvent.click(screen.getByRole('button', { name: /^苦味（.+）の根拠を見る$/ }))
+    fireEvent.click(screen.getByLabelText(/基本味を開く/))
+    fireEvent.click(screen.getByRole('button', { name: /^苦味（.+）に寄与する物質を見る$/ }))
     expectShown(/テオブロミン/)
     expectShown(/ジケトピペラジン類/)
     cleanup()
     location.hash = '#/choco/milk-chocolate'; render(<App />)
     fireEvent.click(screen.getByRole('tab', { name: '味' }))
+    fireEvent.click(screen.getByLabelText(/基本味を開く/))
     fireEvent.click(screen.getByRole('button', { name: /^甘味（.+）の根拠を見る$/ }))
     expectShown(/配合された糖によるもの/)
   })

@@ -1,4 +1,4 @@
-import type { ComboNote, Compound, InferredSpecific, TasteKey } from '../types'
+import type { ComboNote, ComboTaste, Compound, InferredSpecific, TasteKey } from '../types'
 import { flavorCategories, noteById } from '../data/flavors'
 import {
   compoundById, compoundsForNote, compoundsForTaste, compoundTier, type CompoundContext,
@@ -9,7 +9,8 @@ import { chocolateItems } from '../data/chocolates'
 
 // フレーバーホイールの3階層化（第8弾）のデータ層。
 // 香り: 大分類（香味カテゴリ）→ 中分類（具体名）→ 小分類（寄与する化学物質）→ 成分詳細。
-// 味: 次元（甘味・酸味・苦味・渋味・うま味）→ 寄与する物質 → 成分詳細（2段）。
+// 味: 大分類（基本味／口当たり・収れん感）→ 中分類（個々の味）→ 小分類（寄与する
+//   物質）→ 成分詳細（第10弾で香りと同じ3階層に統一。味の大分類は2つだけ）。
 //
 // 中分類（具体名）の作り方:
 // - 漠然としていないノート（柑橘・ベリー・バラ等の具体的な香味ノート）そのもの。
@@ -225,7 +226,66 @@ export function buildAromaTiers(notes: ComboNote[], context?: CompoundContext): 
   return out
 }
 
-/** 味の次元に寄与する物質（小分類）。文脈がある場合は tier 2 以内に限る */
+// ===== 味の3階層（第10弾） =====
+// 味の大分類は2つだけ:
+// - 基本味: 舌の味蕾にある味覚受容体で感じる基本の味（甘味・酸味・苦味・うま味。
+//   塩味のデータが将来出ればこちらに入れる）。
+// - 口当たり・収れん感: 味覚ではなく口の中の感覚として感じるもの。渋味は
+//   基本味ではなく、タンニン類が唾液タンパク質と結びついて生じる収れん感
+//   （触覚に近い感覚）であり、こちらに分類する（アプリ内の味詳細でも
+//   「渋味は収れん感」と区別してきた定義と一致させる）。
+// データに存在しない味・グループは作らない。
+
+export type TasteGroupId = 'basic' | 'mouthfeel'
+
+export interface TasteGroupDef {
+  id: TasteGroupId
+  name: string
+  color: string
+  /** この大分類に属する味キー（中分類の表示順） */
+  keys: TasteKey[]
+}
+
+export const TASTE_GROUPS: TasteGroupDef[] = [
+  { id: 'basic', name: '基本味', color: '#b5654d', keys: ['sweet', 'sour', 'bitter', 'umami'] },
+  { id: 'mouthfeel', name: '口当たり・収れん感', color: '#7a6a58', keys: ['astringent'] },
+]
+
+/** 味キー → 大分類。味の分類分けの唯一の定義（テストでもここを参照する） */
+export const TASTE_GROUP_OF: Record<TasteKey, TasteGroupId> = {
+  sweet: 'basic', sour: 'basic', bitter: 'basic', umami: 'basic',
+  astringent: 'mouthfeel',
+}
+
+export interface TasteGroupTier {
+  groupId: TasteGroupId
+  name: string
+  color: string
+  /** 中分類（この文脈でデータのある味。強さの記録があるものだけ、定義順） */
+  tastes: ComboTaste[]
+  /** 大分類セグメントの大きさ（属する味の強さの合計） */
+  weight: number
+}
+
+/** 味の3階層データ（大分類→中分類）を組み合わせの味から構築する */
+export function buildTasteTiers(tastes: ComboTaste[]): TasteGroupTier[] {
+  const known = tastes.filter((t) => rank(t.intensity) > 0)
+  const out: TasteGroupTier[] = []
+  for (const g of TASTE_GROUPS) {
+    const members = g.keys.flatMap((k) => known.filter((t) => t.key === k))
+    if (members.length === 0) continue
+    out.push({
+      groupId: g.id,
+      name: g.name,
+      color: g.color,
+      tastes: members,
+      weight: members.reduce((a, t) => a + rank(t.intensity), 0),
+    })
+  }
+  return out
+}
+
+/** 味（中分類）に寄与する物質（小分類）。文脈がある場合は tier 2 以内に限る */
 export function buildTasteCompounds(taste: TasteKey, context?: CompoundContext): TierCompound[] {
   const linked = compoundsForTaste(taste)
   const filtered = context ? linked.filter((c) => compoundTier(c, context) <= 2) : linked

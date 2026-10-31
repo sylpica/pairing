@@ -2,8 +2,9 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import ComboWheelPanel from './ComboWheelPanel'
-import TasteWheel, { comboTastesFromProfile } from './TasteWheel'
-import { buildTasteCompounds } from '../engine/wheelTiers'
+import ProfileWheelPanel from './ProfileWheelPanel'
+import { comboTastesFromProfile } from './TasteWheel'
+import { buildTasteCompounds, buildTasteTiers } from '../engine/wheelTiers'
 import { teaItems } from '../data/teas'
 import { chocolateItems } from '../data/chocolates'
 import type { CompoundContext } from '../data/compounds'
@@ -29,7 +30,7 @@ function expectNoBlank(container: HTMLElement) {
 const renderPanel = (a: ComboAnalysis) =>
   render(<ComboWheelPanel notes={a.notes} tastes={a.tastes} context={a.context} resetKey={a.title} />)
 
-describe('3階層ホイール（第8弾）', () => {
+describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () => {
   beforeEach(() => { cleanup() })
 
   it('長崎 × やぶきた × 緑茶：大分類→中分類→小分類→成分詳細まで辿れる', () => {
@@ -92,11 +93,25 @@ describe('3階層ホイール（第8弾）', () => {
     expect(container.querySelector('.wheel-note-index')).toBeTruthy()
   })
 
-  it('味モード：次元→寄与する物質（％合計100）→成分詳細', () => {
+  it('味モード：大分類→中分類→小分類→成分詳細（基本味→苦味→カフェイン）', () => {
     const a = analyzeTeaCombo({ kindId: 'black', regionId: 'nagasaki', cultivarId: 'yabukita' })
     const { container } = renderPanel(a)
     fireEvent.click(screen.getByRole('tab', { name: '味' }))
-    fireEvent.click(screen.getByRole('button', { name: /^苦味（.+）の根拠を見る$/ }))
+    // 第1階層：大分類は2つだけ（基本味／口当たり・収れん感）。中分類名が小さく併記される
+    expectNoBlank(container)
+    expect(segs(container)).toHaveLength(2)
+    const groupSubs = [...container.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')
+    expect(groupSubs).toContain('苦味')
+    expect(groupSubs).toContain('渋味')
+    expect(screen.getByText(/味の大分類は2つだけです/)).toBeTruthy()
+    // 第2階層：基本味の中分類（苦味）。小分類（寄与物質名）が小さく併記される
+    fireEvent.click(screen.getByLabelText(/基本味を開く/))
+    expectNoBlank(container)
+    const bitterSeg = screen.getByRole('button', { name: /^苦味（.+）に寄与する物質を見る$/ })
+    const bitterSubs = [...bitterSeg.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')
+    expect(bitterSubs).toContain('カフェイン')
+    // 第3階層：苦味に寄与する物質（％合計100）→成分詳細シート
+    fireEvent.click(bitterSeg)
     expectNoBlank(container)
     expect(segPercents(container).reduce((x, y) => x + y, 0)).toBe(100)
     const labels = segs(container).flatMap((g) => labelTexts(g)).join('')
@@ -104,32 +119,65 @@ describe('3階層ホイール（第8弾）', () => {
     fireEvent.click(screen.getByLabelText(/カフェイン（\d+%）の詳細を見る/))
     const dialog = screen.getByRole('dialog')
     expect(dialog.textContent).toContain('苦味のもとになる成分')
-    // 味の一覧に戻れる
-    fireEvent.click(screen.getByRole('button', { name: '← 味の一覧に戻る' }))
-    expect(screen.getByRole('button', { name: /^渋味（.+）の根拠を見る$/ })).toBeTruthy()
+    // 階層を戻れる（小分類→中分類→大分類）。口当たり・収れん感には渋味が属する
+    fireEvent.click(screen.getByRole('button', { name: '← 中分類に戻る' }))
+    expect(screen.getByRole('button', { name: /^苦味（.+）に寄与する物質を見る$/ })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '← 大分類に戻る' }))
+    fireEvent.click(screen.getByLabelText(/口当たり・収れん感を開く/))
+    expect(screen.getByRole('button', { name: /^渋味（収れん感）（.+）に寄与する物質を見る$/ })).toBeTruthy()
   })
 
-  it('味モード第1階層：各次元に寄与物質名が小さく併記される（追加指示B）', () => {
-    const a = analyzeTeaCombo({ kindId: 'black', regionId: 'nagasaki', cultivarId: 'yabukita' })
+  it('味モード：あさつゆは基本味（苦味・うま味）と口当たり・収れん感（渋味）に分かれ、全セグメントに併記がある', () => {
+    const a = analyzeTeaCombo({ kindId: 'green', regionId: '', cultivarId: 'asatsuyu' })
     const { container } = renderPanel(a)
     fireEvent.click(screen.getByRole('tab', { name: '味' }))
-    // 全セグメントにラベル＋小さな併記（寄与物質名）が必ずある（無地・併記なし禁止）
+    expectNoBlank(container)
     const groups = segs(container)
-    expect(groups.length).toBeGreaterThan(0)
+    expect(groups).toHaveLength(2)
+    // 全大分類セグメントにラベル＋小さな併記（中分類名）が必ずある（無地・併記なし禁止）
     for (const g of groups) {
       const subs = [...g.querySelectorAll('.wheel-sub')]
       expect(subs.length, `併記なしセグメント: ${g.getAttribute('aria-label')}`).toBeGreaterThan(0)
       expect(subs.map((s) => s.textContent ?? '').join('').length).toBeGreaterThan(0)
     }
-    // 苦味には、第2階層で出る寄与物質カフェインが併記される
-    const bitter = screen.getByRole('button', { name: /^苦味（.+）の根拠を見る$/ })
-    const bitterSubs = [...bitter.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')
-    expect(bitterSubs).toContain('カフェイン')
+    const basic = groups.find((g) => (g.getAttribute('aria-label') ?? '').startsWith('基本味'))!
+    const basicSubs = [...basic.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')
+    expect(basicSubs).toContain('苦味')
+    expect(basicSubs).toContain('うま味')
+    const mouth = groups.find((g) => (g.getAttribute('aria-label') ?? '').startsWith('口当たり・収れん感'))!
+    expect([...mouth.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')).toContain('渋味')
+    // 基本味の中分類は苦味・うま味の2つ。中分類にも小分類（物質名）が併記される
+    fireEvent.click(screen.getByLabelText(/基本味を開く/))
+    expectNoBlank(container)
+    expect(segs(container)).toHaveLength(2)
+    const bitterSeg = screen.getByRole('button', { name: /^苦味（.+）に寄与する物質を見る$/ })
+    expect([...bitterSeg.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')).toContain('ガレート型カテキン類')
     // 凡例に併記の説明がある（香り側の凡例と作法を揃える）
     expect(screen.getByText(/セグメント内の小さな文字は、その味に寄与する物質です/)).toBeTruthy()
   })
 
-  it('味ホイール第1階層の併記は、全アイテムで第2階層の物質と一致する（追加指示B・全数）', () => {
+  it('味モード：物質の無い味（ミルクチョコの甘味）はホイールを作らず根拠説明が出る', () => {
+    const a = analyzeChocoCombo({ kind: 'milk', originId: '', lineage: null })
+    const { container } = renderPanel(a)
+    fireEvent.click(screen.getByRole('tab', { name: '味' }))
+    // 大分類は基本味だけ（データのあるグループのみ。階層構造は維持する）
+    expectNoBlank(container)
+    expect(segs(container)).toHaveLength(1)
+    fireEvent.click(screen.getByLabelText(/基本味を開く/))
+    expectNoBlank(container)
+    const sweetSeg = screen.getByRole('button', { name: /^甘味（.+）の根拠を見る$/ })
+    expect([...sweetSeg.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')).toContain('成分データなし')
+    fireEvent.click(sweetSeg)
+    // 小分類ホイールは作らず、根拠の説明と味の根拠がその場に出る
+    expect(container.querySelectorAll('svg g.wheel-seg')).toHaveLength(0)
+    expect(screen.getByText(/この味に直接結びつく成分データは/)).toBeTruthy()
+    expect(screen.getByText(/ミルクチョコレートの代表プロファイル/)).toBeTruthy()
+    // 中分類へ戻れる
+    fireEvent.click(screen.getByRole('button', { name: '← 中分類に戻る' }))
+    expect(screen.getByRole('button', { name: /^甘味（.+）の根拠を見る$/ })).toBeTruthy()
+  })
+
+  it('味の3階層は全アイテムで仕様どおり（大分類は最大2つ、中分類の併記は小分類と一致・全数）', () => {
     const cases: { name: string; profile: typeof teaItems[number]['profile']; context: CompoundContext }[] = [
       ...teaItems.map((t) => ({
         name: t.name, profile: t.profile,
@@ -140,34 +188,45 @@ describe('3階層ホイール（第8弾）', () => {
         context: { side: 'chocolate' as const, kindId: c.kind, itemName: c.name, itemId: c.id },
       })),
     ]
+    const tasteStart = (key: string) => (key === 'astringent' ? '渋味（収れん感）' : key === 'sweet' ? '甘味' : key === 'sour' ? '酸味' : key === 'bitter' ? '苦味' : 'うま味')
     let checked = 0
     let noCompoundDims = 0
     for (const item of cases) {
       const tastes = comboTastesFromProfile(item.profile)
       if (tastes.length === 0) continue
       checked++
-      const { container } = render(<TasteWheel tastes={tastes} onSelectTaste={() => {}} context={item.context} />)
-      const groups = segs(container)
-      expect(groups.length, `${item.name}: セグメント数`).toBe(tastes.length)
-      for (const g of groups) {
+      const groupTiers = buildTasteTiers(tastes)
+      expect(groupTiers.length, `${item.name}: 大分類は最大2つ`).toBeLessThanOrEqual(2)
+      const { container } = render(<ProfileWheelPanel profile={item.profile} context={item.context} />)
+      fireEvent.click(screen.getByRole('tab', { name: '味' }))
+      // 第1階層：大分類セグメントは buildTasteTiers と一致し、全てに中分類名の併記がある
+      const groupSegs = segs(container)
+      expect(groupSegs.length, `${item.name}: 大分類セグメント数`).toBe(groupTiers.length)
+      for (const g of groupSegs) {
         const subText = [...g.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')
-        expect(subText.length, `${item.name}: 併記なしセグメント ${g.getAttribute('aria-label')}`).toBeGreaterThan(0)
+        expect(subText.length, `${item.name}: 併記なし大分類 ${g.getAttribute('aria-label')}`).toBeGreaterThan(0)
       }
-      // 各次元について、併記の内容が第2階層（buildTasteCompounds）と一致する：
-      // 物質がある次元は最大重みの物質名が併記に含まれ、無い次元は「成分データなし」
-      for (const t of tastes) {
-        const compounds = buildTasteCompounds(t.key, item.context)
-        const seg = groups.find((g) => (g.getAttribute('aria-label') ?? '').startsWith(
-          t.key === 'astringent' ? '渋味（収れん感）' : t.key === 'sweet' ? '甘味' : t.key === 'sour' ? '酸味' : t.key === 'bitter' ? '苦味' : 'うま味'))
-        expect(seg, `${item.name}/${t.key}: セグメント`).toBeTruthy()
-        const subText = [...seg!.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')
-        if (compounds.length === 0) {
-          noCompoundDims++
-          expect(subText, `${item.name}/${t.key}`).toContain('成分データなし')
-        } else {
-          const top = compounds.slice().sort((x, y) => y.percent - x.percent)[0].compound.name
-          expect(subText, `${item.name}/${t.key}: 先頭物質`).toContain(top)
+      // 各大分類を開き、中分類（個々の味）の併記が小分類（buildTasteCompounds）と一致することを確認する：
+      // 物質がある味は最大重みの物質名が併記に含まれ、無い味は「成分データなし」
+      for (const gt of groupTiers) {
+        fireEvent.click(screen.getByLabelText(new RegExp(`^${gt.name}を開く`)))
+        const midSegs = segs(container)
+        expect(midSegs.length, `${item.name}/${gt.name}: 中分類セグメント数`).toBe(gt.tastes.length)
+        for (const t of gt.tastes) {
+          const seg = midSegs.find((g) => (g.getAttribute('aria-label') ?? '').startsWith(tasteStart(t.key)))
+          expect(seg, `${item.name}/${t.key}: 中分類セグメント`).toBeTruthy()
+          const subText = [...seg!.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')
+          expect(subText.length, `${item.name}/${t.key}: 併記なし中分類`).toBeGreaterThan(0)
+          const compounds = buildTasteCompounds(t.key, item.context)
+          if (compounds.length === 0) {
+            noCompoundDims++
+            expect(subText, `${item.name}/${t.key}`).toContain('成分データなし')
+          } else {
+            const top = compounds.slice().sort((x, y) => y.percent - x.percent)[0].compound.name
+            expect(subText, `${item.name}/${t.key}: 先頭物質`).toContain(top)
+          }
         }
+        fireEvent.click(screen.getByRole('button', { name: '← 大分類に戻る' }))
       }
       cleanup()
     }
@@ -203,6 +262,31 @@ describe('3階層ホイール（第8弾）', () => {
           fireEvent.click(screen.getByRole('button', { name: '← 中分類に戻る' }))
         }
         fireEvent.click(screen.getByRole('button', { name: '← 大分類に戻る' }))
+      }
+      // 味モードも3階層を通す（大分類→中分類→小分類。物質の無い味は根拠説明の表示でよい）
+      fireEvent.click(screen.getByRole('tab', { name: '味' }))
+      if (container.querySelectorAll('svg g.wheel-seg').length > 0) {
+        expectNoBlank(container)
+        const tasteGroupCount = container.querySelectorAll('.wheel-wrap .chip').length
+        expect(tasteGroupCount).toBeLessThanOrEqual(2)
+        for (let i = 0; i < tasteGroupCount; i++) {
+          const chip = [...container.querySelectorAll('.wheel-wrap .chip')][i]
+          if (!chip) continue
+          fireEvent.click(chip)
+          expectNoBlank(container)
+          const midCount = container.querySelectorAll('.wheel-wrap .chip').length
+          for (let j = 0; j < midCount; j++) {
+            const mc = [...container.querySelectorAll('.wheel-wrap .chip')][j]
+            if (!mc) continue
+            fireEvent.click(mc)
+            if (container.querySelectorAll('svg g.wheel-seg').length > 0) {
+              expectNoBlank(container)
+              expect(segPercents(container).reduce((x, y) => x + y, 0)).toBe(100)
+            }
+            fireEvent.click(screen.getByRole('button', { name: '← 中分類に戻る' }))
+          }
+          fireEvent.click(screen.getByRole('button', { name: '← 大分類に戻る' }))
+        }
       }
       cleanup()
     }

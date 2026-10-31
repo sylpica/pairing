@@ -4,11 +4,11 @@ import type { CompoundContext } from '../data/compounds'
 import { noteById } from '../data/flavors'
 import { COMBO_LEVEL_LABEL, COMBO_TASTE_LABEL } from '../engine/combo'
 import {
-  buildAromaTiers, buildTasteCompounds, VAGUE_NOTE_IDS,
-  type CategoryTier, type MidEntry, type TierCompound,
+  buildAromaTiers, buildTasteCompounds, buildTasteTiers, VAGUE_NOTE_IDS,
+  type CategoryTier, type MidEntry, type TasteGroupId, type TierCompound,
 } from '../engine/wheelTiers'
 import TieredWheel, { TIER_LEVEL_OPACITY, type TierSeg } from './TieredWheel'
-import TasteWheel, { TASTE_COLORS } from './TasteWheel'
+import { TASTE_COLORS } from './TasteWheel'
 import { COMBO_INT_LABEL } from './ComboWheel'
 import CompoundCard from './CompoundCard'
 import { tierHeading } from './NoteDetail'
@@ -20,7 +20,11 @@ import { CollapsibleSheet } from './Sheet'
 //   ノートへの推測具体名）→ 小分類（寄与する化学物質・％つき）→ 成分詳細シート。
 //   具体名が1つも無い大分類はドリルダウン不可（薄く表示）とし、押すと
 //   理由と漠然とした香りの根拠をシートで説明する。
-// 味: 次元 → 寄与する物質（％つき）→ 成分詳細シート（2段）。
+// 味: 大分類（基本味／口当たり・収れん感の2つだけ）→ 中分類（個々の味）→
+//   小分類（寄与する物質・％つき）→ 成分詳細シート（第10弾で香りと同じ3階層に）。
+//   中分類のセグメントの大きさは強さ（弱い・普通・強い）の重み（％ではない）。
+//   物質の無い味（チョコの甘味＝配合糖由来など）は小分類ホイールを作らず、
+//   根拠の説明をその場に出す。
 // ％は実測の含有率ではなく裏付けデータからの算出値であり、各階層に明記する。
 // ノート・味の「根拠」詳細は呼び出し側（組み合わせ系／アイテム系）から
 // renderNoteDetail / renderTasteDetail で差し込む。
@@ -36,6 +40,7 @@ type SheetState =
 
 const tasteLabel = (k: TasteKey) => (k === 'astringent' ? '渋味（収れん感）' : COMBO_TASTE_LABEL[k])
 const tierOpacity = (tier: 1 | 2 | 3) => (tier === 1 ? 0.95 : tier === 2 ? 0.62 : 0.38)
+const tasteRank = (i: string) => (i === 'strong' ? 3 : i === 'normal' ? 2 : i === 'weak' ? 1 : 0)
 
 function LevelBadge({ level }: { level: ComboNote['level'] }) {
   return <span className={level === 'inferred' ? 'badge badge-inferred' : 'badge'}>{COMBO_LEVEL_LABEL[level]}</span>
@@ -53,6 +58,22 @@ function AromaLegend({ level }: { level: 0 | 1 }) {
       {level === 0
         ? <p className="note-small">大分類のセグメントの大きさは、その分類に属する香りの強さの合計の目安です。濃さと輪郭による根拠の区別は、中分類以降で表示します。セグメント内の小さな文字は、その大分類の中分類（具体名）です。</p>
         : <p className="note-small">中分類のセグメントの大きさと割合は、その具体名の裏付けの大きさの目安です（実測の含有率ではありません）。</p>}
+    </div>
+  )
+}
+
+function TasteLegend({ level }: { level: 0 | 1 }) {
+  return (
+    <div className="combo-legend" role="note" aria-label="ホイールの凡例">
+      <p className="note-small"><strong>凡例（濃さと輪郭＝根拠の確かさ）</strong></p>
+      <ul className="combo-legend-list">
+        <li><span className="legend-swatch" style={{ background: '#8d7b68', opacity: TIER_LEVEL_OPACITY.measured }} />実測・官能評価に基づく</li>
+        <li><span className="legend-swatch" style={{ background: '#8d7b68', opacity: TIER_LEVEL_OPACITY.general }} />一般的な知見</li>
+        <li><span className="legend-swatch legend-inferred" style={{ background: '#8d7b68', opacity: TIER_LEVEL_OPACITY.inferred }} />推測（未検証）：薄い表示＋破線の輪郭</li>
+      </ul>
+      {level === 0
+        ? <p className="note-small">味の大分類は2つだけです。基本味（甘味・酸味・苦味・うま味）は舌で感じる基本の味、口当たり・収れん感は口の中の感覚として感じるものです（渋味は基本味ではなく、収れん感です）。大分類のセグメントの大きさは、その分類に属する味の強さの合計の目安です。濃さと輪郭による根拠の区別は、中分類以降で表示します。セグメント内の小さな文字は、その大分類の中分類（個々の味）です。</p>
+        : <p className="note-small">セグメントの大きさは強さの目安（弱い・普通・強い）です。根拠のある味だけを表示しています（データの無い味は作りません）。セグメント内の小さな文字は、その味に寄与する物質です（寄与する物質の裏付けが無い味は「成分データなし」と示します）。味を押すと、その味に寄与する物質が見えます。</p>}
     </div>
   )
 }
@@ -84,15 +105,18 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
   const [mode, setMode] = useState<'aroma' | 'taste'>('aroma')
   const [catId, setCatId] = useState<string | null>(null)
   const [entryKey, setEntryKey] = useState<string | null>(null)
+  const [tasteGroupId, setTasteGroupId] = useState<TasteGroupId | null>(null)
   const [tasteKey, setTasteKey] = useState<TasteKey | null>(null)
   const [sheet, setSheet] = useState<SheetState | null>(null)
   useEffect(() => {
-    setMode('aroma'); setCatId(null); setEntryKey(null); setTasteKey(null); setSheet(null)
+    setMode('aroma'); setCatId(null); setEntryKey(null); setTasteGroupId(null); setTasteKey(null); setSheet(null)
   }, [resetKey])
 
   const tiers = useMemo(() => buildAromaTiers(notes, context), [notes, context])
   const tier = tiers.find((t) => t.categoryId === catId) ?? null
   const entry: MidEntry | null = tier?.entries.find((e) => e.key === entryKey) ?? null
+  const tasteTiers = useMemo(() => buildTasteTiers(tastes), [tastes])
+  const tasteGroup = tasteTiers.find((g) => g.groupId === tasteGroupId) ?? null
   const tasteCompounds = useMemo(
     () => (tasteKey ? buildTasteCompounds(tasteKey, context) : []),
     [tasteKey, context])
@@ -162,7 +186,39 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
     chip: <>{tc.compound.name} {tc.percent}%</>,
   })) : []
 
-  // ===== 味・物質（第2階層） =====
+  // ===== 味・大分類（第1階層） =====
+  const tasteGroupSegments: TierSeg[] = tasteTiers.map((g) => ({
+    key: g.groupId,
+    label: g.name,
+    color: g.color,
+    weight: g.weight,
+    subLabels: g.tastes.map((t) => tasteLabel(t.key)),
+    ariaLabel: `${g.name}を開く（中分類を表示）`,
+    chip: <>{g.name} ›</>,
+  }))
+  const onSelectTasteGroup = (key: string) => {
+    nav(() => { setTasteGroupId(key as TasteGroupId); setTasteKey(null) })
+  }
+
+  // ===== 味・中分類（第2階層：個々の味） =====
+  const tasteMidSegments: TierSeg[] = tasteGroup ? tasteGroup.tastes.map((t) => {
+    const compounds = buildTasteCompounds(t.key, context)
+    const names = compounds.slice().sort((a, b) => b.percent - a.percent).map((tc) => tc.compound.name)
+    return {
+      key: t.key,
+      label: tasteLabel(t.key),
+      color: TASTE_COLORS[t.key],
+      weight: tasteRank(t.intensity),
+      level: t.level,
+      subLabels: names.length > 0 ? names : ['成分データなし'],
+      ariaLabel: compounds.length > 0
+        ? `${tasteLabel(t.key)}（${COMBO_INT_LABEL[t.intensity]}・${COMBO_LEVEL_LABEL[t.level]}）に寄与する物質を見る`
+        : `${tasteLabel(t.key)}（${COMBO_INT_LABEL[t.intensity]}・${COMBO_LEVEL_LABEL[t.level]}）の根拠を見る`,
+      chip: <>{tasteLabel(t.key)}（{COMBO_INT_LABEL[t.intensity]}） <LevelBadge level={t.level} /></>,
+    }
+  }) : []
+
+  // ===== 味・小分類（第3階層：寄与する物質） =====
   const tasteCompoundSegments: TierSeg[] = tasteKey ? tasteCompounds.map((tc) => ({
     key: tc.compound.id,
     label: tc.compound.name,
@@ -272,16 +328,36 @@ export default function TieredWheelPanel({ notes, tastes, context, resetKey, ari
         </>
       )}
 
-      {mode === 'taste' && !tasteKey && (
-        <TasteWheel tastes={tastes} selectedTasteKey={null} context={context}
-          onSelectTaste={(k) => nav(() => setTasteKey(k))} />
+      {mode === 'taste' && !tasteGroup && tasteTiers.length === 0 && (
+        <p className="unknown-box">この組み合わせでは、根拠のある味のデータがまだ示せません（土台の味覚プロファイル、製法ルールや産地・品種・系統の味への作用が未収録のため）。根拠なく味を並べることはしません。</p>
+      )}
+
+      {mode === 'taste' && !tasteGroup && tasteTiers.length > 0 && (
+        <>
+          <p className="note-small wheel-hint">味の大分類のセグメントを押すと、その大分類に属する味（中分類）が表示されます。</p>
+          <TieredWheel segments={tasteGroupSegments} centerLabel="味" ariaLabel={`${ariaLabel}（味の大分類）`} onSelect={onSelectTasteGroup} />
+          <TasteLegend level={0} />
+        </>
+      )}
+
+      {mode === 'taste' && tasteGroup && !tasteKey && (
+        <>
+          <div className="wheel-nav">
+            <button className="btn ghost" onClick={() => nav(() => { setTasteGroupId(null); setTasteKey(null) })}>← 大分類に戻る</button>
+            <span className="wheel-crumb">味 › {tasteGroup.name}</span>
+          </div>
+          <p className="note-small wheel-hint">味のセグメントを押すと、その味に寄与する物質が表示されます。</p>
+          <TieredWheel segments={tasteMidSegments} centerLabel={tasteGroup.name} ariaLabel={`${ariaLabel}（${tasteGroup.name}の味）`}
+            onSelect={(key) => nav(() => setTasteKey(key as TasteKey))} />
+          <TasteLegend level={1} />
+        </>
       )}
 
       {mode === 'taste' && tasteKey && (
         <>
           <div className="wheel-nav">
-            <button className="btn ghost" onClick={() => nav(() => setTasteKey(null))}>← 味の一覧に戻る</button>
-            <span className="wheel-crumb">味 › {tasteLabel(tasteKey)}</span>
+            <button className="btn ghost" onClick={() => nav(() => setTasteKey(null))}>← 中分類に戻る</button>
+            <span className="wheel-crumb">味 › {tasteGroup?.name} › {tasteLabel(tasteKey)}</span>
           </div>
           {tasteCompounds.length === 0 ? (
             <>

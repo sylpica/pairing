@@ -6,7 +6,11 @@ import { buildTasteCompounds } from '../engine/wheelTiers'
 import { COMBO_INT_LABEL } from './ComboWheel'
 import { fitLabelLines, packScaledLines } from './wheelText'
 
-// 味モードのホイール（第7弾・課題B）。組み合わせの味プロファイル
+// 味モードのホイール（第7弾・課題Bで新設、第10弾で3階層化に伴い
+// TieredWheelPanel の味表示は 大分類→中分類→小分類 の汎用ホイールへ移行した。
+// このコンポーネント自体は単独表示用に残し、comboTastesFromProfile と
+// TASTE_COLORS／TASTE_ORDER は各所から引き続き使われる）。
+// 組み合わせの味プロファイル
 // （ComboAnalysis.tastes＝土台アイテムの味覚プロファイルに、製法ルールと
 // 軸効果の味への作用を根拠レベルつきで重ねたもの）を、香りモードの
 // ComboWheel と同じ作法で円グラフ表示する：
