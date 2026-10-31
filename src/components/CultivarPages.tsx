@@ -86,7 +86,6 @@ export function CultivarsPage() {
   return (
     <div>
       <h2>品種・系統を調べる</h2>
-      <p>お茶の品種とカカオの分類・系統の図鑑です。表示できるのは、出典のある分類・系譜と科学的な所見までです。科学データが確認できていない対象には、香味の特徴を表示しません。</p>
       <input className="search" type="search" placeholder="名前・原語・別名で探す（例：やぶきた、Yabukita、CCN-51）" value={q} onChange={(e) => setQ(e.target.value)} aria-label="品種・系統を検索" />
       {empty && <p className="unknown-box">見つかりませんでした。収録範囲外の品種・系統かもしれません。産地名や商品名は品種名ではないため、収録していない場合があります。</p>}
 
@@ -110,7 +109,6 @@ export function CultivarsPage() {
       })}
 
       {(trad.length > 0 || gen.length > 0 || clones.length > 0) && <h3>カカオの分類・系統</h3>}
-      <p className="note-small">カカオには階層の異なる分類があります。伝統的分類（歴史的・商業的な呼称）と、遺伝学に基づく遺伝集団（Motamayor et al. 2008）は別の体系で、一対一には対応しません。個別クローンは、さらに下の階層の実体です。</p>
       {trad.length > 0 && <>
         <h4>伝統的分類</h4>
         <ul className="item-list">
@@ -146,7 +144,6 @@ export function CultivarsPage() {
       </>}
       {origins.length > 0 && <>
         <h3>カカオの産地</h3>
-        <p className="note-small">産地は品種ではありません。産地と遺伝（系統）は多対多の関係にあり、産地ごとに確認できている科学データの範囲が異なります。香味の実測がない産地には、香味の特徴を表示しません。</p>
         <ul className="item-list">
           {origins.map((o) => (
             <li key={o.id}><button className="item-card" onClick={() => go('origin/' + o.id)}>
@@ -157,6 +154,10 @@ export function CultivarsPage() {
         </ul>
       </>}
       <p><button className="linklike" onClick={() => go('compare-cultivars')}>品種・系統を比べる</button></p>
+      {/* 第18弾追加指示：文字だけの細かい説明は、操作要素より前に置かず画面の一番下に置く */}
+      <p>お茶の品種とカカオの分類・系統の図鑑です。表示できるのは、出典のある分類・系譜と科学的な所見までです。科学データが確認できていない対象には、香味の特徴を表示しません。</p>
+      <p className="note-small">カカオには階層の異なる分類があります。伝統的分類（歴史的・商業的な呼称）と、遺伝学に基づく遺伝集団（Motamayor et al. 2008）は別の体系で、一対一には対応しません。個別クローンは、さらに下の階層の実体です。</p>
+      {origins.length > 0 && <p className="note-small">産地は品種ではありません。産地と遺伝（系統）は多対多の関係にあり、産地ごとに確認できている科学データの範囲が異なります。香味の実測がない産地には、香味の特徴を表示しません。</p>}
     </div>
   )
 }
@@ -178,8 +179,9 @@ function CultivarWheelSection({ cultivarId, cultivarName }: { cultivarId: string
   return (
     <>
       <h3>分類との組み合わせで見る味わい（フレーバーホイール）</h3>
-      <p className="note-small">ホイールは、分類のプロファイルを土台に、品種の所見と製法の科学を重ねた<strong>組み合わせの推測</strong>です。{cultivarName}固有の実測プロファイルではありません。品種固有の実測がある部分は、下の「科学的な所見」に分けて示します。</p>
+      {/* 第18弾：ホイールを見出し直下に置き、説明文はホイールの下に回す */}
       <EntityWheelTabs tabs={tabs} />
+      <p className="note-small">ホイールは、分類のプロファイルを土台に、品種の所見と製法の科学を重ねた<strong>組み合わせの推測</strong>です。{cultivarName}固有の実測プロファイルではありません。品種固有の実測がある部分は、下の「科学的な所見」に分けて示します。</p>
     </>
   )
 }
@@ -297,9 +299,10 @@ function LineageWheelSection({ layer, id, entityName, hasFlavorFindings }: {
   return (
     <>
       <h3>種類との組み合わせで見る味わい（フレーバーホイール）</h3>
+      {/* 第18弾：ホイールを見出し直下に置き、説明文と注意の箱はホイールの下に回す */}
+      <EntityWheelTabs tabs={tabs} />
       <p className="note-small">ホイールは、種類のプロファイルを土台に、系統の所見を重ねた<strong>組み合わせの推測</strong>です。{entityName}固有の実測プロファイルではありません。系統固有の実測がある部分は、下の「科学的な所見」に分けて示します。</p>
       {!hasFlavorFindings && <p className="unknown-box">この系統については、香味の科学的な所見が確認できていません。そのためホイールは種類一般のプロファイルの表示であり、系統の情報は味わいの推測に使っていません。遺伝的分類だけから味を断定することはしません。</p>}
-      <EntityWheelTabs tabs={tabs} />
     </>
   )
 }

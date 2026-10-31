@@ -121,3 +121,56 @@ describe('品種・系統データベースの画面連携', () => {
     expect(screen.getAllByText(/未確認/).length).toBeGreaterThan(0)
   })
 })
+
+describe('第18弾：品種・系統ページではホイールが説明文より上に来る', () => {
+  beforeEach(() => { cleanup(); localStorage.clear(); location.hash = '#/' })
+  // a の後に b が続く（b が a より後ろ）かどうか
+  const isAfter = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0
+
+  it('品種ページ（おくみどり）：ホイールと根拠チップが説明文より前にある', () => {
+    location.hash = '#/cultivar/okumidori'; render(<App />)
+    const wheel = screen.getByLabelText(/組み合わせのフレーバーホイール/)
+    const badge = screen.getByText(/この組み合わせ全体の根拠/)
+    const desc = screen.getAllByText(/固有の実測プロファイルではありません/)[0]
+    expect(isAfter(wheel, desc)).toBe(true)
+    expect(isAfter(badge, desc)).toBe(true)
+    // 説明文自体は削除されず、ホイールの下に残っている
+    expect(desc.textContent).toContain('組み合わせの推測')
+  })
+
+  it('系統ページ（所見なし・Nanay）：プルダウン・ホイールが説明文と注意の箱より前にある', () => {
+    location.hash = '#/cacao/genetic/gen-nanay'; render(<App />)
+    const select = screen.getByLabelText('ホイールを表示する分類')
+    const wheel = screen.getByLabelText(/組み合わせのフレーバーホイール/)
+    const desc = screen.getAllByText(/固有の実測プロファイルではありません/)[0]
+    const box = screen.getByText(/香味の科学的な所見が確認できていません/)
+    expect(isAfter(select, wheel)).toBe(true)
+    expect(isAfter(wheel, desc)).toBe(true)
+    expect(isAfter(wheel, box)).toBe(true)
+    // 説明文と注意の箱は削除されず、ホイールの下に残っている
+    expect(desc.textContent).toContain('組み合わせの推測')
+    expect(box.textContent).toContain('種類一般のプロファイルの表示')
+  })
+
+  it('系統ページ（所見あり・Nacional）：ホイールが説明文より前にある', () => {
+    location.hash = '#/cacao/genetic/gen-nacional'; render(<App />)
+    const wheel = screen.getByLabelText(/組み合わせのフレーバーホイール/)
+    const desc = screen.getAllByText(/固有の実測プロファイルではありません/)[0]
+    expect(isAfter(wheel, desc)).toBe(true)
+    // 所見がある系統では注意の箱は出ない（従来どおり）
+    expect(screen.queryByText(/香味の科学的な所見が確認できていません/)).toBeNull()
+  })
+
+  it('品種・系統を調べる：説明段落3つが検索窓・一覧より下（画面最下部）にある', () => {
+    location.hash = '#/cultivars'; render(<App />)
+    const input = screen.getByLabelText('品種・系統を検索')
+    const compareBtn = screen.getByRole('button', { name: '品種・系統を比べる' })
+    const p1 = screen.getByText(/出典のある分類・系譜と科学的な所見までです/)
+    const p2 = screen.getByText(/一対一には対応しません/)
+    const p3 = screen.getByText(/香味の実測がない産地には、香味の特徴を表示しません/)
+    expect(isAfter(input, compareBtn)).toBe(true)
+    expect(isAfter(compareBtn, p1)).toBe(true)
+    expect(isAfter(p1, p2)).toBe(true)
+    expect(isAfter(p2, p3)).toBe(true)
+  })
+})

@@ -11,10 +11,31 @@ describe('画面の基本動作（§16相当のローカル検証）', () => {
     expect(screen.getByText('チョコを調べる')).toBeTruthy()
     expect(screen.getAllByText('組み合わせる').length).toBeGreaterThan(0)
   })
-  it('お茶一覧で空の検索結果を適切に表示する', () => {
+  it('お茶を調べるには検索窓が無く、プルダウンだけで一覧とプレビューに辿り着ける（第18弾）', () => {
     location.hash = '#/tea'; render(<App />)
-    fireEvent.change(screen.getByLabelText('お茶を検索'), { target: { value: '存在しないお茶xyz' } })
-    expect(screen.getByText(/見つかりませんでした/)).toBeTruthy()
+    expect(screen.queryByLabelText('お茶を検索')).toBeNull()
+    // 検索なしでもプロファイル一覧が出る
+    expect(screen.getAllByText('プロファイル').length).toBeGreaterThan(0)
+    // プルダウンだけで組み合わせプレビューが出る
+    fireEvent.change(screen.getByLabelText('分類（茶類）で絞り込み'), { target: { value: 'green' } })
+    expect(document.querySelector('.combo-preview')).toBeTruthy()
+  })
+  it('チョコを調べるには検索窓が無く、プルダウンだけで一覧とプレビューに辿り着ける（第18弾）', () => {
+    location.hash = '#/choco'; render(<App />)
+    expect(screen.queryByLabelText('チョコレートを検索')).toBeNull()
+    expect(screen.getAllByText('プロファイル').length).toBeGreaterThan(0)
+    fireEvent.change(screen.getByLabelText('分類（種類）で絞り込み'), { target: { value: 'dark' } })
+    expect(document.querySelector('.combo-preview')).toBeTruthy()
+  })
+  it('品種・系統を調べるの検索窓は残る（第18弾の訂正：検索が主要な導線）', () => {
+    location.hash = '#/cultivars'; render(<App />)
+    expect(screen.getByLabelText('品種・系統を検索')).toBeTruthy()
+  })
+  it('成分一覧では説明段落が検索窓より下（画面最下部）にある（第18弾追加指示）', () => {
+    location.hash = '#/compounds'; render(<App />)
+    const input = screen.getByLabelText('成分を検索')
+    const desc = screen.getByText(/香味や味に寄与することが研究で示された化学成分です/)
+    expect(input.compareDocumentPosition(desc) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
   it('存在しないお茶の詳細は未収録と表示する', () => {
     location.hash = '#/tea/no-such-tea'; render(<App />)

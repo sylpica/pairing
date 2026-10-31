@@ -44,6 +44,20 @@ describe('組み合わせページ（産地×品種×分類）', () => {
     expect(wheel.compareDocumentPosition(tastes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
+  it('導入の説明段落はホイールより下の説明群にある（第18弾追加指示）', () => {
+    location.hash = '#/combo/tea/green.nagasaki.yabukita'
+    render(<App />)
+    const wheel = screen.getByLabelText(/組み合わせのフレーバーホイール/)
+    const intro = screen.getByText(/産地×品種×分類の具体的な組み合わせの味わいを見るページです/)
+    expect(wheel.compareDocumentPosition(intro) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    cleanup()
+    location.hash = '#/combo/choco'
+    render(<App />)
+    const wheel2 = screen.getByLabelText(/組み合わせのフレーバーホイール/)
+    const intro2 = screen.getByText(/産地×系統×種類の具体的な組み合わせの味わいを見るページです/)
+    expect(wheel2.compareDocumentPosition(intro2) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   it('大分類には中分類（具体名）が併記され、小分類で化合物名が出る（裏付けのある香りだけ・指示3・第8弾）', () => {
     location.hash = '#/combo/tea/green.nagasaki.yabukita'
     render(<App />)

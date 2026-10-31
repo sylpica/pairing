@@ -148,10 +148,11 @@ export function TeaComboPage({ sub, saved, toggleFav }: { sub?: string; saved?: 
     <div>
       <BackButton fallback="tea" />
       <h2>{analysis.title} {saved && toggleFav && <FavButton fav={saved.favorites.combos.includes(favId)} onToggle={() => toggleFav('combos', favId)} />}</h2>
-      <p className="note-small">産地×品種×分類の具体的な組み合わせの味わいを見るページです。分類のプロファイル、品種の所見、産地の所見、製法の科学を重ねて推測し、実測のある部分と推測の部分を区別して表示します。組み合わせを変えるときは「調べる」「組み合わせる」画面で選び直してください（このページは結果の表示専用です）。</p>
       <AnalysisView analysis={analysis}>
         <Siblings title="違いを見る（兄弟の組み合わせ）" siblings={siblings} pathOf={teaComboPath} />
       </AnalysisView>
+      {/* 第18弾追加指示：文字だけの細かい説明はホイールより前に置かず、下の説明群に置く */}
+      <p className="note-small">産地×品種×分類の具体的な組み合わせの味わいを見るページです。分類のプロファイル、品種の所見、産地の所見、製法の科学を重ねて推測し、実測のある部分と推測の部分を区別して表示します。組み合わせを変えるときは「調べる」「組み合わせる」画面で選び直してください（このページは結果の表示専用です）。</p>
       <p className="note-small">分類×産地の組み合わせは常に開けますが、その産地・品種での実測があるかどうかは、ページ内の注記と「根拠の内訳」で正直に示します。品種は、その分類で確認済みのものと、製法の科学から推測が成立するものだけが組み合わせとして成立します。</p>
       <p className="note-small">チョコレートの組み合わせは <button className="linklike" onClick={() => go('combo/choco')}>組み合わせで調べる（チョコ）</button> から。お茶とチョコのペアリングは「組み合わせる」画面です。</p>
     </div>
@@ -179,10 +180,11 @@ export function ChocoComboPage({ sub, saved, toggleFav }: { sub?: string; saved?
     <div>
       <BackButton fallback="choco" />
       <h2>{analysis.title} {saved && toggleFav && <FavButton fav={saved.favorites.combos.includes(favId)} onToggle={() => toggleFav('combos', favId)} />}</h2>
-      <p className="note-small">産地×系統×種類の具体的な組み合わせの味わいを見るページです。種類のプロファイル、系統の所見、産地の所見を重ねて推測し、実測のある部分と推測の部分を区別して表示します。組み合わせを変えるときは「調べる」「組み合わせる」画面で選び直してください（このページは結果の表示専用です）。</p>
       <AnalysisView analysis={analysis}>
         <Siblings title="違いを見る（兄弟の組み合わせ）" siblings={siblings} pathOf={chocoComboPath} />
       </AnalysisView>
+      {/* 第18弾追加指示：文字だけの細かい説明はホイールより前に置かず、下の説明群に置く */}
+      <p className="note-small">産地×系統×種類の具体的な組み合わせの味わいを見るページです。種類のプロファイル、系統の所見、産地の所見を重ねて推測し、実測のある部分と推測の部分を区別して表示します。組み合わせを変えるときは「調べる」「組み合わせる」画面で選び直してください（このページは結果の表示専用です）。</p>
       <p className="note-small">チョコレートは、種類・産地・系統を相互に制限しません（いろんなチョコにいろんな産地と品種が合わさるため）。産地と系統は多対多の関係で、重ね合わせは相互作用を踏まえた推測として表示します。系統名はカタカナを主表記にしています。ルビーは種類の軸にのみあり、系統には入りません。</p>
       <p className="note-small">お茶の組み合わせは <button className="linklike" onClick={() => go('combo/tea')}>組み合わせで調べる（お茶）</button> から。</p>
     </div>

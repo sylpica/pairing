@@ -196,9 +196,8 @@ function ComboPreview({ analysis, path, note: assumedNote }: { analysis: ComboAn
   )
 }
 
-type TeaListFilters = { q: string; kind: string; region: string; cultivarId: string }
+type TeaListFilters = { kind: string; region: string; cultivarId: string }
 function TeaList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combos', id: string) => void }) {
-  const [q, setQ] = useState('')
   const [kindRaw, setKindRaw] = usePersistedState('pairing.teaList.kind', 'all')
   const [regionRaw, setRegionRaw] = usePersistedState('pairing.teaList.region', 'all')
   const [cultivarRaw, setCultivarRaw] = usePersistedState('pairing.teaList.cultivarId', 'all')
@@ -214,18 +213,15 @@ function TeaList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combo
   const filterKindCategory = (kindValue: string): string => (kindValue ? teaComboCategoryOf(kindValue) : '')
   const isItemValue = (v: string) => v !== '' && !!teaById(v) && v !== filterKindCategory(v)
   const profilesFor = (f: TeaListFilters) => teaItems.filter((t) =>
-    matches(f.q, [t.name, ...t.searchNames])
-    && (f.kind === '' || (isItemValue(f.kind) ? t.id === f.kind : t.kindId === f.kind))
+    (f.kind === '' || (isItemValue(f.kind) ? t.id === f.kind : t.kindId === f.kind))
     && (f.region === '' || TEA_ITEM_REGIONS[t.id] === teaOriginCountryOfValue(f.region))
     && (f.cultivarId === '' || cultivarsForKind(t.kindId).includes(f.cultivarId)))
   const cultivarsFor = (f: TeaListFilters) => teaCultivars.filter((c) =>
-    matches(f.q, [c.name, c.originalName ?? '', ...c.aliases])
-    && (f.kind === '' || usesForCultivar(c.id).some((u) => kindCategoryOf(u.kindId) === filterKindCategory(f.kind)))
+    (f.kind === '' || usesForCultivar(c.id).some((u) => kindCategoryOf(u.kindId) === filterKindCategory(f.kind)))
     && (f.region === '' || c.country === teaOriginCountryOfValue(f.region))
     && (f.cultivarId === '' || c.id === f.cultivarId))
   const regionsFor = (f: TeaListFilters) => teaRegions.filter((r) =>
-    matches(f.q, [r.name, r.country, r.parentName ?? ''])
-    && (f.kind === '' || r.applicableKindIds.includes(filterKindCategory(f.kind)))
+    (f.kind === '' || r.applicableKindIds.includes(filterKindCategory(f.kind)))
     && (f.region === '' || (f.region.startsWith('region:') ? r.id === f.region.slice('region:'.length) : r.country === f.region))
     && (f.cultivarId === '' || teaCultivarById(f.cultivarId)?.country === r.country))
   // 3軸のうち1つでも指定があれば、プルダウンの直下にその組み合わせのフレーバーを出す
@@ -243,7 +239,7 @@ function TeaList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combo
   // 表示条件は「プレビューが組み立つこと」で、組み合わせる画面の保存ボタンと揃える。
   const comboId = previewAnalysis && previewSel ? comboFavId('tea', { kind, origin: region, third: cultivarId }) : ''
   const comboFav = comboId !== '' && saved.favorites.combos.includes(comboId)
-  const current: TeaListFilters = { q, kind, region, cultivarId }
+  const current: TeaListFilters = { kind, region, cultivarId }
   const shownProfiles = [...profilesFor(current)].sort((a, b) => KIND_ORDER.indexOf(a.kindId) - KIND_ORDER.indexOf(b.kindId))
   const cultivars = cultivarsFor(current)
   const regions = regionsFor(current)
@@ -256,7 +252,6 @@ function TeaList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combo
           <FavButton className="pair-save-btn" fav={comboFav} onToggle={() => toggleFav('combos', comboId)} />
         )}
       </div>
-      <input className="search" type="search" placeholder="名前・別名・産地で探す（例：烏龍茶、煎茶）" value={q} onChange={(e) => setQ(e.target.value)} aria-label="お茶を検索" />
       <section className="filter-hero" role="group" aria-label="条件で絞り込み">
         <h3 className="filter-hero-title"><TeaLeafIcon className="hero-icon tea" />分類・産地・品種で探す</h3>
         <div className="filter-grid cols-3">
@@ -345,9 +340,8 @@ function TeaDetail({ id, saved, toggleFav }: { id: string; saved: SavedData; tog
 }
 
 type LineageSel = { layer: CacaoLayer; id: string }
-type ChocoListFilters = { q: string; kind: string; originId: string; lineage: LineageSel | null }
+type ChocoListFilters = { kind: string; originId: string; lineage: LineageSel | null }
 function ChocoList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combos', id: string) => void }) {
-  const [q, setQ] = useState('')
   const [kindRaw, setKindRaw] = usePersistedState('pairing.chocoList.kind', 'all')
   const [originRaw, setOriginRaw] = usePersistedState('pairing.chocoList.originId', 'all')
   const [lineageRaw, setLineageRaw] = usePersistedState<unknown>('pairing.chocoList.lineage', 'all')
@@ -366,13 +360,11 @@ function ChocoList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'com
   const applySelects = (next: ChocoSelectsState) => { setKindRaw(next.kind); setOriginRaw(next.origin); setLineageRaw(next.lineage) }
   const isItemValue = (v: string) => v !== '' && !!chocolateById(v)
   const profilesFor = (f: ChocoListFilters) => chocolateItems.filter((c) =>
-    matches(f.q, [c.name, ...c.searchNames])
-    && (f.kind === '' || (isItemValue(f.kind) ? c.id === f.kind : c.kind === f.kind))
+    (f.kind === '' || (isItemValue(f.kind) ? c.id === f.kind : c.kind === f.kind))
     && f.originId === ''
     && f.lineage === null)
   const originsFor = (f: ChocoListFilters) => cacaoOrigins.filter((o) =>
     f.kind === ''
-    && matches(f.q, [o.name, o.country, ...o.regions.map((r) => r.name), ...o.tradeNames.map((t) => t.name)])
     && (f.originId === '' || o.id === f.originId)
     // 選んだ産地そのものは、系統との記録上の結びつきが無くても結果から消さない
     && (f.lineage === null || o.id === f.originId || originsForLineage(f.lineage.layer, f.lineage.id).some((x) => x.id === o.id)))
@@ -388,13 +380,13 @@ function ChocoList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'com
       // 選んだ系統そのものは、産地との記録上の結びつきが無くても結果から消さない
       && (inOrigin(layer, e.id) || (f.lineage !== null && f.lineage.layer === layer && f.lineage.id === e.id)))
     return {
-      traditional: pick(cacaoTraditionalGroups, 'traditional').filter((g) => matches(f.q, [g.name, g.nameJa, ...g.aliases])),
-      genetic: pick(cacaoGeneticGroups, 'genetic').filter((g) => matches(f.q, [g.name, ...g.aliases])),
-      clones: pick(cacaoClones, 'clone').filter((c) => matches(f.q, [c.name, ...c.aliases])),
+      traditional: pick(cacaoTraditionalGroups, 'traditional'),
+      genetic: pick(cacaoGeneticGroups, 'genetic'),
+      clones: pick(cacaoClones, 'clone'),
     }
   }
   const lineageCountOf = (f: ChocoListFilters) => { const l = lineagesFor(f); return l.traditional.length + l.genetic.length + l.clones.length }
-  const current: ChocoListFilters = { q, kind, originId, lineage }
+  const current: ChocoListFilters = { kind, originId, lineage }
   const profiles = profilesFor(current)
   const origins = originsFor(current)
   const lineageEntities = lineagesFor(current)
@@ -421,7 +413,6 @@ function ChocoList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'com
           <FavButton className="pair-save-btn" fav={comboFav} onToggle={() => toggleFav('combos', comboId)} />
         )}
       </div>
-      <input className="search" type="search" placeholder="名前・種類・産地で探す（例：ダーク、ベネズエラ）" value={q} onChange={(e) => setQ(e.target.value)} aria-label="チョコレートを検索" />
       <section className="filter-hero" role="group" aria-label="条件で絞り込み">
         <h3 className="filter-hero-title"><ChocoBarIcon className="hero-icon choco" />分類・産地・系統で探す</h3>
         <div className="filter-grid cols-3">
@@ -1116,7 +1107,6 @@ function CompoundsPage({ highlightId }: { highlightId?: string }) {
   return (
     <div>
       <h2>成分一覧</h2>
-      <p>香味や味に寄与することが研究で示された化学成分です。「検出された」ことと「香り・味に寄与する」ことは分けて記録しています。香り・味の記述がない成分は、その旨を明記しています。成分名・別名・香味名・味の名前で探せます（成分→香味・食品の逆引き）。</p>
       <input className="search" type="search" placeholder="成分・香味・味で探す（例：リナロール、青草・若葉、苦味）" value={q} onChange={(e) => setQ(e.target.value)} aria-label="成分を検索" />
       {shown.length === 0 && <p className="unknown-box">見つかりませんでした。根拠が確認できない成分は登録していないため、収録範囲外かもしれません。</p>}
       {shown.map((c) => (
@@ -1125,6 +1115,8 @@ function CompoundsPage({ highlightId }: { highlightId?: string }) {
           {highlightId === c.id && <p className="note-small">品種・系統の図鑑から参照された成分です。</p>}
         </article>
       ))}
+      {/* 第18弾追加指示：文字だけの細かい説明は操作要素より前に置かず、画面の一番下に置く */}
+      <p>香味や味に寄与することが研究で示された化学成分です。「検出された」ことと「香り・味に寄与する」ことは分けて記録しています。香り・味の記述がない成分は、その旨を明記しています。成分名・別名・香味名・味の名前で探せます（成分→香味・食品の逆引き）。</p>
     </div>
   )
 }
