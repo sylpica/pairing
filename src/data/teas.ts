@@ -77,6 +77,10 @@ const whiteTastes: Partial<FlavorProfile['tastes']> = {
   bitter: { intensity: 'weak', basis: 'review', sourceIds: TZ },
   astringent: { intensity: 'weak', basis: 'review', sourceIds: TZ },
   umami: { intensity: 'normal', basis: 'review', sourceIds: TZ },
+  // 甘味（第40弾で補完）: 白牡丹のQDA・味活性値の実測（Zheng et al. 2025）で
+  // 甘味が味の中核属性の一つと評価され、スクロースのTAVが3品種すべてで1を
+  // 超えた（甘味の主要因）。官能根拠として通常の強さで収録する。
+  sweet: { intensity: 'normal', basis: 'sensory', sourceIds: ['zheng-2025-baimudan-white-tea', 'zhang-2020-tea-chemistry-taste'] },
 }
 const yellowTastes: Partial<FlavorProfile['tastes']> = {
   bitter: { intensity: 'weak', basis: 'review', sourceIds: TZ },
@@ -87,11 +91,21 @@ const oolongTastes: Partial<FlavorProfile['tastes']> = {
   bitter: { intensity: 'normal', basis: 'review', sourceIds: TZ },
   astringent: { intensity: 'normal', basis: 'review', sourceIds: TZ },
   umami: { intensity: 'normal', basis: 'review', sourceIds: TZ },
+  // 甘味（第40弾で補完）: 8か国15地域の烏龍茶66試料のQDA（Wang et al. 2022）で
+  // 味のサブ属性「甘い後味（sweet aftertaste）」の使用頻度が42.4%だった。
+  // 後味の属性であり頻度も半数未満のため、弱く収録する。鳳凰単叢（烏龍茶の
+  // 個別アイテム）もこの定数を共有する。
+  sweet: { intensity: 'weak', basis: 'sensory', sourceIds: ['wang-2022-oolong-qda-wheel'] },
 }
 const darkTastes: Partial<FlavorProfile['tastes']> = {
   bitter: { intensity: 'weak', basis: 'review', sourceIds: TZ },
   astringent: { intensity: 'weak', basis: 'review', sourceIds: TZ },
   umami: { intensity: 'weak', basis: 'review', sourceIds: TZ },
+  // 甘味（第40弾で補完）: 古樹熟成プーアル茶（熟茶）5試料の官能評価
+  // （Wang et al. 2025、QDA 0〜10尺度）で甘味が5.83〜8.00と全味覚属性中
+  // 最も高く、可溶性糖が特徴的な呈味成分とされた。根拠は熟茶の実測であり、
+  // 黒茶アイテム全体への適用は scopeNote に明記する。通常の強さで収録する。
+  sweet: { intensity: 'normal', basis: 'sensory', sourceIds: ['wang-2025-ancient-ripe-puerh'] },
 }
 const e = (noteId: string, intensity: 'weak' | 'normal' | 'strong') => ({ noteId, intensity, basis: 'review' as const, sourceIds: [Z] })
 
@@ -135,7 +149,7 @@ export const teaItems: TeaItem[] = [
     searchNames: ['白茶', 'White tea', '白牡丹', '白毫銀針'],
     profile: prof([e('floral-general', 'normal'), e('green-leaf', 'normal'), e('fruit-general', 'normal'), e('honey', 'normal')], whiteTastes, whiteTemporal),
     evidenceLevel: 'general',
-    scopeNote: '総説では白茶は爽やか・花・果実・甘い香りとされ、フェニルアセトアルデヒドが蜂蜜様の香りに関連します。白牡丹・白毫銀針など等級固有の実測ではありません。味覚は、総説（Zhang et al. 2020／Ye et al. 2022）の呈味の枠組みに基づく茶類レベルの一般的傾向として、萎凋・乾燥のみの浅い加工を踏まえ、苦味・渋味は弱く、うま味は緑茶並みに収録しています（味覚の個別実測ではありません）。',
+    scopeNote: '総説では白茶は爽やか・花・果実・甘い香りとされ、フェニルアセトアルデヒドが蜂蜜様の香りに関連します。白牡丹・白毫銀針など等級固有の実測ではありません。味覚は、総説（Zhang et al. 2020／Ye et al. 2022）の呈味の枠組みに基づく茶類レベルの一般的傾向として、萎凋・乾燥のみの浅い加工を踏まえ、苦味・渋味は弱く、うま味は緑茶並みに収録しています。甘味については、白牡丹の定量記述分析と味活性値の実測（Zheng et al. 2025）でスクロースが甘味の主要因と確認されたため、官能根拠として通常の強さで収録しました。',
     sourceIds: [Z],
   },
   {
@@ -151,7 +165,7 @@ export const teaItems: TeaItem[] = [
     searchNames: ['烏龍茶', '青茶', 'Oolong', '铁观音', '大紅袍', '鳳凰単叢'],
     profile: prof([e('floral-general', 'strong'), e('fruit-general', 'normal'), e('green-leaf', 'normal'), e('honey', 'normal')], oolongTastes, oolongTemporal),
     evidenceLevel: 'general',
-    scopeNote: '総説では烏龍茶は花・果実・爽やかな香りが特徴とされています。鉄観音・大紅袍など個別銘柄の実測ではありません。煎ごとの変化については、武夷岩茶（水仙・肉桂）を功夫茶式に7煎淹れた実測で、香りは煎ごとに漸減し4煎目以降に顕著に低下しました（Yang et al. 2025）。味覚は、総説（Zhang et al. 2020／Ye et al. 2022）の呈味の枠組みに基づく茶類レベルの一般的傾向として、部分酸化の位置づけ（緑茶と紅茶の中間）から苦味・渋味・うま味を緑茶・紅茶並みに収録しています（個別銘柄の実測ではありません）。',
+    scopeNote: '総説では烏龍茶は花・果実・爽やかな香りが特徴とされています。鉄観音・大紅袍など個別銘柄の実測ではありません。煎ごとの変化については、武夷岩茶（水仙・肉桂）を功夫茶式に7煎淹れた実測で、香りは煎ごとに漸減し4煎目以降に顕著に低下しました（Yang et al. 2025）。味覚は、総説（Zhang et al. 2020／Ye et al. 2022）の呈味の枠組みに基づく茶類レベルの一般的傾向として、部分酸化の位置づけ（緑茶と紅茶の中間）から苦味・渋味・うま味を緑茶・紅茶並みに収録しています（個別銘柄の実測ではありません）。甘味については、8か国15地域の烏龍茶66試料の定量記述分析（Wang et al. 2022）で味のサブ属性「甘い後味」の使用頻度が42.4%だったため、後味の属性として弱く収録しました。',
     sourceIds: [Z],
   },
   {
@@ -163,13 +177,20 @@ export const teaItems: TeaItem[] = [
       // うま味（第16弾で補完）: テアニン等のうま味成分の枠組み（Zhang et al. 2020）は
       // 紅茶にも当てはまるが、苦味・渋味が前面に出るため茶類レベルの傾向として弱く置く。
       umami: { intensity: 'weak', basis: 'review', sourceIds: TZ },
+      // 甘味・酸味（第40弾で補完）: 中国の紅茶と緑茶を比べた官能評価
+      // （Zhang et al. 2022、0〜3尺度）で、紅茶は甘味2.33・酸味1.33、緑茶は
+      // 甘味1.17・酸味0.33だった。緑茶の甘味（弱い）との尺度の整合から、
+      // 紅茶の甘味は通常・酸味は弱く収録する。同研究では有機酸の味活性値は
+      // 官能の酸味と一致せず、酸味の成り立ちは相互作用やpH等によるとされる。
+      sweet: { intensity: 'normal', basis: 'sensory', sourceIds: ['zhang-2022-black-green-tea-sour'] },
+      sour: { intensity: 'weak', basis: 'sensory', sourceIds: ['zhang-2022-black-green-tea-sour'] },
     }, {
       first: { text: '紅茶そのものの飲用時の時間変化の時系列実測は確認できていません。緑茶での知見からの推測では、淹れたての熱い状態で香りが最も立ち、高温では甘味・うま味・渋味も強く感じられると考えられます（日本緑茶の温度別官能研究からの類推）。', basis: 'general', sourceIds: ['pramudya-2018-green-tea-temperature-cata'], estimated: true },
       middle: { text: '推測：冷めていく過程では、甘味に関わる受容体 TRPM5 の温度応答のため甘味の感じ方が変化していくと考えられます。なお貯蔵でも香りは変化し、祁門紅茶では1年の貯蔵でジメチルスルフィドが失われることが実測されています（新茶にのみ検出）。', basis: 'general', sourceIds: ['talavera-2005-trpm5-temperature', 'tao-2022-keemun-black-tea-storage'], estimated: true },
       finish: { text: 'テアフラビン類の渋みは口にまとわりつくように長く持続すると官能評価されています（Scharbert et al. 2004）。また渋みは繰り返し飲むと積み上がっていく性質がワインで実証されており、紅茶でも同様の経過が考えられます（後半は推測です）。', basis: 'sensory', sourceIds: ['scharbert-2004-theaflavins', 'ross-2007-wine-astringency-buildup'], estimated: true },
     }),
     evidenceLevel: 'general',
-    scopeNote: '総説では紅茶は甘い・花・果実の香りとされ、発酵の過程で青草様の香りから甘い花・果実の香りへ移ると説明されています。個別銘柄の実測ではありません。味覚（苦味・渋み）は紅茶浸出液の再構成・除去実験（Scharbert & Hofmann 2005）で主要呈味成分が検証されており、渋みには低閾値のテアフラビン類も関わります（Scharbert et al. 2004、位置づけは研究間で異なります）。うま味は総説（Zhang et al. 2020）の枠組みに基づく茶類レベルの傾向として弱く収録しています。',
+    scopeNote: '総説では紅茶は甘い・花・果実の香りとされ、発酵の過程で青草様の香りから甘い花・果実の香りへ移ると説明されています。個別銘柄の実測ではありません。味覚（苦味・渋み）は紅茶浸出液の再構成・除去実験（Scharbert & Hofmann 2005）で主要呈味成分が検証されており、渋みには低閾値のテアフラビン類も関わります（Scharbert et al. 2004、位置づけは研究間で異なります）。うま味は総説（Zhang et al. 2020）の枠組みに基づく茶類レベルの傾向として弱く収録しています。甘味と酸味については、中国の紅茶と緑茶を比べた官能評価（Zhang et al. 2022、0〜3尺度）で紅茶の甘味が2.33・酸味が1.33（緑茶は甘味1.17・酸味0.33）だった記録に基づき、甘味を通常・酸味を弱く収録しました。なお同研究では有機酸の味活性値は官能の酸味と一致せず、酸味の成り立ちは有機酸と他成分の相互作用やpH等によるとされています。',
     sourceIds: [Z],
   },
   {
@@ -177,7 +198,7 @@ export const teaItems: TeaItem[] = [
     searchNames: ['黒茶', 'Dark tea', 'プーアル茶', '普洱茶', '六堡茶', '茯磚茶'],
     profile: prof([e('wood', 'strong'), e('earth', 'normal'), e('toast', 'weak')], darkTastes, darkTemporal),
     evidenceLevel: 'general',
-    scopeNote: '総説では黒茶の陳香（熟成した香り）は木質・古い・焙煎のニュアンスを含むとされています。プーアル茶・六堡茶など個別茶の実測ではありません。菌花香など種類による違いも知られていますが、ここでは共通範囲のみを示します。味覚は、総説（Zhang et al. 2020／Ye et al. 2022）の枠組みに基づく茶類レベルの一般的傾向として、微生物発酵で苦味・渋みが低下する方向を踏まえ、苦味・渋味・うま味をいずれも弱く収録しています（個別茶の実測ではありません）。',
+    scopeNote: '総説では黒茶の陳香（熟成した香り）は木質・古い・焙煎のニュアンスを含むとされています。プーアル茶・六堡茶など個別茶の実測ではありません。菌花香など種類による違いも知られていますが、ここでは共通範囲のみを示します。味覚は、総説（Zhang et al. 2020／Ye et al. 2022）の枠組みに基づく茶類レベルの一般的傾向として、微生物発酵で苦味・渋みが低下する方向を踏まえ、苦味・渋味・うま味をいずれも弱く収録しています。甘味については、古樹熟成プーアル茶（熟茶）5試料の官能評価（Wang et al. 2025、0〜10尺度）で甘味が全味覚属性の中で最も高く（5.83〜8.00）、可溶性糖が特徴的な呈味成分とされたため通常の強さで収録しましたが、根拠は熟茶の実測であり、黒茶全体への一般化には注意が要ります。',
     sourceIds: [Z],
   },
   {

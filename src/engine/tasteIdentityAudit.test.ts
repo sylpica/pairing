@@ -31,8 +31,9 @@ import { teaCultivars } from '../data/cultivars'
 // 残存同一グループの理由カテゴリ（第28弾の T1〜T3 / C1〜C4 を味向けに拡張）:
 //  T1 足がかり皆無: 所見が組成のみ・香りのみで、土台の味に対応づく方向が無い
 //     （TRI クローン、P312、べにふうき／べにほまれ、紅茶・烏龍茶の多くの品種。
-//     特に烏龍茶・紅茶は土台に甘味・酸味が無く、品種差が主に甘味側の
-//     ノート（蜂蜜・果実）に現れるため味ホイールでは同値になる）
+//     品種差が主に甘味側のノート（蜂蜜・果実）に現れるため味ホイールでは
+//     同値になる。第40弾で紅茶・烏龍茶の土台に甘味（紅茶は酸味も）が入ったが、
+//     品種差そのものはノート側に現れる構造は変わらない）
 //  T2 集約・吸収: 国レベル集約や産地側の効果が品種・系統差を吸収する
 //     （鹿児島、八女、ガーナ×ICS-95/Contamana、ドミニカ×Contamana/Iquitos 等）
 //  T3 ペアリング側の段階化: 単体では差があってもペアリング合成（重みの
@@ -207,6 +208,12 @@ const TEA_CULTIVAR_EXCEPTIONS = new Set([
   'sayamakaori,yutakamidori',
   'soufu,yabukita',
   'tri-2023,tri-2025,tri-2043',
+  // 第40弾で追加（T3型の段階化）: 烏龍茶・紅茶の土台に共通の甘味（紅茶は
+  // 酸味も）を文献根拠で追加した結果、第1階層の％正規化の中で品種間の
+  // 小さな％差が整数化で潰れた。記録された味の差が消えたわけではない。
+  'benifuuki,fenghuang-dancong-group,jinxuan,qingxin-damao,qingxin-oolong,sijichun,tsuiyu',
+  'benifuuki,benihomare,hongyu,hongyun,p312,tri-2023,tri-2025,tri-2043',
+  'hongyu,hongyun',
 ].map((s) => norm(s.split(','))))
 
 const TEA_REGION_EXCEPTIONS = new Set([
@@ -222,6 +229,10 @@ const TEA_REGION_EXCEPTIONS = new Set([
   'kochi,murakami,nagasaki,shizuoka,uji,yame',
   'kochi,murakami,shizuoka',
   'nagasaki,uji',
+  // 第40弾で追加（T3型の段階化）: 烏龍茶の土台への甘味追加で％正規化が
+  // 変わり、台湾地域群（南投を除く）と鳳凰単叢群の地域差が％で潰れた。
+  'alishan,country:台湾,wenshan',
+  'anhui,guangdong,guangxi,guizhou,henan,hubei,jiangsu,shaanxi,sichuan,yunnan,zhejiang',
 ].map((s) => norm(s.split(','))))
 
 const CHOCO_LINEAGE_EXCEPTIONS = new Set([
@@ -250,6 +261,11 @@ const CHOCO_LINEAGE_EXCEPTIONS = new Set([
   'genetic:gen-criollo,traditional:trad-criollo,traditional:trad-trinitario',
   'genetic:gen-criollo,traditional:trad-trinitario',
   'genetic:gen-maranon,traditional:trad-trinitario',
+  // 第40弾で追加（C2＋段階化）: ミルクチョコレートの土台に共通の酸味
+  // （一般的知見）が入った結果、ガーナ産地のミルクでは野生集団群・
+  // フォラステロ・ICS-95 の％差が潰れた。土台の味が共通化した帰結で、
+  // 系統側の記録が変わったわけではない。
+  'clone:ics-95,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-nanay,genetic:gen-purus,traditional:trad-forastero',
 ].map((s) => norm(s.split(','))))
 
 const CHOCO_ORIGIN_EXCEPTIONS = new Set([
@@ -314,6 +330,13 @@ const PAIR_TEA_EXCEPTIONS = new Set([
   'av2,benifuuki,fenghuang-dancong-group,jinxuan,qingxin-damao,sijichun,soufu,tieguanyin,tsuiyu',
   'av2,p312',
   'benifuuki,benihomare',
+  // 第40弾で追加（T3）: 紅茶の土台に甘味・酸味（Zhang et al. 2022 の官能実測）が
+  // 入ったことで第1階層の％配分が変わり、単体コンボでは区別できる
+  // べにほまれ／やぶきた と 紅玉／紅韻 の差が、ペアリング合成の％丸めで
+  // 潰れる文脈（紅茶の12地域・台湾系3地域）が生まれた。単体側の差別化は
+  // teaVaryCultivar 側で引き続き担保されている。
+  'benihomare,yabukita',
+  'hongyu,hongyun',
   'benifuuki,hokumei,kanayamidori,koushun,okumidori,samidori,sayamakaori,yutakamidori',
   'benifuuki,hokumei,koushun,samidori,tsuyuhikari',
   'benifuuki,kanayamidori,okumidori,samidori,tsuyuhikari',
@@ -333,6 +356,14 @@ const PAIR_TEA_EXCEPTIONS = new Set([
   'meiryoku,yabukita',
   'sayamakaori,yutakamidori',
   'tri-2023,tri-2025,tri-2043',
+  // 第40弾で追加（T3）: 烏龍茶・紅茶の土台への甘味追加でペアリング合成の
+  // ％配分が変わり、烏龍茶の品種群と紅茶の一部品種群の差が％丸めで
+  // 潰れた（単体コンボ側の差は teaVaryCultivar 側に残っている）。
+  'benifuuki,fenghuang-dancong-group,jinxuan,qingxin-damao,tsuiyu',
+  'benifuuki,hongyu,hongyun',
+  'jinxuan,qingxin-damao,tsuiyu',
+  'p312,tri-2023,tri-2025,tri-2043',
+  'sijichun,tieguanyin',
 ].map((s) => norm(s.split(','))))
 
 describe('味ホイールの同一性監査（第37弾）', () => {

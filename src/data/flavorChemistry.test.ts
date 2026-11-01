@@ -7,8 +7,8 @@ import { teaKinds } from './teas'
 const sourceIds = new Set(sources.map((s) => s.id))
 
 describe('フレーバーホイール×科学成分の自動検査', () => {
-  it('化合物は66件（従来57＋文献拡張の統合7＋第7弾でクマリン追加1＋第36弾で乳酸追加1）でIDが一意', () => {
-    expect(compounds).toHaveLength(66)
+  it('化合物は70件（従来57＋文献拡張の統合7＋第7弾でクマリン追加1＋第36弾で乳酸追加1＋第40弾でフラバン-3-オール分割3・カカオのフラボノール配糖体1・クマロイルキナ酸1、旧フラバン-3-オール群の廃止−1）でIDが一意', () => {
+    expect(compounds).toHaveLength(70)
     expect(new Set(compounds.map((c) => c.id)).size).toBe(compounds.length)
   })
 
@@ -118,8 +118,8 @@ describe('フレーバーホイール×科学成分の自動検査', () => {
       const teaSide = compoundsForTaste(taste).filter((c) => (c.scopes ?? []).some((s) => s.side === 'tea'))
       expect(teaSide.length, taste).toBeGreaterThan(0)
     }
-    expect(compoundsForTaste('bitter').map((c) => c.id)).toEqual(expect.arrayContaining(['caffeine', 'theobromine', 'diketopiperazines', 'flavan-3-ols']))
-    expect(compoundsForTaste('astringent').map((c) => c.id)).toEqual(expect.arrayContaining(['gallate-catechins', 'flavonol-glycosides', 'theaflavins', 'n-phenylpropenoyl-amino-acids']))
+    expect(compoundsForTaste('bitter').map((c) => c.id)).toEqual(expect.arrayContaining(['caffeine', 'theobromine', 'diketopiperazines', 'epicatechin', 'catechin', 'procyanidins']))
+    expect(compoundsForTaste('astringent').map((c) => c.id)).toEqual(expect.arrayContaining(['gallate-catechins', 'flavonol-glycosides', 'theaflavins', 'n-phenylpropenoyl-amino-acids', 'epicatechin', 'procyanidins', 'cacao-flavonol-glycosides', 'coumaroylquinic-acids']))
     expect(compoundsForTaste('umami').map((c) => c.id)).toEqual(expect.arrayContaining(['l-theanine', 'glutamic-acid', 'matcha-umami-enhancers']))
   })
 

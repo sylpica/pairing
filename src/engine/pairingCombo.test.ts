@@ -37,11 +37,17 @@ describe('課題C: 軸指定がペアリング結果に効く', () => {
     expect(interactionTexts(axed)).not.toEqual(interactionTexts(base))
   })
 
-  it('お茶の品種を変えると性格チップが変わる（紅茶 × ダーク、やぶきたの製法読み替え）', () => {
-    const tea = teaById('black-tea')!
+  it('お茶の品種を変えると性格チップが変わる（煎茶 × ダーク、つゆひかり）', () => {
+    // 第40弾で代表ケースを移した。元の「紅茶 × ダーク、やぶきた」は、紅茶の
+    // 土台に甘味（Zhang et al. 2022 の官能実測）が入ったことで土台側でも
+    // 「甘味が渋味を和らげる」が発火して『まろやか』が出るようになり、
+    // やぶきた指定時と性格チップが一致するようになった（紅茶の全品種で同じ
+    // 帰結。品種差そのものは味ホイールの同一性監査で別途担保されている）。
+    // つゆひかり（煎茶）では指定時に『まろやか』が消え、性格が変わる。
+    const tea = teaById('sencha')!
     const choco = chocolateById('dark-roasted')!
     const base = assemblePairing(tea, choco, null, null)
-    const axed = assemblePairing(tea, choco, { kindId: 'black-tea', regionId: '', cultivarId: 'yabukita' }, null)
+    const axed = assemblePairing(tea, choco, { kindId: 'sencha', regionId: '', cultivarId: 'tsuyuhikari' }, null)
     expect(characterIds(axed)).not.toEqual(characterIds(base))
   })
 

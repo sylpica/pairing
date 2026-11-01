@@ -499,6 +499,20 @@ export const compounds: Compound[] = [
     ],
   },
   {
+    // 第40弾追加。祁門紅茶での渋み寄与の一次実証（Wen et al. 2022）。
+    id: 'coumaroylquinic-acids', name: 'クマロイルキナ酸類', aliases: ['p-Coumaroylquinic acids', 'trans-4-O-p-Coumaroylquinic acid'],
+    noteIds: [],
+    plainDescription: '紅茶に含まれるフェノール酸の一種で、渋みに関わる成分です。',
+    detectedIn: '紅茶浸出液（祁門紅茶）',
+    aromaKnowledge: '香りへの寄与ではなく、味（渋味）との関連だけを記録します。',
+    contributionEvidence: '祁門（キーマン）工夫紅茶を対象に、MS分析・濁度分析・官能評価を組み合わせて、trans-4-O-p-クマロイルキナ酸が渋み寄与成分であることが初めて確認されました。渋みの閾値は 38 µM で、供試した祁門紅茶8等級の含有量（40.20〜65.53 µM）は閾値を上回っていました（Wen et al. 2022）。試料は祁門紅茶であり、他の紅茶への広がりは未確認です。',
+    sourceIds: ['wen-2022-keemun-astringency'],
+    scopes: [{ side: 'tea', kindId: 'black' }],
+    tasteLinks: [
+      { taste: 'astringent', evidence: '祁門紅茶で、閾値を上回る含有量とともに渋み寄与成分として確認されています（他の紅茶での寄与は未確認）。' },
+    ],
+  },
+  {
     id: 'l-theanine', name: 'L-テアニン', aliases: ['L-Theanine'],
     noteIds: [],
     plainDescription: 'お茶に特徴的なアミノ酸で、うま味を支える成分です。',
@@ -604,18 +618,50 @@ export const compounds: Compound[] = [
       { taste: 'bitter', evidence: '焙煎カカオニブで苦味への寄与が実証されています（焙煎条件で変動します）。' },
     ],
   },
+  // 第40弾: 旧「フラバン-3-オール類（カカオ）」を、Ullrich et al. 2022 の DoT 表の
+  // 構造に対応する個別分子（エピカテキン／カテキン／プロシアニジン類）に分割した。
+  // エピカテキンとプロシアニジン類は最終製品ダークチョコレートでの DoT 実証が
+  // あるため scope に {chocolate, dark} を持ち、その文脈では tier 1 になる。
   {
-    id: 'flavan-3-ols', name: 'フラバン-3-オール類（カカオ）', aliases: ['Flavan-3-ols', 'Epicatechin', 'Procyanidins'],
+    id: 'epicatechin', name: 'エピカテキン', aliases: ['(-)-Epicatechin'],
     noteIds: [],
-    plainDescription: 'エピカテキンやプロシアニジンなど、カカオのポリフェノールの一群です。苦味と渋みの両方に関わります。',
-    detectedIn: '焙煎カカオニブ',
+    plainDescription: 'カカオのポリフェノールの中心的な成分で、苦味と渋みの両方に関わります。',
+    detectedIn: '焙煎カカオニブ、ダークチョコレート',
     aromaKnowledge: '香りへの寄与ではなく、味（苦味・渋味）との関連だけを記録します。',
-    contributionEvidence: '焙煎カカオニブで、苦味と渋みの両方への寄与が定量・官能実験で確認されました（Stark et al. 2006）。カカオの遺伝タイプごとのポリフェノール量の比較（Elwers et al. 2009）は組成の知見であり、官能への寄与の実証ではありません。系統の違いだけで味を断定する根拠にはしません。',
-    sourceIds: ['stark-2006-cocoa-nibs-taste', 'elwers-2009-cocoa-phenolics'],
-    scopes: [{ side: 'cacao' }],
+    contributionEvidence: '焙煎カカオニブでは、苦味・渋味の両方に寄与するフラバン-3-オールの一つとして、定量・再構成・除去実験で確認されました（Stark et al. 2006）。最終製品のダークチョコレートでも、渋み方向の高い DoT（閾値に対する用量比）が示されています（Ullrich et al. 2022）。100%チョコレートの苦味成分の定量研究でも対象成分の一つです（McClure et al. 2021）。カカオの遺伝タイプごとのポリフェノール量の比較（Elwers et al. 2009）は組成の知見であり、官能への寄与の実証ではありません。系統の違いだけで味を断定する根拠にはしません。',
+    sourceIds: ['stark-2006-cocoa-nibs-taste', 'ullrich-2022-dark-chocolate-flavor', 'mcclure-2021-bitter-compounds-chocolate', 'elwers-2009-cocoa-phenolics'],
+    scopes: [{ side: 'cacao' }, { side: 'chocolate', kindId: 'dark' }],
     tasteLinks: [
       { taste: 'bitter', evidence: '焙煎カカオニブで苦味への寄与が実証されています。' },
-      { taste: 'astringent', evidence: '焙煎カカオニブで渋み（収れん感）への寄与が実証されています。' },
+      { taste: 'astringent', evidence: '焙煎カカオニブで渋みへの寄与が実証され、ダークチョコレート製品でも渋み方向の高い DoT が示されています。' },
+    ],
+  },
+  {
+    id: 'catechin', name: 'カテキン（カカオ）', aliases: ['(+)-Catechin'],
+    noteIds: [],
+    plainDescription: 'カカオに含まれるフラバン-3-オールの一つです。エピカテキンとは立体配置が異なる別の成分です。',
+    detectedIn: '焙煎カカオニブ',
+    aromaKnowledge: '香りへの寄与ではなく、味（苦味・渋味）との関連だけを記録します。',
+    contributionEvidence: '焙煎カカオニブの呈味成分研究で定量されたフラバン-3-オールの一つです。苦味・渋味への寄与は、フラバン-3-オール群（7種）が主要呈味成分であることが再構成・除去実験で示された形で確認されています（Stark et al. 2006）。この成分単独の寄与の大きさは、個別には実証されていません。',
+    sourceIds: ['stark-2006-cocoa-nibs-taste'],
+    scopes: [{ side: 'cacao' }],
+    tasteLinks: [
+      { taste: 'bitter', evidence: '焙煎カカオニブで、フラバン-3-オール群として苦味への寄与が確認されています（単独の大きさは未確認）。' },
+      { taste: 'astringent', evidence: '焙煎カカオニブで、フラバン-3-オール群として渋みへの寄与が確認されています（単独の大きさは未確認）。' },
+    ],
+  },
+  {
+    id: 'procyanidins', name: 'プロシアニジン類', aliases: ['Procyanidins', 'Procyanidin B2', 'Procyanidin C1'],
+    noteIds: [],
+    plainDescription: 'エピカテキンなどが鎖状につながったポリフェノールの一群です。カカオの渋みの中心的な担い手です。',
+    detectedIn: '焙煎カカオニブ、ダークチョコレート',
+    aromaKnowledge: '香りへの寄与ではなく、味（渋味・苦味）との関連だけを記録します。',
+    contributionEvidence: '焙煎カカオニブでは、苦味・渋味に寄与するフラバン-3-オール（プロシアニジンB2・C1等を含む）として、定量・再構成・除去実験で確認されました（Stark et al. 2006）。最終製品のダークチョコレートでも、プロシアニジンB2とC1が渋み方向の高い DoT を示しました（Ullrich et al. 2022）。高重合のプロシアニジンは単体でも強い渋みと急峻な用量–応答を示し、タンパク質沈殿能が最も高いことが訓練パネルで示されています（Hofmann et al. 2006。ただし試料はソルガム由来の精製プロシアニジンで、カカオそのものの実測ではありません）。',
+    sourceIds: ['stark-2006-cocoa-nibs-taste', 'ullrich-2022-dark-chocolate-flavor', 'hofmann-2006-procyanidin-astringency'],
+    scopes: [{ side: 'cacao' }, { side: 'chocolate', kindId: 'dark' }],
+    tasteLinks: [
+      { taste: 'astringent', evidence: '焙煎カカオニブとダークチョコレート製品の両方で、渋みへの寄与が実証されています（製品ではB2・C1の高い DoT）。' },
+      { taste: 'bitter', evidence: '焙煎カカオニブで、フラバン-3-オール群として苦味への寄与も確認されています。' },
     ],
   },
   {
@@ -629,6 +675,22 @@ export const compounds: Compound[] = [
     scopes: [{ side: 'cacao' }],
     tasteLinks: [
       { taste: 'astringent', evidence: '焙煎カカオニブで渋み（収れん感）への寄与が実証されています。' },
+    ],
+  },
+  {
+    // 第40弾追加。Stark et al. 2006 の抄録で「ベルベット様の渋みの主要呈味成分
+    // （4種のフラボノール配糖体）」として除去実験・用量反応で同定された成分群。
+    // お茶側の同名項目とは別の成分群として、カカオ側に独立に記録する。
+    id: 'cacao-flavonol-glycosides', name: 'フラボノール配糖体（カカオ）', aliases: ['Flavonol glycosides (cacao)'],
+    noteIds: [],
+    plainDescription: 'ケルセチンなどに糖がついた成分の一群です。カカオでは、口に残るベルベット様の渋みに関わります。',
+    detectedIn: '焙煎カカオニブ',
+    aromaKnowledge: '香りへの寄与ではなく、味（渋味）との関連だけを記録します。',
+    contributionEvidence: '焙煎カカオニブの再構成・除去実験と用量–応答で、「ベルベット様の渋み」を与える主要呈味成分として4種のフラボノール配糖体が同定されました（Stark et al. 2006）。カカオ豆75試料の呈味成分定量でも、渋みを駆動する成分群の一つ（ポリフェノール配糖体）として位置づけられています（Kauz et al. 2021）。お茶側のフラボノール配糖体とは別の試料・別の成分群として記録します。',
+    sourceIds: ['stark-2006-cocoa-nibs-taste', 'kauz-2021-cocoa-tastants'],
+    scopes: [{ side: 'cacao' }],
+    tasteLinks: [
+      { taste: 'astringent', evidence: '焙煎カカオニブで、ベルベット様の渋みへの寄与が除去実験・用量–応答で実証されています。' },
     ],
   },
   // ===== 鳳凰単叢の香気成分（Qin et al. 2023 / Kun et al. 2025、2026-10-30 追加）=====

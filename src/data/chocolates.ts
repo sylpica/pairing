@@ -92,9 +92,14 @@ export const chocolateItems: ChocolateItem[] = [
       // （Luchian et al. 2023）に基づく。ファインフレーバー固有の呈味実測ではない。
       bitter: { intensity: 'normal', basis: 'general', sourceIds: ['stark-2006-cocoa-nibs-taste', 'luchian-2023-chocolate-profiles'] },
       astringent: { intensity: 'normal', basis: 'general', sourceIds: ['stark-2006-cocoa-nibs-taste', 'luchian-2023-chocolate-profiles'] },
+      // 酸味（第40弾で補完）: 発酵由来の有機酸（酢酸・乳酸等）がカカオ・
+      // チョコレートの酸味に関与するという総説レベル（Afoakwa et al. 2008）の
+      // 一般的知見と、ダーク（焙煎）の酸味（弱い・general）との整合から弱く収録。
+      // ファインフレーバー固有の官能実証ではない。
+      sour: { intensity: 'weak', basis: 'general', sourceIds: ['afoakwa-2008-cocoa-flavour-review', 'stark-2006-cocoa-nibs-taste'] },
     }, chocoTemporal),
     evidenceLevel: 'general',
-    scopeNote: '系統的レビューでファインフレーバーカカオの豆とチョコレートの記述に共通して使われた言葉（キャラメル・果実・花・麦芽・ナッツ・スパイス）を整理したものです。産地ごとに異なり、カカオリカーの特徴が最終製品にそのまま残るとは限らない点が同レビューで指摘されています。味覚はファインフレーバー固有の実測ではなく、ダークチョコレートとしての一般レベル（カカオニブの呈味成分研究 Stark et al. 2006 と市販ダークのパネル評価 Luchian et al. 2023）に基づき、苦味・渋味を収録しています。',
+    scopeNote: '系統的レビューでファインフレーバーカカオの豆とチョコレートの記述に共通して使われた言葉（キャラメル・果実・花・麦芽・ナッツ・スパイス）を整理したものです。産地ごとに異なり、カカオリカーの特徴が最終製品にそのまま残るとは限らない点が同レビューで指摘されています。味覚はファインフレーバー固有の実測ではなく、ダークチョコレートとしての一般レベル（カカオニブの呈味成分研究 Stark et al. 2006 と市販ダークのパネル評価 Luchian et al. 2023）に基づき、苦味・渋味を収録しています。酸味については、発酵由来の有機酸（酢酸・乳酸等）がカカオ・チョコレートの酸味に関与するという総説レベル（Afoakwa et al. 2008）の一般的知見に基づき弱く収録しました（ファインフレーバー固有の官能実証ではありません）。',
     sourceIds: [P],
   },
   {
@@ -112,9 +117,15 @@ export const chocolateItems: ChocolateItem[] = [
       // 苦味（第16弾で補完）: 同じパネル研究でミルク（カカオ32%）も同一尺度で
       // 評価され、苦味は低い側だった範囲で弱く収録する。
       bitter: { intensity: 'weak', basis: 'sensory', sourceIds: ['luchian-2023-chocolate-profiles'] },
+      // 酸味（第40弾で補完）: カカオ発酵由来の有機酸（酢酸・乳酸等）は
+      // カカオマスを通じてミルクチョコレートにも保持され、チョコレートの
+      // 酸味に関与すると総説（Afoakwa et al. 2008）で整理されている。
+      // 化合物記録（酢酸・乳酸）でも寄与は一般的な知見レベルに留まるため、
+      // 弱く・一般的知見として収録する。個別製品での官能実証は未確認。
+      sour: { intensity: 'weak', basis: 'general', sourceIds: ['afoakwa-2008-cocoa-flavour-review'] },
     }, milkTemporal),
     evidenceLevel: 'general',
-    scopeNote: '市販ミルクチョコレート1種の AEDA 研究（Schnermann & Schieberle 1997）と、クラムチョコレートのクリーミーさ研究（Samfaß et al. 2021）に基づく一般レベルの整理です。モルト様・ナッツ様の成分が高 FD値で、ラクトン類が甘い香りとクリーミーさに関わります。試料数が限られるため、全てのミルクチョコレートの実測ではありません。甘味は市販品パネル研究（Luchian et al. 2023）で最も甘い群とされた記録と、配合実験（Guinard & Mazzucchelli 1999）に基づきますが、糖分量で大きく変わる配合依存の値です。苦味は同じパネル研究で低い側に評価された範囲で弱く収録しています。',
+    scopeNote: '市販ミルクチョコレート1種の AEDA 研究（Schnermann & Schieberle 1997）と、クラムチョコレートのクリーミーさ研究（Samfaß et al. 2021）に基づく一般レベルの整理です。モルト様・ナッツ様の成分が高 FD値で、ラクトン類が甘い香りとクリーミーさに関わります。試料数が限られるため、全てのミルクチョコレートの実測ではありません。甘味は市販品パネル研究（Luchian et al. 2023）で最も甘い群とされた記録と、配合実験（Guinard & Mazzucchelli 1999）に基づきますが、糖分量で大きく変わる配合依存の値です。苦味は同じパネル研究で低い側に評価された範囲で弱く収録しています。酸味については、カカオ発酵由来の有機酸（酢酸・乳酸等）がカカオマスを通じてチョコレートの酸味に関与するという総説レベル（Afoakwa et al. 2008）の一般的知見に基づき弱く収録しましたが、ミルクチョコレートの個別製品で酸味の寄与を官能実証した研究は確認できておらず、カカオ分や乳原料の配合で変わりうる値です。',
     sourceIds: ['schnermann-1997-milk-chocolate', 'samfass-2021-crumb-chocolate-lactones'],
   },
   {

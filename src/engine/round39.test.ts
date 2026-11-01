@@ -73,12 +73,16 @@ describe('第39弾B: 強さの順序は逆転しない', () => {
 })
 
 describe('第39弾C: アイテム単体の段階（文献再検証と較正の結果）', () => {
-  it('抹茶は普通（3）。ダークチョコレート（焙煎）とカカオ分100%は強い（4）', () => {
+  it('抹茶は普通（3）。ダークチョコレート（焙煎）とカカオ分100%は第40弾でとても強い（5）', () => {
+    // 第40弾: ダーク文脈の渋味寄与化合物の裏付けを文献で拡充した
+    // （フラバン-3-オールの個別分子への分割＋配糖体。support 4→12）ため、
+    // 強さ「強い」の2アイテムは段階5（とても強い）に正規に到達した。
+    // 閾値・段階表は変更していない。
     const matcha = itemStage('tea', 'matcha')
     expect(matcha?.taste.intensity).toBe('normal')
     expect(matcha?.stage).toBe(3)
-    expect(itemStage('chocolate', 'dark-roasted')?.stage).toBe(4)
-    expect(itemStage('chocolate', 'dark-100')?.stage).toBe(4)
+    expect(itemStage('chocolate', 'dark-roasted')?.stage).toBe(5)
+    expect(itemStage('chocolate', 'dark-100')?.stage).toBe(5)
   })
 
   it('紅茶は裏付けの大きさで強い（4）。煎茶は普通（3）。玉露・白茶は弱い（2）', () => {
@@ -88,32 +92,37 @@ describe('第39弾C: アイテム単体の段階（文献再検証と較正の�
     expect(itemStage('tea', 'white-tea')?.stage).toBe(2)
   })
 
-  it('アイテム単体の分布（第39弾時点）: 段階2が5件・3が10件・4が3件、ゲージ無し4件', () => {
+  it('アイテム単体の分布（第40弾時点）: 段階2が5件・3が8件・4が3件・5が2件、ゲージ無し4件', () => {
+    // 第39弾時点は 2:5 / 3:10 / 4:3 / 5:0。第40弾でダーク（焙煎）と
+    // カカオ分100%が段階5に上がり、未焙煎・ファインフレーバーが
+    // 3→4に上がった（どちらも裏付け support の拡充による較正の帰結）。
     const counts = new Map<string, number>()
     const bump = (k: string) => counts.set(k, (counts.get(k) ?? 0) + 1)
     for (const t of teaItems) bump(String(itemStage('tea', t.id)?.stage ?? 'none'))
     for (const c of chocolateItems) bump(String(itemStage('chocolate', c.id)?.stage ?? 'none'))
     expect(counts.get('2')).toBe(5)
-    expect(counts.get('3')).toBe(10)
+    expect(counts.get('3')).toBe(8)
     expect(counts.get('4')).toBe(3)
+    expect(counts.get('5')).toBe(2)
     expect(counts.get('none')).toBe(4)
     expect(counts.get('1')).toBeUndefined()
-    expect(counts.get('5')).toBeUndefined()
   })
 
-  it('ペアリング: 抹茶×ダーク（焙煎）は普通（3）（脂肪の対向が発火する帰結）、煎茶×ダーク（焙煎）も普通（3）', () => {
-    // 抹茶の土台を普通に上げたことで、相互作用「渋味と脂肪の対向」
-    // （お茶側の渋味が普通以上のとき発火）が抹茶ペアでも発火するようになり、
-    // 合成の渋味は強い→普通へ1段下がる（エンジンの既定の帰結）。
-    // 単体の抹茶は段階1→3に上がっている。
+  it('ペアリング: 抹茶×ダーク（焙煎）は段階4、煎茶×ダーク（焙煎）も段階4、玉露×ダーク（焙煎）は段階5（第40弾）', () => {
+    // 第39弾時点: 抹茶×ダーク・煎茶×ダークは段階3、玉露×ダークは段階4。
+    // 第40弾でダーク側の裏付けが support 12 に増えたため、合成の裏付けは
+    // 16（お茶側4＋ダーク側12）になり、段階がそれぞれ1段上がった。
+    // 抹茶・煎茶は相互作用「渋味と脂肪の対向」（お茶側の渋味が普通以上のとき
+    // 発火）で合成の強さが強い→普通へ下がるため、普通＋裏付け大で段階4。
     const dark = chocolateItems.find((c) => c.id === 'dark-roasted')!
     const matchaPair = assemblePairing(teaItems.find((t) => t.id === 'matcha')!, dark, null, null)
-    expect(buildAstringency(matchaPair.wheel.tastes, matchaPair.wheel.contexts)?.stage).toBe(3)
+    expect(buildAstringency(matchaPair.wheel.tastes, matchaPair.wheel.contexts)?.stage).toBe(4)
     const senchaPair = assemblePairing(teaItems.find((t) => t.id === 'sencha')!, dark, null, null)
-    expect(buildAstringency(senchaPair.wheel.tastes, senchaPair.wheel.contexts)?.stage).toBe(3)
-    // 玉露（弱い）は脂肪の対向が発火しないため、ダーク側の強さが残って強い（4）
+    expect(buildAstringency(senchaPair.wheel.tastes, senchaPair.wheel.contexts)?.stage).toBe(4)
+    // 玉露（弱い）は脂肪の対向が発火しないため、ダーク側の強さが残り、
+    // 裏付け16で段階5（とても強い）
     const gyokuroPair = assemblePairing(teaItems.find((t) => t.id === 'gyokuro')!, dark, null, null)
-    expect(buildAstringency(gyokuroPair.wheel.tastes, gyokuroPair.wheel.contexts)?.stage).toBe(4)
+    expect(buildAstringency(gyokuroPair.wheel.tastes, gyokuroPair.wheel.contexts)?.stage).toBe(5)
   })
 })
 
