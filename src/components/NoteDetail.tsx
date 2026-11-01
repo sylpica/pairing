@@ -19,9 +19,9 @@ export function kindLabel(ctx: CompoundContext): string {
 export function tierHeading(tier: 1 | 2 | 3, ctx?: CompoundContext): string {
   if (!ctx) return tier === 1 ? '研究例' : tier === 2 ? '研究例' : '研究例'
   const kn = kindLabel(ctx)
-  if (tier === 1) return ctx.side === 'tea' ? `${kn}の試料での研究例` : `${kn}の試料での研究例`
-  if (tier === 2) return ctx.side === 'tea' ? 'お茶全般の研究例' : 'チョコレート・原料カカオでの研究例'
-  return '他のお茶・チョコレートでの研究例'
+  if (tier === 1) return `${kn}そのものの試料での研究例`
+  if (tier === 2) return 'お茶・チョコレートの他の分類・種類での研究例'
+  return 'お茶・チョコレート以外の食品・茶類での研究例'
 }
 
 export default function NoteDetail({ noteId, profile, context }: { noteId: string; profile: FlavorProfile; context?: CompoundContext }) {

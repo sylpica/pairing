@@ -20,9 +20,9 @@ import { inferencesFor } from '../data/inferences'
 // 明示する（第19弾の原則: 根拠・状態系チップは凡例ボックス内へ）。
 
 const PAIR_TIER_HEADING: Record<1 | 2 | 3, string> = {
-  1: 'どちらか一方の分類・種類の試料での研究例',
-  2: 'お茶・チョコレート全般の研究例',
-  3: '他の食品・茶類での研究例',
+  1: 'どちらかの分類・種類そのものの試料での研究例',
+  2: 'お茶・チョコレートの他の分類・種類での研究例',
+  3: 'お茶・チョコレート以外の食品・茶類での研究例',
 }
 
 function PairingNoteDetail({ note, data }: { note: ComboNote; data: PairingWheelData }) {

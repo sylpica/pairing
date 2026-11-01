@@ -29,8 +29,8 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
     fireEvent.click(screen.getByRole('button', { name: '「青草・若葉」の根拠を見る' }))
     expect(screen.getByRole('dialog')).toBeTruthy()
     expectShown(/ヘキサナール/)
-    // 階層表示: 白茶の試料での研究例として区別される
-    expectShown(/白茶の試料での研究例/)
+    // 階層表示: 白茶そのものの試料での研究例として区別される
+    expectShown(/白茶そのものの試料での研究例/)
   })
 
   it('シートを閉じても選択は保持され、もう一度開ける', () => {
@@ -48,14 +48,14 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
   })
 
   it('6/10. 固有データがない場合は、未確認である旨を示してから全般の研究例を出す', () => {
-    // 蒸し緑茶の「青草・若葉」: 白茶試料の成分（ヘキサナール）は「他のお茶・チョコレートでの研究例」に回る
+    // 蒸し緑茶の「青草・若葉」: 白茶試料の成分（ヘキサナール）は「お茶・チョコレート以外の食品・茶類での研究例」に回る
     location.hash = '#/tea/green-steamed'; render(<App />)
     fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 香りタブへ（第46弾以降は既定も香り）
     clickButton(/植物系/)
     clickButton(/青草・若葉/)
     fireEvent.click(screen.getByRole('button', { name: '「青草・若葉」の根拠を見る' }))
     expectShown(/そのもの（個別の試料）での成分情報は未確認です/)
-    expectShown(/他のお茶・チョコレートでの研究例/)
+    expectShown(/お茶・チョコレート以外の食品・茶類での研究例/)
     expectShown(/ヘキサナール/)
   })
 
