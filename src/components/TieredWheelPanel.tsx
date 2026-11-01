@@ -57,15 +57,33 @@ function LevelBadge({ level }: { level: ComboNote['level'] }) {
   return <span className={level === 'inferred' ? 'badge badge-inferred' : 'badge'}>{COMBO_LEVEL_LABEL[level]}</span>
 }
 
+/**
+ * 香り・味で共通の凡例リスト（第48弾で共通化）。見本は実物の描画と一致
+ * させる: measured＝不透明・輪郭なし／general＝半透明＋細い実線の輪郭
+ * （.legend-general。実物は TieredWheel の LEVEL_OUTLINE）／inferred＝
+ * 薄色＋破線の輪郭（.legend-inferred）。
+ * 第1階層（level 0）では、具体名が無く薄表示（不透明度0.42・輪郭なし）
+ * になるセグメントが出現するため、その見本も足す。第2階層では出現
+ * しないので出さない。
+ */
+function LevelLegendList({ level }: { level: 0 | 1 }) {
+  return (
+    <ul className="combo-legend-list">
+      <li><span className="legend-swatch" style={{ background: '#8d7b68', opacity: TIER_LEVEL_OPACITY.measured }} />実測・官能評価に基づく</li>
+      <li><span className="legend-swatch legend-general" style={{ background: '#8d7b68', opacity: TIER_LEVEL_OPACITY.general }} />一般的な知見</li>
+      <li><span className="legend-swatch legend-inferred" style={{ background: '#8d7b68', opacity: TIER_LEVEL_OPACITY.inferred }} />推測（未検証）：薄い表示＋破線の輪郭</li>
+      {level === 0 && (
+        <li><span className="legend-swatch" style={{ background: '#8d7b68', opacity: 0.42 }} />具体名なし（薄表示）</li>
+      )}
+    </ul>
+  )
+}
+
 function AromaLegend({ level, extra }: { level: 0 | 1; extra?: ReactNode }) {
   return (
     <div className="combo-legend" role="note" aria-label="ホイールの凡例">
       <p className="note-small"><strong>凡例（濃さと輪郭＝根拠の確かさ）</strong></p>
-      <ul className="combo-legend-list">
-        <li><span className="legend-swatch" style={{ background: '#8d7b68', opacity: TIER_LEVEL_OPACITY.measured }} />実測・官能評価に基づく</li>
-        <li><span className="legend-swatch" style={{ background: '#8d7b68', opacity: TIER_LEVEL_OPACITY.general }} />一般的な知見</li>
-        <li><span className="legend-swatch legend-inferred" style={{ background: '#8d7b68', opacity: TIER_LEVEL_OPACITY.inferred }} />推測（未検証）：薄い表示＋破線の輪郭</li>
-      </ul>
+      <LevelLegendList level={level} />
       {level === 0
         ? <p className="note-small">大分類のセグメントの大きさと割合は、その分類に属する香りの強さの合計の重みから算出した目安です（実測の含有率ではありません）。濃さと輪郭による根拠の区別は、中分類以降で表示します。セグメント内の小さな文字は、その大分類の中分類（具体名）です。</p>
         : <p className="note-small">中分類のセグメントの大きさと割合は、その具体名の裏付けの大きさの目安です（実測の含有率ではありません）。</p>}
@@ -78,11 +96,7 @@ function TasteLegend({ level, extra }: { level: 0 | 1; extra?: ReactNode }) {
   return (
     <div className="combo-legend" role="note" aria-label="ホイールの凡例">
       <p className="note-small"><strong>凡例（濃さと輪郭＝根拠の確かさ）</strong></p>
-      <ul className="combo-legend-list">
-        <li><span className="legend-swatch" style={{ background: '#8d7b68', opacity: TIER_LEVEL_OPACITY.measured }} />実測・官能評価に基づく</li>
-        <li><span className="legend-swatch" style={{ background: '#8d7b68', opacity: TIER_LEVEL_OPACITY.general }} />一般的な知見</li>
-        <li><span className="legend-swatch legend-inferred" style={{ background: '#8d7b68', opacity: TIER_LEVEL_OPACITY.inferred }} />推測（未検証）：薄い表示＋破線の輪郭</li>
-      </ul>
+      <LevelLegendList level={level} />
       {level === 0
         ? <p className="note-small">第1階層は、その対象で確認されている基本味そのものです（甘味・酸味・苦味・うま味。データのある味だけを表示し、データの無い味は作りません）。セグメントの大きさと割合は、味の強さ（弱い・普通・強い）を主成分とし、その味に結びつく具体名と寄与する化学物質の裏付けの大きさも加えて算出した目安です（実測の含有率ではありません）。セグメント内の小さな文字は、その味の具体名（フレーバー）のプレビューです（化学物質の名前はここには出しません）。渋味（収れん感）は基本味ではないためホイールには入れず、ホイールのすぐ下のゲージで示します。味を押すと、その味の具体名が見えます（具体名が示せない味は、根拠の説明が表示されます）。</p>
         : <p className="note-small">中分類は、その味に対応づく具体名（フレーバー名）です。具体名と味の対応づけは、香りの性質と化合物の知見に基づく解釈です（実測の分類ではありません）。具体名には、その対象で確認済みの呈味成分をもとに代表例として示す推測（未検証）の名前も含まれます。セグメントの大きさと割合は、その具体名の裏付けの大きさの目安です（実測の含有率ではありません）。セグメント内の小さな文字は、その具体名に寄与する化学物質です（裏付けが無い具体名は「成分データなし」と示します）。</p>}
@@ -145,6 +159,8 @@ function CompoundLegend({ extra, pair }: { extra?: ReactNode; pair?: boolean }) 
       <ul className="combo-legend-list">
         <li><span className="legend-swatch" style={{ background: '#8d7b68', opacity: 0.95 }} />{pair ? 'どちらか一方の分類・種類の試料での研究例' : 'この分類・種類の試料での研究例'}</li>
         <li><span className="legend-swatch" style={{ background: '#8d7b68', opacity: 0.62 }} />お茶・チョコレート全般の研究例</li>
+        {/* 第48弾: tier 3（不透明度0.38）の見本を追加。文言は PAIR_TIER_HEADING[3] と同じ「他の食品・茶類での研究例」で、軸（根拠の近さ）は従来の2見本とそろえる */}
+        <li><span className="legend-swatch" style={{ background: '#8d7b68', opacity: 0.38 }} />他の食品・茶類での研究例</li>
       </ul>
       {extra}
     </div>

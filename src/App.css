@@ -337,3 +337,4 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 .combo-legend-list li { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
 .legend-swatch { display: inline-block; width: 22px; height: 14px; border-radius: 4px; flex: none; }
 .legend-inferred { border: 1.6px dashed #5b4636; }
+.legend-general { border: 1.6px solid #5b4636; }

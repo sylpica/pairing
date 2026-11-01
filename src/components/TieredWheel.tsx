@@ -7,12 +7,35 @@ import { fitLabelLines, fitOneLine, packScaledLines, safeWidthAt, textWidthAt, W
 // - 全セグメントに必ずラベルを出す（フォント段階縮小・2行割り。無地禁止）。
 // - percent があれば名前の下に「○%」を併記する。
 // - subLabels は小さく併記する行（中分類名、化合物○種など）。
-// - level があれば根拠レベルの視覚区別（measured 不透明／general 半透明／
-//   inferred 薄色＋破線）。level が無い階層（大分類・化合物）は、
-//   呼び出し側が決めた濃さで描く（化合物は根拠の近さを不透明度に写す）。
+// - level があれば根拠レベルの視覚区別（measured 不透明・輪郭なし／
+//   general 半透明＋細い実線の輪郭／inferred 薄色＋破線の輪郭。第48弾:
+//   濃さだけでは measured と general が見分けにくいというユーザーFBを
+//   受け、general にも輪郭による質的区別を足した）。level が無い階層
+//   （大分類・化合物）は、呼び出し側が決めた濃さで描く（化合物は
+//   根拠の近さを不透明度に写す）。
 // - drillable=false のセグメントは薄く描き、押せる/押せないが視覚的に分かるようにする。
 
 export const TIER_LEVEL_OPACITY: Record<ComboLevel, number> = { measured: 0.95, general: 0.62, inferred: 0.38 }
+
+/**
+ * 根拠レベルの輪郭（第48弾）。色・太さは inferred の破線と同系
+ * （#5b4636・1.6px）にそろえ、general は dasharray なしの実線にする
+ * ことで、濃さに頼らず measured／general／inferred を見分けられる。
+ * 優先順位は現行挙動を維持する:
+ * - ドリル不可の薄表示（不透明度0.42）には輪郭を付けない（薄表示の意味を保つ）
+ * - inferred の破線が最優先（選択中でも破線のまま変わらない）
+ * - 選択中の輪郭（#33302a・2.4px）は general の実線より優先される
+ * - measured は輪郭なし
+ */
+export const LEVEL_OUTLINE = { color: '#5b4636', width: 1.6 } as const
+
+function levelOutline(s: TierSeg): { stroke: string; strokeWidth: number; strokeDasharray?: string } {
+  if (s.drillable === false) return { stroke: 'none', strokeWidth: 0 }
+  if (s.level === 'inferred') return { stroke: LEVEL_OUTLINE.color, strokeWidth: LEVEL_OUTLINE.width, strokeDasharray: '5 3' }
+  if (s.selected) return { stroke: '#33302a', strokeWidth: 2.4 }
+  if (s.level === 'general') return { stroke: LEVEL_OUTLINE.color, strokeWidth: LEVEL_OUTLINE.width }
+  return { stroke: 'none', strokeWidth: 0 }
+}
 
 export interface TierSeg {
   key: string
@@ -242,17 +265,20 @@ export default function TieredWheel({ segments, centerLabel, ariaLabel, onSelect
             全テキストを最前面の専用レイヤーで描くことで、文字が色の後ろに
             隠れることを構造的に無くす。文字自体の色・不透明度は従来通り
             （.wheel-label / .wheel-sub の不透明な fill）。 */}
-        {drawn.map(({ seg, a0, a1, opacity }) => (
+        {drawn.map(({ seg, a0, a1, opacity }) => {
+          const ol = levelOutline(seg)
+          return (
           <g key={seg.key} data-seg={seg.key} onClick={() => onSelect(seg.key)} className="wheel-seg" tabIndex={0} role="button"
             aria-label={seg.ariaLabel}
             onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onSelect(seg.key) } }}>
             <path d={arcPath(cx, cy, 52, 138, a0 + 0.01, a1 - 0.01)} fill={seg.color}
               opacity={opacity}
-              stroke={seg.level === 'inferred' ? '#5b4636' : seg.selected ? '#33302a' : 'none'}
-              strokeWidth={seg.level === 'inferred' ? 1.6 : seg.selected ? 2.4 : 0}
-              strokeDasharray={seg.level === 'inferred' ? '5 3' : undefined} />
+              stroke={ol.stroke}
+              strokeWidth={ol.strokeWidth}
+              strokeDasharray={ol.strokeDasharray} />
           </g>
-        ))}
+          )
+        })}
         <circle cx={cx} cy={cy} r={50} fill="#fffaf2" />
         <g className="wheel-texts" pointerEvents="none">
           {drawn.map(({ seg, lines }) => (
