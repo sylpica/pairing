@@ -3,11 +3,11 @@
 // になるケースを、サンプルでなく機械的全数で列挙する。
 //
 // 選択空間（pairingFullSpace.test.ts で固定された数値体系）:
-//   お茶側の選択 2,266 通り = アイテム14 ×（品種なし: 産地 未指定+国5+地域30 /
+//   お茶側の選択 2,422 通り = アイテム14 ×（品種なし: 産地 未指定+国5+地域31 /
 //     品種あり: 産地 未指定+品種の国+その国の地域）
 //   チョコ側の選択 1,224 通り = アイテム8 × 系統17（なし+伝統3+遺伝10+クローン3）
 //     × 産地9（なし+8）
-//   ペアリング 2,773,584 通り = 2,266 × 1,224
+//   ペアリング 2,964,528 通り = 2,422 × 1,224
 // 署名は画面に表示されるホイール内容で定義する:
 //   L1 = 第1階層（香り大分類・基本味の％と具体名ラベル）＋渋味ゲージ段階
 //        （＝最初に見える姿）
@@ -17,7 +17,7 @@
 //   raw は違うが側の L2 が同一なら (ii) 合成（％整数化・代表選定等）で潰れた、
 //   ペアリングでのみ同一になるものは (iii) ペアリング合成で埋もれた。
 // ペアリングの隣接比較は、側の寄与が等しい選択をクラスに圧縮して正確に数える
-// （組み立ては (お茶クラス × チョコクラス) でメモ化し、全 2,773,584 通りの
+// （組み立ては (お茶クラス × チョコクラス) でメモ化し、全 2,964,528 通りの
 // 隣接比較をクラス単位で過不足なく数える）。
 import { describe, it, expect } from 'vitest'
 import { writeFileSync } from 'node:fs'
@@ -177,9 +177,9 @@ function pairWheelSig(tIdx: number, cIdx: number): { l1: string; l2: string } {
 
 describe('第43弾追加: 軸変更でホイールが変わらないケースの全数監査', () => {
   it('選択空間の件数が固定値と一致する', () => {
-    expect(teaStates.length).toBe(2266)
+    expect(teaStates.length).toBe(2422)
     expect(chocoStates.length).toBe(1224)
-    expect(teaStates.length * chocoStates.length).toBe(2773584)
+    expect(teaStates.length * chocoStates.length).toBe(2964528)
     for (const s of teaStates) expect(teaComboViable(s.sel), s.key).toBe(true)
     console.log(`teaClasses=${teaRepByKey.size} chocoClasses=${chocoRepByKey.size} teaAdj=${teaAdj.length} chocoAdj=${chocoAdj.length}`)
   })
@@ -274,7 +274,7 @@ describe('第43弾追加: 軸変更でホイールが変わらないケースの
       }
     }
     console.log('PAIRING tea-direction done', JSON.stringify({ comparisons, l1Same, l2Same, causeCount, assemblies: pairWheelCache.size }))
-    // チョコ側を変える方向: 隣接ペア × お茶選択 2,266 全件
+    // チョコ側を変える方向: 隣接ペア × お茶選択 2,422 全件
     for (const p of chocoAdj) {
       comparisons += teaStates.length
       const ka = chocoClassIdxOf.get(chocoKeyOf.get(p.a.key)!)!

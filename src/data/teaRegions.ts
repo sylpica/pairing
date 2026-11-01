@@ -231,6 +231,43 @@ export const teaRegions: TeaRegion[] = [
     sourceIds: ['sawamura-2025-earlgrey-extraction', 'kochi-tosacha'],
     applicableKindIds: ['black'],
   },
+  {
+    id: 'sayama',
+    name: '狭山',
+    country: '日本',
+    parentName: '埼玉県',
+    note: '日本三大銘茶の一つに数えられる煎茶の産地。国内の主な茶産地の中で最も北に位置し、伝統的に強い火入れ（狭山火入れ）で仕上げられる。',
+    flavorEvidence: 'measured',
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '同一品種やぶきたの蒸し製緑茶を7府県産で比べた揮発成分の実測（Hattori et al. 2005）と、市販茶の呈味成分を静岡・宇治・狭山の3地域で比べた実測（桑野ら 1989）がある。狭山火入れという火入れの伝統とその香気化学は、埼玉県茶業研究所の研究者の総説（高橋 2015）に整理されている。香味の所見は煎茶（緑茶）についてのみ確認できた。',
+    findings: [
+      {
+        kind: 'composition',
+        statement: '同一品種やぶきたの蒸し製緑茶を埼玉・静岡・三重・奈良・京都・佐賀・宮崎の7府県産で比較すると、揮発成分75種の構成には産地間で差があり、主成分分析で各産地に特徴的な成分があることが示された',
+        sourceIds: ['hattori-2005-green-tea-regions-volatiles'],
+      },
+      {
+        kind: 'composition',
+        statement: '狭山茶は比較的強い焙煎（火入れ）によって製造され、その焙煎香が特徴であり、アミノカルボニル反応によって生成するアルキルピラジンが多く含まれていた',
+        conditions: 'Hattori et al. 2005 の産地比較を水上 2015 の総説が要約した記述に基づく。アルキルピラジンの含量の知見であり、狭山茶の香りへの寄与を実証したものではない',
+        sourceIds: ['mizukami-2015-green-tea-odor-characteristics', 'hattori-2005-green-tea-regions-volatiles'],
+      },
+      {
+        kind: 'composition',
+        statement: '静岡・宇治・狭山の市販ブランド茶（低級・中級・高級）の比較では、遊離アミノ酸・カフェイン・タンニンの合計量は全等級で狭山茶が最も多く、内訳では遊離アミノ酸が少なくタンニンが多く、カフェインが相対的に多かった。著者らはこの構成から、狭山茶は「濃厚で苦く、渋い」特徴を示すと述べている',
+        conditions: '1989年当時の市販茶での比較であり、原著全文ではなく引用要約に基づく二次確認である。成分含量からの特徴づけであり、官能評価の実測ではない',
+        sourceIds: ['kuwano-1989-market-green-tea-regions'],
+      },
+      {
+        kind: 'composition',
+        statement: '狭山の火入れは伝統的に高温（100℃程度）で長時間行って香味を強くするもので、他産地の上級茶の火入れ（80℃、30〜40分程度）と区別して「狭山火入れ」と呼ばれる。火入れでは糖由来の甘い香気成分（マルトール、フラネオール等）と香ばしいピラジン類が生成し、これらは加熱温度が高いほど増加する',
+        conditions: '埼玉県茶業研究所の研究者による総説（高橋 2015）の整理であり、狭山茶試料そのものの官能実測ではない',
+        sourceIds: ['takahashi-2015-sayama-tea-aroma'],
+      },
+    ],
+    sourceIds: ['hattori-2005-green-tea-regions-volatiles', 'mizukami-2015-green-tea-odor-characteristics', 'takahashi-2015-sayama-tea-aroma', 'kuwano-1989-market-green-tea-regions', 'saitama-pref-sayama-tea', 'sayama-city-sayama-tea'],
+    applicableKindIds: ['green'],
+  },
 
   // ---------------- 中国 ----------------
   {

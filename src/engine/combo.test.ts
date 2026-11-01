@@ -19,11 +19,12 @@ const LEVELS = ['measured', 'general', 'inferred']
 
 // 選択空間のアンカー（2026-10-31 時点）。収録データが増えたら、
 // 件数の内訳を確認した上でこの数字を更新すること（pairingFullSpace.test.ts と同じ運用）。
-// お茶 564 の内訳：品種なし＝分類6 × 産地36（指定なし＋国5＋地域30）＝216、
-// 品種あり＝348（品種×分類の確認があるもの×その国の産地選択肢）。
+// お茶 592 の内訳：品種なし＝分類6 × 産地37（指定なし＋国5＋地域31）＝222、
+// 品種あり＝370（品種×分類の確認があるもの×その国の産地選択肢）。
 // 2026-10-31 の成立条件修正（分類×産地は常時成立）と地域30件への拡充で
-// 127 から増えた。
-const TEA_VIABLE_COUNT = 564
+// 127 から増え、2026-11-01 第45弾で狭山（地域31件目）の追加により
+// 564 から 592 になった（品種なし +6、日本の品種×分類 +22）。
+const TEA_VIABLE_COUNT = 592
 // チョコ 765 の内訳：種類5 × 産地9（指定なし＋8）× 系統17（指定なし＋16）。
 // 2026-10-31 実機フィードバック第2弾の自由化で、種類×産地×系統は全て成立する
 // （旧：系統×産地の結びつきがあるものだけ 190 通り）。クローンの産地制限は
@@ -110,7 +111,7 @@ describe('組み合わせページ：選択空間の全数検査（チョコ）'
 describe('成立条件（2026-10-31 修正：分類×産地は常時成立）', () => {
   it('品種を指定しなければ、分類×産地（国・地域）は全通り成立する', () => {
     const regions = ['', ...allTeaRegionOptions().map((o) => o.id)]
-    expect(regions.length).toBe(36) // 指定なし＋国5＋地域30
+    expect(regions.length).toBe(37) // 指定なし＋国5＋地域31
     for (const kindId of TEA_COMBO_KINDS) {
       for (const regionId of regions) {
         expect(teaComboViable({ kindId, regionId, cultivarId: '' }), `${kindId}×${regionId}`).toBe(true)
@@ -135,7 +136,7 @@ describe('成立条件（2026-10-31 修正：分類×産地は常時成立）', 
   })
   it('地域の全所見に出典があり、出典は全て実在する', async () => {
     const { teaRegions } = await import('../data/teaRegions')
-    expect(teaRegions.length).toBe(30)
+    expect(teaRegions.length).toBe(31)
     for (const r of teaRegions) {
       expect(r.findings.length, r.id).toBeGreaterThan(0)
       for (const f of r.findings) {

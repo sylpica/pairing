@@ -107,6 +107,12 @@ const TEA_WHEEL_EXCEPTIONS = new Set([
   'yabukita,soufu,seimei,harumidori,meiryoku',
   'yutakamidori,benifuuki,samidori',
   'yutakamidori,benifuuki,samidori,qingxin-damao',
+  // 第45弾で追加: 緑茶×狭山では、地域効果（苦味・渋味を一段強くする
+  // 推測）が穏やか方向の品種（つゆひかり・さみどり）を土台水準まで
+  // 持ち上げ、強い方向の品種（ゆたかみどり・べにふうき）との残る差も
+  // ペアリングホイールの段階化で吸収される（T3/C5 相当）。単体コンボ
+  // では4品種とも区別される（実測で確認済み）。
+  'yutakamidori,tsuyuhikari,benifuuki,samidori',
 ].map((s) => norm(s.split(','))))
 
 const CHOCO_COMBO_EXCEPTIONS = new Set([

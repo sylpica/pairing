@@ -247,6 +247,11 @@ const TEA_CULTIVAR_EXCEPTIONS = new Set([
   // （緑茶で強い方向、紅茶では交配親からの穏やか方向）と べにほまれ・
   // やぶきた の味署名が一致する（C2/C5 相当）。
   'benifuuki,benihomare,yabukita',
+  // 第45弾で追加: 緑茶×狭山では、地域効果（苦味・渋味を一段強くする
+  // 推測）が上限に達し、品種側の同方向の味効果（べにふうき・さやまかおり
+  // の強い方向）が飽和して吸収される。差別化が香り側のみの ほくめい・
+  // 香駿とも味署名が一致する（C5/T2 相当。香り側では区別される）。
+  'benifuuki,hokumei,koushun,sayamakaori',
 ].map((s) => norm(s.split(','))))
 
 const TEA_REGION_EXCEPTIONS = new Set([
@@ -255,7 +260,7 @@ const TEA_REGION_EXCEPTIONS = new Set([
   'assam,country:インド,darjeeling',
   'country:スリランカ,dimbula,nuwara-eliya,uva',
   'country:中国,shandong',
-  'country:日本,kagoshima,kochi,miyazaki,murakami,nagasaki,saga,shizuoka,uji,yame',
+  'country:日本,kagoshima,kochi,miyazaki,murakami,nagasaki,saga,sayama,shizuoka,uji,yame',
   'country:日本,kochi',
   'kagoshima,miyazaki,murakami,nagasaki,saga,shizuoka,uji,yame',
   'kochi,murakami,nagasaki,shizuoka,uji',
@@ -276,6 +281,10 @@ const TEA_REGION_EXCEPTIONS = new Set([
   // ・村上（伝統的評価＋県広報に基づく苦味・渋味の穏やか方向の推測）は、
   //   味署名では同じく穏やかな方向を持つ宮崎と広く一致する（C2 相当）。
   'miyazaki,murakami',
+  // 第45弾で追加: 狭山は緑茶専用の地域所見しかなく、紅茶では無効果。
+  // 紅茶×べにふうき／べにほまれ では、宮崎・村上の穏やか方向の味効果が
+  // 下限で飽和し、無効果の狭山と味署名が一致する（C5 相当）。
+  'miyazaki,murakami,sayama',
   // ・和紅茶クラスタ（宇治・佐賀・静岡・長崎・鹿児島）は、いずれも
   //   参考情報に基づく渋味を穏やかにする方向の推測を持つため、紅茶の
   //   味署名では相互に一致する文脈がある（C2 相当）。飽和で土台同値の
@@ -296,7 +305,8 @@ const TEA_REGION_EXCEPTIONS = new Set([
   // ・紅茶×やぶきた では土台の渋味が既に下限（弱い）のため、和紅茶
   //   クラスタの渋味を穏やかにする推測が飽和し、無効果の地域と味署名が
   //   一致する（C5 相当。実測: 全群とも astringent:weak で一致）。
-  'kagoshima,kochi,miyazaki,murakami,nagasaki,shizuoka,yame',
+  //   第45弾で狭山が加わった（紅茶に所見のない狭山も無効果として同値）。
+  'kagoshima,kochi,miyazaki,murakami,nagasaki,sayama,shizuoka,yame',
   // ・紅茶×べにふうき／べにほまれ では、鹿児島・長崎・静岡・八女の
   //   4地域とも味の効果が渋味を穏やかにする方向のみで同値に収束する
   //   （C2 相当。各地域の根拠は独立した参考情報）。
@@ -529,6 +539,16 @@ const PAIR_TEA_EXCEPTIONS = new Set([
   // ・烏龍茶のペアリングでは、青心大冇・鉄観音の香り側の差別化が味署名に
   //   現れず、従来群に合流する。
   'benifuuki,fenghuang-dancong-group,jinxuan,qingxin-damao,tieguanyin,tsuiyu',
+  // 第45弾で追加（いずれも T3: ペアリング合成の段階化で単体側の差が
+  // 味署名に現れないもの）:
+  // ・緑茶×日本（国レベル集約）: 集約に狭山の火入れ系ノート（トースト・
+  //   キャラメル）が加わったことで甘味階層の％配分が変わり、かなやみどり
+  //   の果実側の差が丸めで吸収され、強い方向の品種群と同値になった。
+  'benifuuki,kanayamidori,sayamakaori,yutakamidori',
+  // ・緑茶×狭山: 地域効果（苦味・渋味を一段強く＋火入れ系ノート）が支配的で、
+  //   強い方向・穏やか方向どちらの品種効果も飽和／段階化で吸収される。
+  //   単体コンボ側の区別は teaVaryCultivar 側で担保されている。
+  'benifuuki,hokumei,koushun,samidori,sayamakaori,tsuyuhikari,yutakamidori',
 ].map((s) => norm(s.split(','))))
 
 describe('味ホイールの同一性監査（第37弾）', () => {

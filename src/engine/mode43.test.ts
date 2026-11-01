@@ -52,7 +52,7 @@ describe('第43弾追加: モード別署名の補助集計', () => {
     }
     console.log('TEA mode:', JSON.stringify(count(teaAdj, teaMode)))
     console.log('CHOCO mode:', JSON.stringify(count(chocoAdj, chocoMode)))
-    expect(teaStates.length).toBe(2266)
+    expect(teaStates.length).toBe(2422)
   }, 600000)
 
   it('重点文脈のモード別マトリクス（烏龍×南投×全チョコ選択）', () => {

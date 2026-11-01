@@ -324,6 +324,34 @@ export const teaAxisRules: TeaAxisRule[] = [
     ],
   },
   {
+    id: 'axr-sayama-green-inf',
+    axis: 'region', entityId: 'sayama', kindCategory: 'green',
+    noteEffects: [
+      {
+        noteId: 'toast', mode: 'add', level: 'inferred',
+        text: '同一品種やぶきたの蒸し製緑茶の産地比較（Hattori et al. 2005）について、総説（水上 2015）は、狭山茶は比較的強い焙煎（火入れ）によって製造され、その焙煎香が特徴で、アミノカルボニル反応によって生成するアルキルピラジンが多く含まれていたと要約します。ピラジン類は成分データでトースト様の焙煎香に対応づけられています（2-エチル-3,5-ジメチルピラジン等）。この地域で確認された化合物と強い火入れという製法の特徴からの推測として、トーストを弱く示します（含量の知見であり、寄与の直接実証ではありません）。',
+        sourceIds: ['hattori-2005-green-tea-regions-volatiles', 'mizukami-2015-green-tea-odor-characteristics'],
+      },
+      {
+        noteId: 'caramel', mode: 'add', level: 'inferred',
+        text: '狭山の火入れは伝統的に高温（100℃程度）で長時間行い、他産地の上級茶の火入れ（80℃、30〜40分程度）より強いと、埼玉県茶業研究所の研究者の総説（高橋 2015）が整理します。火入れでは糖由来の甘い香気成分（マルトール、フラネオール等）が生成し、加熱温度が高いほど増加します。フラネオールは成分データでキャラメル様の甘い香りに対応づけられています。製法の特徴からの推測として、キャラメルを弱く示します。',
+        sourceIds: ['takahashi-2015-sayama-tea-aroma'],
+      },
+    ],
+    tasteEffects: [
+      {
+        key: 'bitter', direction: 'stronger', level: 'inferred',
+        text: '静岡・宇治・狭山の市販ブランド茶の比較（桑野ら 1989）では、狭山茶は遊離アミノ酸・カフェイン・タンニンの合計量が全等級で最も多く、カフェインが相対的に多い構成で、著者らは狭山茶を「濃厚で苦く、渋い」と特徴づけました。成分含量の方向と著者の特徴づけが示す推測として、苦味を一段強く示します（1989年当時の市販茶での知見であり、官能の直接実測ではありません）。',
+        sourceIds: ['kuwano-1989-market-green-tea-regions'],
+      },
+      {
+        key: 'astringent', direction: 'stronger', level: 'inferred',
+        text: '同じ比較で狭山茶は、渋味の主因であるタンニンが多い構成でした。タンニンの含量の方向と著者の特徴づけからの推測として、渋味を一段強く示します。',
+        sourceIds: ['kuwano-1989-market-green-tea-regions'],
+      },
+    ],
+  },
+  {
     id: 'axr-miyazaki-green-inf',
     axis: 'region', entityId: 'miyazaki', kindCategory: 'green',
     noteEffects: [],
@@ -2412,6 +2440,8 @@ export const axisNoEffects: AxisNoEffect[] = [
     text: '「宇治」の所見は、覆い下茶を冷蔵保存すると熟成してうま味やまろやかさが増すという、保存による時間変化の知見です。緑茶では、その方向からの推測としてうま味を反映しています。この分類については、地域自体の香味の方向を示す所見がないため、ホイールには反映していません。' },
   { axis: 'region', entityId: 'kochi', category: 'no-direction',
     text: '「高知」の所見は、高知県産の和紅茶と輸入アールグレイ銘柄との成分比較です。紅茶では、カフェインが最少だった実測からの推測として苦味の方向を反映しています。この分類については、地域自体の香味の方向を示す所見がないため、ホイールには反映していません。' },
+  { axis: 'region', entityId: 'sayama', category: 'no-direction',
+    text: '「狭山」の所見は、煎茶（蒸し製緑茶）についての産地比較の実測（揮発成分・呈味成分）と、伝統的な火入れ（狭山火入れ）に関する総説です。緑茶では、アルキルピラジンの知見と火入れの製法、呈味成分の比較が示す方向を推測として反映しています。この分類については、香味の方向を示す所見がないため、ホイールには反映していません。' },
   { axis: 'region', entityId: 'zhejiang', category: 'discrimination-only',
     text: '「浙江」の所見のうち香味の寄与を示すものは緑茶（龍井茶）についてのもので、緑茶ではキー成分の実測に基づき反映しています。その他の分類については、非揮発成分による小産地の判別等の知見のみで、特定のノートへの寄与を示すものではないため、ホイールのノートには反映していません。' },
   { axis: 'region', entityId: 'jiangsu', category: 'composition-only',

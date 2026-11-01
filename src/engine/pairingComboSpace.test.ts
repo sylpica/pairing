@@ -16,7 +16,7 @@ import { assemblePairing } from './pairingCombo'
 // 組み合わせ分析（第2層）を経た入力プロファイルの「相異なる顔ぶれ」全ペアについて、
 // ペアリング（第3層）の組み立て（PairPage と同じ assemblePairing）が例外なく成立し、
 // 不変条件（根拠の実在・スコア表現なし・参照の実在）を満たすことを確認する。
-// 選択の総数は列挙カウンタで担保する（pairingFullSpace.test.ts の 2,773,584 通りは
+// 選択の総数は列挙カウンタで担保する（pairingFullSpace.test.ts の 2,964,528 通りは
 // UI 選択モデルでの全数。本ファイルは組み合わせエンジンの選択空間での全数）。
 
 const sourceIdSet = new Set(sources.map((s) => s.id))

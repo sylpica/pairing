@@ -27,12 +27,12 @@ import type { DataLevelUsed, EntityFinding } from '../types'
 //   teaRegionPairingNote(region, tea.kindId)          … お茶の産地（地域）×茶類に依存
 //   cacaoPairingNote(layer, entity)                   … カカオ系統エンティティに依存
 //   cacaoOriginPairingNote(origin)                    … カカオ産地に依存
-// お茶の産地は国→地域の階層で選べる（国5＋地域30）。品種を指定した場合は、
+// お茶の産地は国→地域の階層で選べる（国5＋地域31）。品種を指定した場合は、
 // その品種の国の産地（国全体＋その国の地域）だけが選択肢になる（PairPage の連動）。
 // 選択空間は、相異なる引数の組み合わせ
-// （ペア112 + 品種39 + お茶産地（国）30 + お茶産地（地域）180 + 系統16 + 産地8 = 385通り）
+// （ペア112 + 品種39 + お茶産地（国）30 + お茶産地（地域）186 + 系統16 + 産地8 = 391通り）
 // への実呼び出しで過不足なく覆われる。本ファイルでは:
-//   (1) 相異なる引数の全385通りを実際に関数へ通し、不変条件を深掘り検査する
+//   (1) 相異なる引数の全391通りを実際に関数へ通し、不変条件を深掘り検査する
 //       （あわせて同じ引数で2回呼んでも結果が一致すること＝決定性も確認する）。
 //   (2) 選択空間を全件列挙し、PairPage と同じ組み立てで、
 //       階層バッジ（DataLevelUsed）が指定内容と矛盾しないことを、
@@ -217,10 +217,10 @@ describe('全組み合わせ検証：相異なる引数空間（実呼び出し�
     }
   })
 
-  it('お茶の地域×茶類の全180通りで、階層が適用分類・実測区分・所見の有無と一致する', () => {
+  it('お茶の地域×茶類の全186通りで、階層が適用分類・実測区分・所見の有無と一致する', () => {
     const kindIds = [...new Set(teaItems.map((t) => t.kindId))]
-    expect(teaRegions.length).toBe(30)
-    expect(teaRegions.length * kindIds.length).toBe(180)
+    expect(teaRegions.length).toBe(31)
+    expect(teaRegions.length * kindIds.length).toBe(186)
     for (const region of teaRegions) {
       for (const kindId of kindIds) {
         const ctx = `region:${region.id}@${kindId}`
@@ -267,7 +267,7 @@ describe('全組み合わせ検証：選択空間の全件組み立て', () => {
     expect(teaItems.length).toBe(14)
     expect(chocolateItems.length).toBe(8)
     expect(teaCountries.length).toBe(5)
-    expect(teaRegions.length).toBe(30)
+    expect(teaRegions.length).toBe(31)
     expect(cacaoOrigins.length).toBe(8)
     expect(cacaoEntities.length).toBe(16)
 
@@ -324,7 +324,7 @@ describe('全組み合わせ検証：選択空間の全件組み立て', () => {
     let violationCount = 0
     let count = 0
 
-    // PairPage の産地選択肢: 品種なしでは国5＋地域30の全て、品種ありではその品種の国（国全体＋その国の地域）のみ
+    // PairPage の産地選択肢: 品種なしでは国5＋地域31の全て、品種ありではその品種の国（国全体＋その国の地域）のみ
     type TeaOriginChoice = { type: 'country'; country: string } | { type: 'region'; region: (typeof teaRegions)[number] } | null
     const allOriginChoices: TeaOriginChoice[] = [null,
       ...teaCountries.map((country): TeaOriginChoice => ({ type: 'country', country })),
@@ -406,10 +406,10 @@ describe('全組み合わせ検証：選択空間の全件組み立て', () => {
       return sum + noCultivar + withCultivar
     }, 0)
     const chocoSide = chocolateItems.length * (1 + cacaoEntities.length) * (1 + cacaoOrigins.length)
-    expect(teaSide).toBe(2266)
+    expect(teaSide).toBe(2422)
     expect(chocoSide).toBe(1224)
     expect(count).toBe(teaSide * chocoSide)
-    expect(count).toBe(2773584)
+    expect(count).toBe(2964528)
     expect(violationCount, violations.join('\n')).toBe(0)
   }, 600000)
 })
