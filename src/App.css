@@ -25,22 +25,23 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
 .item-list { list-style: none; padding: 0; display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
 .item-card { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 7px; padding: 16px 12px; background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; font: inherit; cursor: pointer; text-align: left; min-height: 56px; }
-/* 名称の段階的縮小（第37弾 F監査で導入、第41弾で全面較正）。
-   統一契約: 名称は左・1行・全文表示（省略しない）、バッジは右ブロック内
-   でのみ折り返す。単一行ゾーン（≥375px）ではカード自体は折り返さない
-   （第41弾）ため、名称は文字数に応じたクラスで段階的に縮小し、
-   バッジブロック（47%・最小でも最長ピル幅までしか縮まない）と常に
-   同じ1行に収める。サイズは全名称×最長ピルの実測から、単一行ゾーンの
-   下限 375px でクラスごとの最悪ケースが収まるよう較正した。
-   ≤374px は積み重ねゾーン（.card-badges の項を参照）: 名称が行全体を
-   使えるため、ゾーン用の別ラダーで緩める。 */
-.item-name { font-weight: 700; white-space: nowrap; flex: none; }
-.item-name.name-len-2xl { font-size: 0.94rem; }
-@media (max-width: 560px) { .item-name.name-len-xl { font-size: 0.84rem; } .item-name.name-len-2xl { font-size: 0.72rem; } }
-@media (max-width: 480px) { .item-name { font-size: 0.92rem; } .item-name.name-len-s { font-size: 0.7rem; } .item-name.name-len-m { font-size: 0.64rem; } .item-name.name-len-l { font-size: 0.5625rem; } .item-name.name-len-xl { font-size: 0.5rem; } .item-name.name-len-2xl { font-size: 0.4375rem; } }
-@media (max-width: 374px) { .item-name { font-size: 0.88rem; line-height: 23px; } .item-name.name-len-s { font-size: 0.88rem; } .item-name.name-len-m { font-size: 0.88rem; } .item-name.name-len-l { font-size: 0.88rem; } .item-name.name-len-xl { font-size: 0.7rem; } .item-name.name-len-2xl { font-size: 0.6rem; } }
-@media (max-width: 330px) { .item-name.name-len-m { font-size: 0.83rem; } .item-name.name-len-l { font-size: 0.81rem; } .item-name.name-len-xl { font-size: 0.57rem; } .item-name.name-len-2xl { font-size: 0.49rem; } }
-@media (max-width: 290px) { .item-name.name-len-m { font-size: 0.77rem; } .item-name.name-len-l { font-size: 0.75rem; } .item-name.name-len-xl { font-size: 0.53rem; } .item-name.name-len-2xl { font-size: 0.46rem; } }
+/* 名称の文字サイズ統一（第42弾で文字数ラダーを廃止。第37弾で導入し
+   第41弾で拡張した段階的縮小は、名称ごとに大きさが違って見えるという
+   ユーザー実機指摘で撤去）。
+   統一契約: 名称は左・全文表示（省略しない）、バッジは右ブロック内でのみ
+   折り返す。名称のサイズは全カード・全幅で単一の 0.92rem（=14.72px。
+   お茶の品種・系統リストで短い名称に当たっていた computed 値を実測して
+   基準化）に統一し、名称ごとに変えることはしない。
+   統一サイズで1行に収まらない名称は、文字を縮小せず折り返す。改行は
+   意味の切れ目でのみ許可する: 名称を改行不可の単位（.name-seg）に分け、
+   切れ目（スペース／「（」の前／「・」の後／「）」の後）にだけ改行機会を
+   差し込む（itemNameSegments が担当）。名称側は flex: 0 1 auto とし、
+   アイコンとバッジブロック（47%上限・最長ピルまで縮む）に場所を譲り、
+   余りは折り返してカードの高さで吸収する。バッジブロックは右端・
+   縦中央（align-items: center）の関係を保つ。
+   ≤374px の積み重ねゾーン（.card-badges の項を参照）でも同じ統一サイズ。 */
+.item-name { font-weight: 700; font-size: 0.92rem; flex: 0 1 auto; min-width: 0; }
+.item-name .name-seg { white-space: nowrap; }
 .badge { background: #f7ead2; border-radius: 999px; padding: 2px 10px; font-size: 0.8rem; white-space: nowrap; }
 .wheel-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .astringency-gauge { display: flex; flex-direction: column; gap: 4px; width: min(320px, 100%); background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 14px; font: inherit; cursor: pointer; text-align: left; margin: 2px auto; }
@@ -250,24 +251,37 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
    空白を生んだ（第41弾・ユーザー実機指摘）。改修後は次の2ゾーンに統一する。
    ・単一行ゾーン（≥375px）: カードは折り返さない。ブロック幅は47%を
      上限とし（flex: 0 1 47%）、名称が長い場合は最長ピルの min-content
-     まで縮んで場所を譲る。名称側も文字数ラダーで較正済みのため、全カード
-     が「名称とバッジが同じ1行・縦中央」の同じリズムで揃う。
+     まで縮んで場所を譲る。名称は全カード共通サイズ（第42弾: 0.92rem
+     統一）で、入りきらない分は意味の切れ目で折り返し、バッジブロックは
+     右端・縦中央のまま全カード同じリズムで揃う。
    ・積み重ねゾーン（≤374px）: 最長名称×最長ピルの組み合わせは可読
      サイズでは1行に収まらないため、全カード一律にブロックを行全体へ
      回した設計済みの2段（1行目=アイコン+名称、2行目=バッジ右寄せ）に
      統一する。偶然の回り込みではなく全カード同一構造にするのが要点。 */
 .card-badges { margin-left: auto; text-align: right; display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 6px; flex: 0 1 47%; width: 47%; min-width: min-content; }
-/* 一覧カードの名称は左で必ず1行（nowrap・圧縮しない）。バッジ群は右側に
-   ひとまとまりのブロックとして固め、折り返しはブロックの中でだけ行う
-   （第37弾の実機FB。全ての一覧カードで共通）。 */
+/* 一覧カードの名称は左・共通サイズ（第42弾）で、入りきらない場合のみ
+   意味の切れ目で折り返す。バッジ群は右側にひとまとまりのブロックとして
+   固め、折り返しはブロックの中でだけ行う（第37弾の実機FB。全ての一覧
+   カードで共通）。 */
 .card-badges .badge { flex: none; }
 @media (max-width: 400px) { .card-badges .badge { white-space: nowrap; } }
 @media (max-width: 374px) {
-  /* 積み重ねゾーン: 全カードを設計済みの2段に統一する。名称の行高は
-     23px に固定し、名称のフォントサイズ差で1行目の高さ（=バッジの
-     縦位置）がカードごとにずれないようにする。 */
+  /* 積み重ねゾーン: 全カードを設計済みの2段に統一する。名称の文字
+     サイズは全幅共通（第42弾: 0.92rem 統一）のため、1行の名称では
+     1行目の高さは全カード同一になる。折り返した名称はその分だけ
+     カードが伸び、バッジは常に名称の直下・右寄せで一貫する。
+     名称は flex: 1 1 0 として必ずアイコンと同じ1行目に置く（第42弾
+     実測: 折り返し前の実幅が大きい名称が、アイコンの横に収まらず
+     名称だけ次の行へ落ち、アイコンの右に空白ができていた）。 */
   .item-card { flex-wrap: wrap; }
+  .item-name { flex: 1 1 0; }
   .card-badges { flex: 0 0 100%; width: 100%; margin-left: 0; }
+}
+@media (max-width: 300px) {
+  /* 極狭幅ではカードの横パディングを詰め、名称の最長セグメント
+     （例: （キャラメリゼホワイト））がアイコン横の行幅に収まるようにする
+     （第42弾実測: 280px で約3px はみ出したための調整。全カード一律）。 */
+  .item-card { padding-left: 8px; padding-right: 8px; }
 }
 /* 組み合わせ画面の見出しアイコン */
 .col-head { display: flex; align-items: center; gap: 8px; }

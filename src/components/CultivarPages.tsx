@@ -3,7 +3,7 @@ import type { CacaoOrigin, ComboNote, ComboTaste, TeaCultivar, TeaCultivarRank }
 import { FLAVOR_FINDING_KINDS } from '../types'
 import ComboWheelPanel from './ComboWheelPanel'
 import FavButton from './FavButton'
-import { itemNameClass } from './itemName'
+import ItemName from './ItemName'
 import BackButton from './BackButton'
 import type { CompoundContext } from '../data/compounds'
 import { COMBO_LEVEL_LABEL } from '../engine/combo'
@@ -103,7 +103,7 @@ export function CultivarsPage() {
             <ul className="item-list">
               {list.map((c) => (
                 <li key={c.id}><button className="item-card" onClick={() => go(`cultivar/${c.id}`)}>
-                  <span className={itemNameClass(c.name)}>{c.name}</span>
+                  <ItemName name={c.name} />
                   <span className="card-badges"><span className="badge">{RANK_LABEL[c.rank]}</span> <span className="badge">{SCIENCE_LABEL[c.verification.science]}</span></span>
                 </button></li>
               ))}
@@ -118,7 +118,7 @@ export function CultivarsPage() {
         <ul className="item-list">
           {trad.map((g) => (
             <li key={g.id}><button className="item-card" onClick={() => go('cacao/traditional/' + g.id)}>
-              <span className={itemNameClass(`${g.nameJa}（${g.name}）`)}>{g.nameJa}（{g.name}）</span>
+              <ItemName name={`${g.nameJa}（${g.name}）`} />
               <span className="card-badges"><span className="badge">{SCIENCE_LABEL[g.verification.science]}</span></span>
             </button></li>
           ))}
@@ -129,7 +129,7 @@ export function CultivarsPage() {
         <ul className="item-list">
           {gen.map((g) => (
             <li key={g.id}><button className="item-card" onClick={() => go('cacao/genetic/' + g.id)}>
-              <span className={itemNameClass(g.name)}>{g.name}</span>
+              <ItemName name={g.name} />
               <span className="card-badges"><span className="badge">{SCIENCE_LABEL[g.verification.science]}</span></span>
             </button></li>
           ))}
@@ -140,7 +140,7 @@ export function CultivarsPage() {
         <ul className="item-list">
           {clones.map((c) => (
             <li key={c.id}><button className="item-card" onClick={() => go('cacao/clone/' + c.id)}>
-              <span className={itemNameClass(c.name)}>{c.name}</span>
+              <ItemName name={c.name} />
               <span className="card-badges"><span className="badge">{SCIENCE_LABEL[c.verification.science]}</span></span>
             </button></li>
           ))}
@@ -151,7 +151,7 @@ export function CultivarsPage() {
         <ul className="item-list">
           {origins.map((o) => (
             <li key={o.id}><button className="item-card" onClick={() => go('origin/' + o.id)}>
-              <span className={itemNameClass(o.name)}>{o.name}</span>
+              <ItemName name={o.name} />
               <span className="card-badges"><span className="badge">産地</span> <span className="badge">{SCIENCE_LABEL[o.verification.science]}</span></span>
             </button></li>
           ))}

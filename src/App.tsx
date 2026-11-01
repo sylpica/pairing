@@ -13,7 +13,7 @@ import type { ChocolateItem, InteractionStatement, PairingCharacter, TeaItem } f
 import { categoryById } from './data/flavors'
 import { loadSaved, persistSaved, pairIdOf, parsePairId, comboFavId, parseComboFavId, parseLineageFavId, type SavedData } from './storage'
 import FavButton from './components/FavButton'
-import { itemNameClass } from './components/itemName'
+import ItemName from './components/ItemName'
 import { go, scrollTop, trackRoute } from './nav'
 import CompoundCard from './components/CompoundCard'
 import { PairNoteCompounds, PairCategoryCompounds, type PairCompoundSide } from './components/PairCompounds'
@@ -268,7 +268,7 @@ function TeaList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combo
           {shownProfiles.map((t) => (
             <li key={t.id}><button className="item-card" onClick={() => go(`tea/${t.id}`)}>
               <span className="card-icon" style={{ background: KIND_COLOR[kindCategoryOf(t.kindId)] ?? '#7fb069' }}><TeaLeafIcon /></span>
-              <span className={itemNameClass(t.name)}>{t.name}</span>
+              <ItemName name={t.name} />
               <span className="card-badges"><span className="badge">プロファイル</span> <span className="badge">{LEVEL_LABEL[t.evidenceLevel]}</span></span>
             </button></li>
           ))}
@@ -280,7 +280,7 @@ function TeaList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combo
           {regions.map((r) => (
             <li key={r.id}><button className="item-card" onClick={() => go(teaComboPath({ kindId: r.applicableKindIds[0], regionId: r.id, cultivarId: '' }))}>
               <span className="card-icon" style={{ background: '#c98a5e' }}><MapPinIcon /></span>
-              <span className={itemNameClass(r.name)}>{r.name}</span>
+              <ItemName name={r.name} />
               <span className="card-badges"><span className="badge">産地（地域）</span> <span className="badge">{r.country}</span> <span className="badge">{SCIENCE_LABEL[r.verification.science]}</span></span>
             </button></li>
           ))}
@@ -292,7 +292,7 @@ function TeaList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combo
           {cultivars.map((c) => (
             <li key={c.id}><button className="item-card" onClick={() => go(`cultivar/${c.id}`)}>
               <span className="card-icon" style={{ background: '#8aa864' }}><SproutIcon /></span>
-              <span className={itemNameClass(c.name)}>{c.name}</span>
+              <ItemName name={c.name} />
               <span className="card-badges"><span className="badge">{RANK_LABEL[c.rank]}</span> <span className="badge">{c.country}</span> <span className="badge">{SCIENCE_LABEL[c.verification.science]}</span></span>
             </button></li>
           ))}
@@ -436,7 +436,7 @@ function ChocoList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'com
           {profiles.map((c) => (
             <li key={c.id}><button className="item-card" onClick={() => go(`choco/${c.id}`)}>
               <span className="card-icon" style={{ background: CHOCO_KIND_COLOR[c.kind] }}><ChocoBarIcon /></span>
-              <span className={itemNameClass(c.name)}>{c.name}</span>
+              <ItemName name={c.name} />
               <span className="card-badges"><span className="badge">プロファイル</span> <span className="badge">{LEVEL_LABEL[c.evidenceLevel]}</span></span>
             </button></li>
           ))}
@@ -448,7 +448,7 @@ function ChocoList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'com
           {origins.map((o) => (
             <li key={o.id}><button className="item-card" onClick={() => go(`origin/${o.id}`)}>
               <span className="card-icon" style={{ background: '#b08968' }}><CacaoPodIcon /></span>
-              <span className={itemNameClass(o.name)}>{o.name}</span>
+              <ItemName name={o.name} />
               <span className="card-badges"><span className="badge">産地</span> <span className="badge">{SCIENCE_LABEL[o.verification.science]}</span></span>
             </button></li>
           ))}
@@ -460,21 +460,21 @@ function ChocoList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'com
           {lineageEntities.traditional.map((g) => (
             <li key={g.id}><button className="item-card" onClick={() => go('cacao/traditional/' + g.id)}>
               <span className="card-icon" style={{ background: '#8d7b68' }}><LineageIcon /></span>
-              <span className={itemNameClass(`${g.nameJa}（${g.name}）`)}>{g.nameJa}（{g.name}）</span>
+              <ItemName name={`${g.nameJa}（${g.name}）`} />
               <span className="card-badges"><span className="badge">{CACAO_LAYER_LABEL.traditional}</span> <span className="badge">{SCIENCE_LABEL[g.verification.science]}</span></span>
             </button></li>
           ))}
           {lineageEntities.genetic.map((g) => (
             <li key={g.id}><button className="item-card" onClick={() => go('cacao/genetic/' + g.id)}>
               <span className="card-icon" style={{ background: '#8d7b68' }}><LineageIcon /></span>
-              <span className={itemNameClass(`${g.nameJa}（${g.name}）`)}>{g.nameJa}（{g.name}）</span>
+              <ItemName name={`${g.nameJa}（${g.name}）`} />
               <span className="card-badges"><span className="badge">遺伝的分類</span> <span className="badge">{SCIENCE_LABEL[g.verification.science]}</span></span>
             </button></li>
           ))}
           {lineageEntities.clones.map((c) => (
             <li key={c.id}><button className="item-card" onClick={() => go('cacao/clone/' + c.id)}>
               <span className="card-icon" style={{ background: '#8d7b68' }}><LineageIcon /></span>
-              <span className={itemNameClass(c.name)}>{c.name}</span>
+              <ItemName name={c.name} />
               <span className="card-badges"><span className="badge">{CACAO_LAYER_LABEL.clone}</span> <span className="badge">{SCIENCE_LABEL[c.verification.science]}</span></span>
             </button></li>
           ))}
