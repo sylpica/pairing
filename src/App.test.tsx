@@ -13,6 +13,16 @@ describe('画面の基本動作（§16相当のローカル検証）', () => {
     expect(screen.getByText('チョコを調べる')).toBeTruthy()
     expect(screen.getAllByText('組み合わせる').length).toBeGreaterThan(0)
   })
+  it('ホームに大きなタイトルブロックは無い（ヘッダーのアプリ名と重複するため第47弾で削除）', () => {
+    render(<App />)
+    // ヘッダーのアプリ名は残る
+    expect(screen.getByText('お茶×チョコ フレーバー図鑑')).toBeTruthy()
+    // 本文の大きな見出しと副題は表示されない
+    expect(screen.queryByText(/お茶とチョコレートの/)).toBeNull()
+    expect(screen.queryByText(/香りの世界をのぞいてみましょう/)).toBeNull()
+    expect(document.querySelector('.hero')).toBeNull()
+    expect(document.querySelector('main h1')).toBeNull()
+  })
   it('お茶を調べるには検索窓が無く、プルダウンだけで一覧とプレビューに辿り着ける（第18弾）', () => {
     location.hash = '#/tea'; render(<App />)
     expect(screen.queryByLabelText('お茶を検索')).toBeNull()

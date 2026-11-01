@@ -118,10 +118,6 @@ export default function App() {
 function Home() {
   return (
     <div>
-      <section className="hero">
-        <h1>お茶とチョコレートの<br />フレーバー図鑑</h1>
-        <p>科学論文をもとに、香りの世界をのぞいてみましょう。</p>
-      </section>
       <div className="card-grid">
         <button className="big-card tea" onClick={() => go('tea')}>
           <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M10 26h38v10a14 14 0 0 1-14 14h-10A14 14 0 0 1 10 36z" fill="#7fb069" /><path d="M48 30h2a7 7 0 0 1 0 14h-4" fill="none" stroke="#7fb069" strokeWidth="4" /><path d="M20 20c0-4 4-4 4-8M32 20c0-4 4-4 4-8" stroke="#b5654d" strokeWidth="3" fill="none" strokeLinecap="round" /></svg>
