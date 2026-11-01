@@ -64,9 +64,12 @@ function checkGroup(ctx: string, seg: string, lines: string[], units: string[], 
 
 function auditState(container: HTMLElement, ctx: string) {
   const segs = [...container.querySelectorAll('svg.wheel g.wheel-seg')]
-  for (const g of segs) {
+  // 第44弾: ラベルは最前面レイヤー（g.wheel-seg-labels）に分離されたため、
+  // セグメントのテキストは文書順インデックスで対応づけて引く。
+  const labelGroups = [...container.querySelectorAll('svg.wheel g.wheel-seg-labels')]
+  for (const [gi, g] of segs.entries()) {
     const aria = g.getAttribute('aria-label') ?? ''
-    const texts = [...g.querySelectorAll('text')].map((t) => ({
+    const texts = [...(labelGroups[gi]?.querySelectorAll('text') ?? [])].map((t) => ({
       cls: t.getAttribute('class') ?? '',
       text: t.textContent ?? '',
       x: parseFloat(t.getAttribute('x') ?? '150'),

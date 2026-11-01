@@ -177,8 +177,16 @@ export default function TieredWheel({ segments, centerLabel, ariaLabel, onSelect
   return (
     <div className="wheel-wrap">
       <svg viewBox={`0 0 ${size} ${size}`} className="wheel" role="group" aria-label={ariaLabel}>
-        {drawn.map(({ seg, a0, a1, lines, opacity }) => (
-          <g key={seg.key} onClick={() => onSelect(seg.key)} className="wheel-seg" tabIndex={0} role="button"
+        {/* 第44弾: 描画を「塗り層→テキスト層」に分離する。以前はセグメントごとに
+            path→text の順で描いていたため、後から描かれる隣接セグメントの
+            半透明の塗りが、先に描かれたテキストのはみ出し部分を上塗りして
+            隣の色に染めて薄く見せていた（ユーザー実機FB: 「具体名の裏付けなし」
+            の両端が隣の色に染まる）。全セグメントの塗りを描き終えてから、
+            全テキストを最前面の専用レイヤーで描くことで、文字が色の後ろに
+            隠れることを構造的に無くす。文字自体の色・不透明度は従来通り
+            （.wheel-label / .wheel-sub の不透明な fill）。 */}
+        {drawn.map(({ seg, a0, a1, opacity }) => (
+          <g key={seg.key} data-seg={seg.key} onClick={() => onSelect(seg.key)} className="wheel-seg" tabIndex={0} role="button"
             aria-label={seg.ariaLabel}
             onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onSelect(seg.key) } }}>
             <path d={arcPath(cx, cy, 52, 138, a0 + 0.01, a1 - 0.01)} fill={seg.color}
@@ -186,13 +194,19 @@ export default function TieredWheel({ segments, centerLabel, ariaLabel, onSelect
               stroke={seg.level === 'inferred' ? '#5b4636' : seg.selected ? '#33302a' : 'none'}
               strokeWidth={seg.level === 'inferred' ? 1.6 : seg.selected ? 2.4 : 0}
               strokeDasharray={seg.level === 'inferred' ? '5 3' : undefined} />
-            {lines.map((l, i) => (
-              <text key={i} x={l.x} y={l.y} textAnchor="middle" dominantBaseline="middle" className={l.cls} style={{ fontSize: l.fs }}>{l.text}</text>
-            ))}
           </g>
         ))}
         <circle cx={cx} cy={cy} r={50} fill="#fffaf2" />
-        <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" className="wheel-center">{centerLabel}</text>
+        <g className="wheel-texts" pointerEvents="none">
+          {drawn.map(({ seg, lines }) => (
+            <g key={seg.key} className="wheel-seg-labels" data-seg={seg.key}>
+              {lines.map((l, i) => (
+                <text key={i} x={l.x} y={l.y} textAnchor="middle" dominantBaseline="middle" className={l.cls} style={{ fontSize: l.fs }}>{l.text}</text>
+              ))}
+            </g>
+          ))}
+          <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" className="wheel-center">{centerLabel}</text>
+        </g>
       </svg>
       {footer}
       <ul className="wheel-list">

@@ -13,8 +13,17 @@ import { compounds } from '../data/compounds'
 import { analyzeTeaCombo, analyzeChocoCombo, type ComboAnalysis } from '../engine/combo'
 
 const segs = (container: HTMLElement) => [...container.querySelectorAll('svg g.wheel-seg')]
-const labelTexts = (g: Element) => [...g.querySelectorAll('.wheel-label')].map((t) => t.textContent ?? '')
-const labelFontSizes = (g: Element) => [...g.querySelectorAll('.wheel-label')].map((t) => parseFloat((t as HTMLElement).style.fontSize || '12'))
+// 第44弾: ラベルテキストは塗り層と分離した最前面レイヤー（g.wheel-seg-labels）に
+// 描かれる。セグメントのラベルは data-seg と文書順インデックスで対応づけて引く。
+const segLabelEls = (g: Element, sel: string): Element[] => {
+  const svg = g.closest('svg')
+  if (!svg) return []
+  const idx = [...svg.querySelectorAll('g.wheel-seg')].indexOf(g as HTMLElement)
+  const lg = svg.querySelectorAll('g.wheel-seg-labels')[idx]
+  return lg ? [...lg.querySelectorAll(sel)] : []
+}
+const labelTexts = (g: Element) => segLabelEls(g, '.wheel-label').map((t) => t.textContent ?? '')
+const labelFontSizes = (g: Element) => segLabelEls(g, '.wheel-label').map((t) => parseFloat((t as HTMLElement).style.fontSize || '12'))
 const segPercents = (container: HTMLElement) => segs(container)
   .map((g) => /（(\d+)%）/.exec(g.getAttribute('aria-label') ?? '')?.[1])
   .filter((x): x is string => x !== undefined)
@@ -211,13 +220,13 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
     expect(container.querySelector('.astringency-gauge')).toBeTruthy()
     const previewOf = (prefix: string) => {
       const g = top.find((x) => (x.getAttribute('aria-label') ?? '').startsWith(prefix))!
-      return [...g.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')
+      return segLabelEls(g, '.wheel-sub').map((el) => el.textContent ?? '').join('')
     }
     // 具体名のある味は具体名のプレビューが出る。化合物名はどの味の併記にも出ない
     expect(previewOf('甘味')).toContain('栗')
     expect(previewOf('うま味')).toContain('だし')
     for (const g of top) {
-      const subs = [...g.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')
+      const subs = segLabelEls(g, '.wheel-sub').map((el) => el.textContent ?? '').join('')
       expect(subs).not.toContain('カテキン')
       expect(subs).not.toContain('テアニン')
       expect(subs).not.toContain('グルタミン酸')
@@ -251,7 +260,7 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
     fireEvent.click(screen.getByLabelText(/甘味を開く/))
     expectNoBlank(container)
     const maltSeg = screen.getByRole('button', { name: /^麦芽（\d+%）の根拠を見る$/ })
-    expect([...maltSeg.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')).toContain('成分データなし')
+    expect(segLabelEls(maltSeg, '.wheel-sub').map((el) => el.textContent ?? '').join('')).toContain('成分データなし')
     fireEvent.click(maltSeg)
     const dialog = screen.getByRole('dialog')
     expect(dialog.textContent).toContain('麦芽')
@@ -307,7 +316,7 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
       expect(topSegs.length, `${item.name}: 第1階層セグメント数`).toBe(tiers.length)
       // 第36弾: 第1階層の併記（具体名プレビュー）に登録化合物の名前が一切現れない
       for (const g of topSegs) {
-        const subText = [...g.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')
+        const subText = segLabelEls(g, '.wheel-sub').map((el) => el.textContent ?? '').join('')
         for (const name of compoundNames) {
           expect(subText.includes(name), `${item.name}: 第1階層の併記に化合物名 ${name}`).toBe(false)
         }
@@ -324,7 +333,7 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
           for (const e of tier.entries) {
             const seg = midSegs.find((g) => (g.getAttribute('aria-label') ?? '').startsWith(e.label))
             expect(seg, `${item.name}/${tier.key}/${e.key}: 具体名セグメント`).toBeTruthy()
-            const subText = [...seg!.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')
+            const subText = segLabelEls(seg!, '.wheel-sub').map((el) => el.textContent ?? '').join('')
             expect(subText.length, `${item.name}/${tier.key}/${e.key}: 併記なし具体名`).toBeGreaterThan(0)
             if (e.compounds.length === 0) {
               noCompoundDims++

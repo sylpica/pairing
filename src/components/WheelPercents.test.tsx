@@ -9,6 +9,15 @@ import { teaById } from '../data/teas'
 // 第27弾: 描画されたホイールの全階層で、セグメントラベルと凡例チップに％があり、
 // 同一ホイール内の％合計が100になること（表示レベルの検証）。
 const segs = (root: HTMLElement) => [...root.querySelectorAll('svg g.wheel-seg')]
+// 第44弾: ラベルは最前面レイヤー（g.wheel-seg-labels）に分離されたため、
+// セグメントのテキストは文書順インデックスで対応づけて引く。
+const segTexts = (g: Element) => {
+  const svg = g.closest('svg')
+  if (!svg) return [] as Element[]
+  const idx = [...svg.querySelectorAll('g.wheel-seg')].indexOf(g as HTMLElement)
+  const lg = svg.querySelectorAll('g.wheel-seg-labels')[idx]
+  return lg ? [...lg.querySelectorAll('.wheel-label, .wheel-sub')] : []
+}
 // ホイール本体のチップ一覧だけを対象にする（香り一覧インデックスのチップは含めない）
 const chips = (root: HTMLElement) => [...root.querySelectorAll('.wheel-wrap .wheel-list .chip')]
 const ariaPercents = (root: HTMLElement) => segs(root).map((g) => {
@@ -26,7 +35,7 @@ function expectTierPercents(root: HTMLElement, label: string) {
   for (const c of chips(root)) expect(c.textContent ?? '', `${label}: チップ`).toMatch(/\d+%/)
   // 無地セグメント禁止・フォント下限（既存のラベル収納ルール）
   for (const g of groups) {
-    const texts = [...g.querySelectorAll('.wheel-label, .wheel-sub')]
+    const texts = segTexts(g)
     expect(texts.map((t) => t.textContent ?? '').join('').length, `${label}: 無地`).toBeGreaterThan(0)
     for (const t of texts) expect(parseFloat((t as HTMLElement).style.fontSize || '12')).toBeGreaterThanOrEqual(7)
     // セグメント内テキストにも％行がある

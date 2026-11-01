@@ -10,6 +10,16 @@ import { compounds } from '../data/compounds'
 // （「化合物○種」の件数だけにしない）ことを固定する。
 const compoundNames = new Set(compounds.map((c) => c.name))
 
+// 第44弾: ラベルは最前面レイヤー（g.wheel-seg-labels）に分離されたため、
+// セグメントの併記は文書順インデックスで対応づけて引く。
+const segSubs = (g: Element) => {
+  const svg = g.closest('svg')
+  if (!svg) return [] as Element[]
+  const idx = [...svg.querySelectorAll('g.wheel-seg')].indexOf(g as HTMLElement)
+  const lg = svg.querySelectorAll('g.wheel-seg-labels')[idx]
+  return lg ? [...lg.querySelectorAll('.wheel-sub')] : []
+}
+
 describe('香り中分類ホイールへの化合物名併記（第32弾）', () => {
   beforeEach(() => { cleanup() })
 
@@ -37,7 +47,7 @@ describe('香り中分類ホイールへの化合物名併記（第32弾）', ()
     expect(segs.length).toBeGreaterThan(0)
     let named = 0
     for (const g of segs) {
-      const subs = [...g.querySelectorAll('.wheel-sub')].map((t) => t.textContent ?? '').join('・')
+      const subs = segSubs(g).map((t) => t.textContent ?? '').join('・')
       expect(subs).not.toMatch(/化合物\d+種/)
       if ([...compoundNames].some((n) => subs.includes(n))) named++
     }
@@ -56,7 +66,7 @@ describe('香り中分類ホイールへの化合物名併記（第32弾）', ()
     fireEvent.click(screen.getByLabelText(/ナッツ・カカオ系を開く/))
     const segs = [...container.querySelectorAll('svg g.wheel-seg')]
     expect(segs.length).toBeGreaterThan(0)
-    const allSubs = segs.map((g) => [...g.querySelectorAll('.wheel-sub')].map((t) => t.textContent ?? '').join('・')).join('|')
+    const allSubs = segs.map((g) => segSubs(g).map((t) => t.textContent ?? '').join('・')).join('|')
     expect(allSubs).not.toMatch(/化合物\d+種/)
     expect([...compoundNames].some((n) => allSubs.includes(n))).toBe(true)
   })
