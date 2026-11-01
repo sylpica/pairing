@@ -8,13 +8,20 @@
 // 原子扱い（内部の切断は全て違反）。併せて円盤の輪郭外へのはみ出しも数える。
 // 導入時の実測（修正前）: 途中改行 482件（アイテム169／コンボ180／ペアリング
 // 133）・幾何違反 7件 → 修正後はいずれも 0件。
+// 第46弾: 幾何チェックを強化した。従来は「行中心の y における弦幅」と
+// 「近似幅（emWidthOf）」で判定していたため、行の上下の角と、実フォント
+// が近似より広いケース（%・数字）を取りこぼし、実機で化合物ラベルの
+// 先頭文字が円盤の輪郭を越える事故を見逃した。強化後は「グリフの帯
+// （中心 ± fs×0.9）の遠い方の端での弦」と「安全幅（safeWidthAt）」で
+// 角の半径を判定し、円盤半径（138）以内に収まることを要求する。
+// 実ブラウザでの実測監査（tmp/round46-audit.cjs）と対で担保する。
 import { describe, it, expect } from 'vitest'
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import { createElement } from 'react'
 import ProfileWheelPanel from './ProfileWheelPanel'
 import ComboWheelPanel from './ComboWheelPanel'
 import PairingWheelPanel from './PairingWheelPanel'
-import { textWidthAt } from './wheelText'
+import { safeWidthAt } from './wheelText'
 import { compounds } from '../data/compounds'
 import { flavorNotes, flavorCategories } from '../data/flavors'
 import { teaItems } from '../data/teas'
@@ -81,9 +88,11 @@ function auditState(container: HTMLElement, ctx: string) {
       const arr = byCls.get(t.cls) ?? []
       arr.push(t.text)
       byCls.set(t.cls, arr)
-      // 幾何: 円盤の輪郭内に収まるか
-      const w = textWidthAt(t.text, t.fs)
-      const cross = Math.sqrt(Math.max(138 * 138 - (t.y - 150) * (t.y - 150), 0))
+      // 幾何: 円盤の輪郭内に収まるか（第46弾で帯の角＋安全幅に強化）
+      const w = safeWidthAt(t.text, t.fs)
+      const half = t.fs * 0.9
+      const dy = Math.max(Math.abs(t.y - half - 150), Math.abs(t.y + half - 150))
+      const cross = Math.sqrt(Math.max(138 * 138 - dy * dy, 0))
       const extent = Math.abs(t.x - 150) + w / 2
       if (extent > cross + 0.5) geomViolations.push({ ctx, text: t.text, extent, cross })
       if (t.text.includes('…')) violations.push({ ctx, seg: aria, unit: t.text, lines: [t.text], kind: 'ellipsis' })
@@ -123,17 +132,22 @@ function visitWheel(container: HTMLElement, ctx: string, depth: number) {
   }
 }
 function drillPanel(container: HTMLElement, ctx: string) {
-  // 味モード（既定）: ゲージ先 → 各階層
-  const gauge = container.querySelector('.astringency-gauge')
-  if (gauge) {
-    fireEvent.click(gauge)
-    if (container.querySelector('svg.wheel')) {
-      visitWheel(container, `${ctx} 渋味ゲージ先`, 1)
-      const back = findBack(container)
-      if (back) fireEvent.click(back)
+  // 第46弾: 既定モードは香りになったため、味側（ゲージ先を含む）は
+  // タブを明示的に切り替えてから走査する。両モードとも全階層を対象にする。
+  const tasteTab = screen.queryByRole('tab', { name: '味' })
+  if (tasteTab) {
+    fireEvent.click(tasteTab)
+    const gauge = container.querySelector('.astringency-gauge')
+    if (gauge) {
+      fireEvent.click(gauge)
+      if (container.querySelector('svg.wheel')) {
+        visitWheel(container, `${ctx} 渋味ゲージ先`, 1)
+        const back = findBack(container)
+        if (back) fireEvent.click(back)
+      }
     }
+    if (container.querySelector('svg.wheel')) visitWheel(container, `${ctx} 味`, 0)
   }
-  if (container.querySelector('svg.wheel')) visitWheel(container, `${ctx} 味`, 0)
   const aromaTab = screen.queryByRole('tab', { name: '香り' })
   if (aromaTab) {
     fireEvent.click(aromaTab)

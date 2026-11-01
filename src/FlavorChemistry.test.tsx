@@ -7,6 +7,8 @@ const clickButton = (name: RegExp) => {
   const btns = screen.getAllByRole('button', { name })
   fireEvent.click(btns[0])
 }
+/** 第46弾: ホイールの既定モードは香り。味ホイールを使うテストは先に切り替える */
+const toTaste = () => fireEvent.click(screen.getAllByRole('tab', { name: '味' })[0])
 /** 名前など複数箇所に出る文字列は「どこかに表示されていること」で検証する */
 const expectShown = (re: RegExp) => expect(screen.getAllByText(re).length).toBeGreaterThan(0)
 /** ホイールのセグメントラベル（SVGテキスト。2行に割れた名前も連結して読む） */
@@ -17,7 +19,7 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
 
   it('1. 白茶の「青草・若葉」をタップすると関連成分が確認できる', () => {
     location.hash = '#/tea/white-tea'; render(<App />)
-    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 第33弾: 既定は味
+    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 香りタブへ（第46弾以降は既定も香り）
     clickButton(/植物系/)
     clickButton(/青草・若葉/)
     // 第8弾: 中分類（青草・若葉）を押すと小分類（化学物質）のホイールが出る
@@ -33,7 +35,7 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
 
   it('シートを閉じても選択は保持され、もう一度開ける', () => {
     location.hash = '#/tea/white-tea'; render(<App />)
-    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 第33弾: 既定は味
+    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 香りタブへ（第46弾以降は既定も香り）
     clickButton(/植物系/)
     clickButton(/青草・若葉/)
     fireEvent.click(screen.getByRole('button', { name: '「青草・若葉」の根拠を見る' }))
@@ -48,7 +50,7 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
   it('6/10. 固有データがない場合は、未確認である旨を示してから全般の研究例を出す', () => {
     // 蒸し緑茶の「青草・若葉」: 白茶試料の成分（ヘキサナール）は「他のお茶・チョコレートでの研究例」に回る
     location.hash = '#/tea/green-steamed'; render(<App />)
-    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 第33弾: 既定は味
+    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 香りタブへ（第46弾以降は既定も香り）
     clickButton(/植物系/)
     clickButton(/青草・若葉/)
     fireEvent.click(screen.getByRole('button', { name: '「青草・若葉」の根拠を見る' }))
@@ -60,8 +62,9 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
   it('5. 紅茶の苦味からカフェイン、渋味から渋味の科学的区別と成分を確認できる', () => {
     location.hash = '#/tea/black-tea'; render(<App />)
     // 第36弾: 味ホイールは 第1階層（基本味）→第2階層（具体名）→第3階層（化合物）。
-    // 既定モードは味（第33弾）。紅茶の苦味の具体名は、呈味成分からの代表例
+    // 既定モードは香り（第46弾）。紅茶の苦味の具体名は、呈味成分からの代表例
     // 「コーヒー」（根拠成分＝カフェイン）として示される
+    toTaste()
     fireEvent.click(screen.getByLabelText(/苦味を開く/))
     expect(wheelText()).toContain('コーヒー')
     fireEvent.click(screen.getByLabelText(/コーヒー（\d+%）に寄与する化学物質を見る/))
@@ -70,6 +73,7 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
     expectShown(/再構成・除去（オミッション）実験で、苦味の主要呈味化合物/)
     cleanup()
     location.hash = '#/tea/black-tea'; render(<App />)
+    toTaste()
     // 渋味はホイールではなくゲージ。タップすると寄与する化学物質が出る
     const gauge = document.querySelector('.astringency-gauge') as HTMLElement
     expect(gauge).toBeTruthy()
@@ -88,6 +92,7 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
     location.hash = '#/tea/matcha'; render(<App />)
     // 第36弾: うま味の具体名は呈味成分からの代表例「だし」（根拠成分＝グルタミン酸）。
     // 第3階層でグルタミン酸の詳細を開き、寄与が未確認である限定を確認する
+    toTaste()
     fireEvent.click(screen.getByLabelText(/うま味を開く/))
     expect(wheelText()).toContain('だし')
     fireEvent.click(screen.getByLabelText(/だし（\d+%）に寄与する化学物質を見る/))
@@ -98,6 +103,7 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
     location.hash = '#/tea/matcha'; render(<App />)
     // うま味そのものの根拠（味の根拠シート）では、テアニン等の実証成分が
     // 関係する成分として併記される
+    toTaste()
     fireEvent.click(screen.getByLabelText(/うま味を開く/))
     fireEvent.click(screen.getByRole('button', { name: '「うま味」の根拠を見る' }))
     expectShown(/L-テアニン/)
@@ -108,6 +114,7 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
   it('7. チョコレート側でも味覚から成分を確認でき、甘味は配合糖由来と区別される', () => {
     location.hash = '#/choco/dark-roasted'; render(<App />)
     // 第34弾: 苦味→具体名（カカオ）→化合物、と辿って成分を確認できる
+    toTaste()
     fireEvent.click(screen.getByLabelText(/苦味を開く/))
     fireEvent.click(screen.getByLabelText(/カカオ（\d+%）に寄与する化学物質を見る/))
     expectShown(/ジメチルピラジン/)
@@ -119,12 +126,14 @@ describe('フレーバーホイール×科学成分の画面連携（追加指�
     location.hash = '#/choco/milk-chocolate'; render(<App />)
     // 第36弾: ミルクチョコの苦味に直接結びつく成分（ジケトピペラジン類）は、
     // 味の根拠シート（関係する成分）で確認できる（ホイールに直接は出さない）
+    toTaste()
     fireEvent.click(screen.getByLabelText(/苦味を開く/))
     fireEvent.click(screen.getByRole('button', { name: '「苦味」の根拠を見る' }))
     expectShown(/ジケトピペラジン類/)
     cleanup()
     location.hash = '#/choco/milk-chocolate'; render(<App />)
     // 甘味そのものの根拠では、配合糖由来であることが区別して示される
+    toTaste()
     fireEvent.click(screen.getByLabelText(/甘味を開く/))
     fireEvent.click(screen.getByRole('button', { name: '「甘味」の根拠を見る' }))
     expectShown(/配合された糖によるもの/)

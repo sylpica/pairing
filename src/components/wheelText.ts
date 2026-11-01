@@ -33,6 +33,20 @@ export function emWidthOf(s: string): number {
 }
 export const textWidthAt = (s: string, fs: number): number => emWidthOf(s) * fs
 
+/**
+ * 輪郭判定専用の「安全幅」（第46弾）。emWidthOf の近似（半角=0.55em）は、
+ * 実フォントでは '%'（約0.95em）や数字で上回ることが実測で分かった
+ * （'9%' は実測が近似の1.41倍）。円盤の輪郭内に収まることを「実測でも」
+ * 担保するため、判定側では ASCII を 0.75em と広めに見積もる。
+ * フィッティング自体（フォント決定）は従来どおり emWidthOf で行い、
+ * この安全幅は TieredWheel の輪郭判定（violates／x寄せ）でのみ使う。
+ */
+export function safeWidthAt(s: string, fs: number): number {
+  let em = 0
+  for (const ch of s) em += ch === ' ' ? 0.35 : (ch.codePointAt(0) ?? 0) < 128 ? 0.75 : 1
+  return em * fs
+}
+
 export interface FittedLine {
   text: string
   fs: number

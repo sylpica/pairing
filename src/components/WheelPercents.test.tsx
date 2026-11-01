@@ -50,7 +50,8 @@ describe('ホイールの％表示（第27弾・表示検証）', () => {
     const a = analyzeTeaCombo({ kindId: 'green', regionId: 'nagasaki', cultivarId: 'yabukita' })
     const { container } = render(<ComboWheelPanel notes={a.notes} tastes={a.tastes} context={a.context} resetKey={a.title} />)
     const root = container as HTMLElement
-    // 第33弾: 既定は味。味・第1階層（味そのもの）
+    // 第46弾: 既定は香りのため、まず味タブへ。味・第1階層（味そのもの）
+    fireEvent.click(screen.getByRole('tab', { name: '味' }))
     expectTierPercents(root, '味第1階層')
     // 味・第2階層（甘味→具体名）
     fireEvent.click(screen.getByLabelText(/甘味を開く/))
@@ -73,7 +74,8 @@ describe('ホイールの％表示（第27弾・表示検証）', () => {
     const item = teaById('sencha')!
     const { container } = render(<ProfileWheelPanel profile={item.profile} context={{ side: 'tea', kindId: item.kindId, itemName: item.name, itemId: item.id }} />)
     const root = container as HTMLElement
-    // 第33弾: 既定は味
+    // 第46弾: 既定は香りのため、まず味タブへ
+    fireEvent.click(screen.getByRole('tab', { name: '味' }))
     expectTierPercents(root, 'アイテム味第1階層')
     fireEvent.click(screen.getByLabelText(/うま味を開く/))
     expectTierPercents(root, 'アイテム味第2階層')

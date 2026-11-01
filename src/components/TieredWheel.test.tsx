@@ -91,7 +91,7 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
     // 組み合わせ系：長崎 × やぶきた × 緑茶 → 花系 → ジャスミン（スクリーンショットの状態）
     const a = analyzeTeaCombo({ kindId: 'green', regionId: 'nagasaki', cultivarId: 'yabukita' })
     const c1 = renderPanel(a)
-    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 第33弾: 既定は味
+    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 香りタブへ（第46弾以降は既定も香り）
     fireEvent.click(screen.getByLabelText(/花系を開く/))
     fireEvent.click(screen.getByLabelText(/ジャスミン（\d+%）に寄与する化学物質を見る/))
     expectWheelBeforeHead(c1.container)
@@ -99,7 +99,7 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
     // アイテム系：蒸し緑茶の詳細ホイールでも同じ並び
     const item = teaItems.find((t) => t.id === 'green-steamed')!
     const c2 = render(<ProfileWheelPanel profile={item.profile} context={{ side: 'tea', kindId: item.kindId, itemName: item.name, itemId: item.id }} />)
-    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 第33弾: 既定は味
+    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 香りタブへ（第46弾以降は既定も香り）
     fireEvent.click(screen.getByLabelText(/花系を開く/))
     fireEvent.click(screen.getByLabelText(/ジャスミン（\d+%）に寄与する化学物質を見る/))
     expectWheelBeforeHead(c2.container)
@@ -108,7 +108,8 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
   it('第17弾：味の第3階層でもホイールが注記より前に来る', () => {
     const a = analyzeChocoCombo({ kind: 'dark', originId: '', lineage: null })
     const { container } = renderPanel(a)
-    // 第33弾・第34弾: 既定は味モード。第1階層（苦味）→第2階層（具体名カカオ）→第3階層（化合物）
+    // 第46弾: 既定は香りのため、味タブへ切り替えてから。第1階層（苦味）→第2階層（具体名カカオ）→第3階層（化合物）
+    fireEvent.click(screen.getByRole('tab', { name: '味' }))
     fireEvent.click(screen.getByLabelText(/苦味を開く/))
     fireEvent.click(screen.getByLabelText(/カカオ（\d+%）に寄与する化学物質を見る/))
     const wheel = container.querySelector('svg.wheel')
@@ -125,7 +126,7 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
   it('マダガスカル × クリオロ × ダーク：甘い香り→キャラメル→フラネオールの詳細が出る', () => {
     const a = analyzeChocoCombo({ kind: 'dark', originId: 'madagascar', lineage: { layer: 'traditional', id: 'trad-criollo' } })
     const { container } = renderPanel(a)
-    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 第33弾: 既定は味
+    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 香りタブへ（第46弾以降は既定も香り）
     expectNoBlank(container)
     fireEvent.click(screen.getByLabelText(/甘い香りを開く/))
     expectNoBlank(container)
@@ -142,7 +143,7 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
   it('中分類の無い大分類は薄く表示され、押すと理由が説明される（緑茶 × 鹿児島の果実系）', () => {
     const a = analyzeTeaCombo({ kindId: 'green', regionId: 'kagoshima', cultivarId: '' })
     const { container } = renderPanel(a)
-    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 第33弾: 既定は味
+    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 香りタブへ（第46弾以降は既定も香り）
     const seg = screen.getByLabelText(/果実系（\d+%・具体名の中分類はありません）/)
     expect(seg).toBeTruthy()
     fireEvent.click(seg)
@@ -155,8 +156,9 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
   it('味モード：第1階層（基本味）→第2階層（具体名）→第3階層（化合物）→成分詳細（第34弾・第36弾）', () => {
     const a = analyzeTeaCombo({ kindId: 'green', regionId: 'nagasaki', cultivarId: 'yabukita' })
     const { container } = renderPanel(a)
-    // 第33弾: 既定は味モード。第36弾: 第1階層は基本味のみ（甘味・苦味・うま味の3つ）。
+    // 第46弾: 既定は香りのため、味タブへ切り替えてから。第36弾: 第1階層は基本味のみ（甘味・苦味・うま味の3つ）。
     // 渋味（収れん感）はホイールに入らず、すぐ下のゲージで示される
+    fireEvent.click(screen.getByRole('tab', { name: '味' }))
     expectNoBlank(container)
     expect(segs(container)).toHaveLength(3)
     // 旧2グループ構造のセグメント名（基本味／口当たり・収れん感）は出ない
@@ -213,6 +215,7 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
   it('味モード：あさつゆは第1階層が3つの基本味（甘味・苦味・うま味）に分かれ、併記は具体名だけ（第36弾）', () => {
     const a = analyzeTeaCombo({ kindId: 'green', regionId: '', cultivarId: 'asatsuyu' })
     const { container } = renderPanel(a)
+    fireEvent.click(screen.getByRole('tab', { name: '味' })) // 第46弾: 既定は香り
     expectNoBlank(container)
     const top = segs(container)
     expect(top).toHaveLength(3)
@@ -241,6 +244,7 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
   it('味モード：具体名も物質も無い味（ルビーの甘味）はホイールを無理に作らず根拠説明が出る', () => {
     const a = analyzeChocoCombo({ kind: 'ruby', originId: '', lineage: null })
     const { container } = renderPanel(a)
+    fireEvent.click(screen.getByRole('tab', { name: '味' })) // 第46弾: 既定は香り
     // 第1階層は甘味・酸味の2つ（データのある基本味のみ）
     expectNoBlank(container)
     expect(segs(container)).toHaveLength(2)
@@ -257,6 +261,7 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
   it('味モード：化合物の無い具体名（ミルクチョコの麦芽）は根拠シートを開く', () => {
     const a = analyzeChocoCombo({ kind: 'milk', originId: '', lineage: null })
     const { container } = renderPanel(a)
+    fireEvent.click(screen.getByRole('tab', { name: '味' })) // 第46弾: 既定は香り
     fireEvent.click(screen.getByLabelText(/甘味を開く/))
     expectNoBlank(container)
     const maltSeg = screen.getByRole('button', { name: /^麦芽（\d+%）の根拠を見る$/ })
@@ -271,6 +276,7 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
     const { container } = render(
       <ComboWheelPanel notes={a.notes} tastes={a.tastes} context={a.context} resetKey={a.title}
         legendExtra={<p><span className="badge">組み合わせ全体の根拠：一般的な知見</span></p>} />)
+    fireEvent.click(screen.getByRole('tab', { name: '味' })) // 第46弾: 既定は香り
     fireEvent.click(screen.getByLabelText(/甘味（\d+%・[^）]*対応づく具体名はありません/))
     // ホイールも通常の凡例も出ないが、集約した注意書きは凡例ボックスの器で残る
     expect(screen.getByText(/対応づく具体名（フレーバー）は、この対象ではまだ示せません/)).toBeTruthy()
@@ -311,7 +317,8 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
       checked++
       const tiers = buildTasteNoteTiers(notes, tastes, item.context)
       const { container } = render(<ProfileWheelPanel profile={item.profile} context={item.context} />)
-      // 第33弾: 既定は味モード。第1階層セグメントは buildTasteNoteTiers と一致する（基本味のみ）
+      // 第46弾: 既定は香りのため味タブへ切り替える。第1階層セグメントは buildTasteNoteTiers と一致する（基本味のみ）
+      fireEvent.click(screen.getByRole('tab', { name: '味' }))
       const topSegs = segs(container)
       expect(topSegs.length, `${item.name}: 第1階層セグメント数`).toBe(tiers.length)
       // 第36弾: 第1階層の併記（具体名プレビュー）に登録化合物の名前が一切現れない
@@ -367,7 +374,7 @@ describe('3階層ホイール（第8弾・味は第10弾で3階層化）', () =>
     ]
     for (const a of analyses) {
       const { container } = renderPanel(a)
-      fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 第33弾: 既定は味。香り側を先に通す
+      fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 香りタブへ。香り側を先に通す
       expectNoBlank(container)
       // 大分類チップを順に開き、中分類→小分類まで無地が無いことを確認する
       const catChips = [...container.querySelectorAll('.wheel-wrap .chip')]

@@ -72,7 +72,13 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 .wheel-list .chip { flex-wrap: wrap; max-width: 100%; }
 .wheel-list .chip-inferred { border: 1.5px dashed #b08968; }
 .wheel-list .badge { flex: none; }
-.chip-label { white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
+/* 第46弾: ラベルは「名前」と「％」の2単位で構成し、単位内では絶対に
+   割らない（.unit-keep の nowrap）が、画面に収まらない場合は単位の
+   間でのみ折り返す。従来はラベル全体が nowrap の1単位だったため、
+   最長の化合物名（N-フェニルプロペノイル-L-アミノ酸類）のチップが
+   280px 幅で画面からはみ出した（実ブラウザ監査で発見・是正）。 */
+.chip-label { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; column-gap: 5px; }
+@media (max-width: 374px) { .wheel-list .chip-label { font-size: 0.86rem; } }
 /* 括弧併記（化合物名）は名前＋％のラベルとは別単位。化合物名の途中では
    切らず、区切り（読点・空白）でのみ折り返す（最長トークン幅が下限になる
    ため、1文字ずつの縦折れにはならない）。 */

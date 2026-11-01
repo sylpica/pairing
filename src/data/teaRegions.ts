@@ -239,7 +239,7 @@ export const teaRegions: TeaRegion[] = [
     note: '日本三大銘茶の一つに数えられる煎茶の産地。国内の主な茶産地の中で最も北に位置し、伝統的に強い火入れ（狭山火入れ）で仕上げられる。',
     flavorEvidence: 'measured',
     verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
-    scienceNote: '同一品種やぶきたの蒸し製緑茶を7府県産で比べた揮発成分の実測（Hattori et al. 2005）と、市販茶の呈味成分を静岡・宇治・狭山の3地域で比べた実測（桑野ら 1989）がある。狭山火入れという火入れの伝統とその香気化学は、埼玉県茶業研究所の研究者の総説（高橋 2015）に整理されている。香味の所見は煎茶（緑茶）についてのみ確認できた。',
+    scienceNote: '同一品種やぶきたの蒸し製緑茶を7府県産で比べた揮発成分の実測（Hattori et al. 2005）と、市販茶の呈味成分を静岡・宇治・狭山の3地域で比べた実測（桑野ら 1989）がある。狭山火入れという火入れの伝統とその香気化学は、埼玉県茶業研究所の研究者の総説（高橋 2015）に整理され、2024年の埼玉県中小企業診断協会の調査報告書でも「通常より強め・高温で火入れをして火入れ香が出る伝統の技」として記述されている。香味の所見は煎茶（緑茶）についてのみ確認できた。2020年代に狭山産煎茶の香味を直接測った新しい査読研究は、2026-11-01 の再調査でも見つからなかった（第46弾）。',
     findings: [
       {
         kind: 'composition',
@@ -261,11 +261,11 @@ export const teaRegions: TeaRegion[] = [
       {
         kind: 'composition',
         statement: '狭山の火入れは伝統的に高温（100℃程度）で長時間行って香味を強くするもので、他産地の上級茶の火入れ（80℃、30〜40分程度）と区別して「狭山火入れ」と呼ばれる。火入れでは糖由来の甘い香気成分（マルトール、フラネオール等）と香ばしいピラジン類が生成し、これらは加熱温度が高いほど増加する',
-        conditions: '埼玉県茶業研究所の研究者による総説（高橋 2015）の整理であり、狭山茶試料そのものの官能実測ではない',
-        sourceIds: ['takahashi-2015-sayama-tea-aroma'],
+        conditions: '埼玉県茶業研究所の研究者による総説（高橋 2015）の整理であり、狭山茶試料そのものの官能実測ではない。狭山火入れの伝統自体は、2024年の埼玉県中小企業診断協会の調査報告書でも「通常より強め・高温で火入れをするため、独特の強い『火入れ香』が出る伝統の技」と記述され、裏付けが更新されている（同報告書は地域調査であり香味の実測ではない）',
+        sourceIds: ['takahashi-2015-sayama-tea-aroma', 'saitama-smeca-2024-sayama-report'],
       },
     ],
-    sourceIds: ['hattori-2005-green-tea-regions-volatiles', 'mizukami-2015-green-tea-odor-characteristics', 'takahashi-2015-sayama-tea-aroma', 'kuwano-1989-market-green-tea-regions', 'saitama-pref-sayama-tea', 'sayama-city-sayama-tea'],
+    sourceIds: ['hattori-2005-green-tea-regions-volatiles', 'mizukami-2015-green-tea-odor-characteristics', 'takahashi-2015-sayama-tea-aroma', 'kuwano-1989-market-green-tea-regions', 'saitama-pref-sayama-tea', 'sayama-city-sayama-tea', 'saitama-smeca-2024-sayama-report'],
     applicableKindIds: ['green'],
   },
 

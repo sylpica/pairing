@@ -41,7 +41,7 @@ describe('香り中分類ホイールへの化合物名併記（第32弾）', ()
   it('画面: 第2階層のセグメントに化合物名が出て、「化合物○種」表記が残らない', () => {
     const a = analyzeTeaCombo({ kindId: 'green', regionId: 'nagasaki', cultivarId: 'yabukita' })
     const { container } = render(<ComboWheelPanel notes={a.notes} tastes={a.tastes} context={a.context} resetKey={a.title} />)
-    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 第33弾: 既定は味
+    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 香りタブへ（第46弾以降は既定も香り）
     fireEvent.click(screen.getByLabelText(/花系を開く/))
     const segs = [...container.querySelectorAll('svg g.wheel-seg')]
     expect(segs.length).toBeGreaterThan(0)
@@ -62,7 +62,7 @@ describe('香り中分類ホイールへの化合物名併記（第32弾）', ()
   it('チョコ側（ダーク×ガーナ相当）でも第2階層に化合物名が出る', () => {
     const a = analyzeChocoCombo({ kind: 'dark', originId: 'ghana', lineage: null })
     const { container } = render(<ComboWheelPanel notes={a.notes} tastes={a.tastes} context={a.context} resetKey={a.title} />)
-    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 第33弾: 既定は味
+    fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 香りタブへ（第46弾以降は既定も香り）
     fireEvent.click(screen.getByLabelText(/ナッツ・カカオ系を開く/))
     const segs = [...container.querySelectorAll('svg g.wheel-seg')]
     expect(segs.length).toBeGreaterThan(0)

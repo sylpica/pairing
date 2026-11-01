@@ -17,8 +17,9 @@ import { chocolateItems } from '../data/chocolates'
 // 強さはピル内の括弧文言、推測（未検証）の印はピル自体の破線
 // （.chip-inferred）で表す。
 // 不変条件（テスト可能な形）:
-//  1. ホイール本体の全チップは、ラベル（名前＋％）を .chip-label という
-//     改行しない（white-space: nowrap）単位としてちょうど1つ持つ。
+//  1. ホイール本体の全チップは、ラベル（名前＋％）を .chip-label として
+//     ちょうど1つ持つ。第46弾: ラベルの中は「名前」と「％」の2単位
+//     （各 .unit-keep が nowrap）で、単位の間でのみ折り返す。
 //  2. 根拠バッジ（.badge）はチップ本体の中には決して入らない。第2階層では
 //     チップ直下の .wheel-chip-note に置かれる（味・香り共通）。
 //     第1階層は味・香りとも直下の要素自体を持たない。
@@ -57,6 +58,7 @@ describe('凡例チップの統一構造（第37弾・第39弾）', () => {
   it('味・第1階層: 香りの第1階層と完全に同じ作法（1ピルのみ・直下に何も無い）。強さはピル内の括弧文言（再現ケース: ルビー）', () => {
     const a = analyzeChocoCombo({ kind: 'ruby', originId: 'dominican-republic', lineage: { layer: 'genetic', id: 'gen-maranon' } })
     const { container } = renderPanel(a)
+    fireEvent.click(screen.getByRole('tab', { name: '味' })) // 第46弾: 既定は香り
     const chips = expectChipStructure(container, { badgeBelow: false })
     const texts = chips.map((c) => c.querySelector('.chip-label')!.textContent ?? '')
     // 強さはピル内の括弧に入り、具体名がある味は › が付く（香りの括弧の置き場と同じ）
@@ -74,6 +76,7 @@ describe('凡例チップの統一構造（第37弾・第39弾）', () => {
   it('味・第1階層: 具体名が無い味は「（強さ・具体名なし）」までがラベルの1単位になる', () => {
     const a = analyzeChocoCombo({ kind: 'ruby', originId: '', lineage: null })
     const { container } = renderPanel(a)
+    fireEvent.click(screen.getByRole('tab', { name: '味' })) // 第46弾: 既定は香り
     const chips = expectChipStructure(container, { badgeBelow: false })
     const texts = chips.map((c) => c.querySelector('.chip-label')!.textContent ?? '')
     expect(texts.some((t) => /^甘味 \d+%（(弱い|普通|強い)・具体名なし）$/.test(t))).toBe(true)
@@ -84,6 +87,7 @@ describe('凡例チップの統一構造（第37弾・第39弾）', () => {
     const chocoItem = chocolateItems.find((c) => c.id === 'dark-roasted')!
     const pair = assemblePairing(teaItem, chocoItem, null, null)
     const { container } = render(<PairingWheelPanel data={pair.wheel} resetKey="matcha-dark" />)
+    fireEvent.click(screen.getByRole('tab', { name: '味' })) // 第46弾: 既定は香り
     const chips = expectChipStructure(container, { badgeBelow: false })
     expect(chips.length).toBeGreaterThan(0)
     for (const chip of chips) {
@@ -95,6 +99,7 @@ describe('凡例チップの統一構造（第37弾・第39弾）', () => {
   it('味・第2階層: 化合物の括弧併記は .chip-aux、バッジはチップ直下（香り第2階層と同じ作法）', () => {
     const a = analyzeChocoCombo({ kind: 'ruby', originId: 'dominican-republic', lineage: { layer: 'genetic', id: 'gen-maranon' } })
     const { container } = renderPanel(a)
+    fireEvent.click(screen.getByRole('tab', { name: '味' })) // 第46弾: 既定は香り
     fireEvent.click(screen.getByLabelText(/酸味を開く/))
     const chips = expectChipStructure(container, { badgeBelow: true })
     expect(chips.some((c) => c.querySelector('.chip-aux'))).toBe(true)
@@ -130,6 +135,7 @@ describe('凡例チップの統一構造（第37弾・第39弾）', () => {
   it('第3階層（化学物質）: チップは「成分名＋％」のラベルだけ', () => {
     const a = analyzeChocoCombo({ kind: 'dark', originId: '', lineage: null })
     const { container } = renderPanel(a)
+    fireEvent.click(screen.getByRole('tab', { name: '味' })) // 第46弾: 既定は香り
     fireEvent.click(screen.getByLabelText(/苦味を開く/))
     const entryChip = wheelChips(container)[0]
     fireEvent.click(entryChip)
@@ -139,9 +145,13 @@ describe('凡例チップの統一構造（第37弾・第39弾）', () => {
     }
   })
 
-  it('CSS の不変条件: ラベルは nowrap、チップは単位ごとに折り返し、バッジは狭幅でも潰れない', () => {
+  it('CSS の不変条件: ラベルは単位内では割らず単位間でのみ折り返し、バッジは狭幅でも潰れない', () => {
     const css = readFileSync('src/App.css', 'utf-8')
-    expect(css).toMatch(/\.chip-label\s*\{[^}]*white-space:\s*nowrap/)
+    // 第46弾: ラベルは「名前」と「％」の2単位（各 .unit-keep が nowrap）。
+    // 単位の間でのみ折り返す（最長化合物名のチップのはみ出し是正）。
+    expect(css).toMatch(/\.chip-label\s*\{[^}]*flex-wrap:\s*wrap/)
+    expect(css).toMatch(/\.unit-keep\s*\{[^}]*white-space:\s*nowrap/)
+    expect(css).toMatch(/@media \(max-width: 374px\) \{ \.wheel-list \.chip-label \{ font-size: 0\.86rem; \} \}/)
     expect(css).toMatch(/\.wheel-list \.chip\s*\{[^}]*flex-wrap:\s*wrap/)
     expect(css).toMatch(/@media \(max-width: 400px\) \{ \.wheel-list \.badge \{ white-space: nowrap; \} \}/)
     expect(css).toMatch(/\.wheel-chip-note\s*\{/)

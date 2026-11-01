@@ -5,7 +5,7 @@ import { createElement } from 'react'
 import TieredWheel from './TieredWheel'
 import ProfileWheelPanel from './ProfileWheelPanel'
 import ComboWheelPanel from './ComboWheelPanel'
-import { fitLabelLines, packScaledLines, textWidthAt, emWidthOf, boundaryCutsOf } from './wheelText'
+import { fitLabelLines, packScaledLines, textWidthAt, safeWidthAt, emWidthOf, boundaryCutsOf } from './wheelText'
 import { compounds } from '../data/compounds'
 import { teaItems } from '../data/teas'
 import { chocolateItems } from '../data/chocolates'
@@ -97,8 +97,10 @@ describe('ホイールラベルの途切れ防止（第29弾・第43弾で単位
 // そのため烘青緑茶のうま味セグメントの併記（viewBox 内には収まるが、
 // 円盤の輪郭を16px横切って末尾が途切れて見えた）が漏れた。
 // ここでは実際のパネルを描画し、全ての SVG テキストについて「…」省略が
-// 無いこと、viewBox 内に収まること、および行の中心の高さでの円盤の横幅に
-// 収まることを、x/y 属性とフォントサイズから幾何学的に検証する（恒常テスト）。
+// 無いこと、viewBox 内に収まること、および円盤の輪郭内に収まることを、
+// x/y 属性とフォントサイズから幾何学的に検証する（恒常テスト）。
+// 第46弾: 輪郭の判定を「行の帯の角＋安全幅（safeWidthAt）」に強化した
+// （従来の「行中心の弦幅＋近似幅」では実機のはみ出しを見逃したため）。
 describe('ホイールラベルの収納（第36弾・実パネル全数）', () => {
   const DISC_R = 138
   const expectWheelTextsFit = (container: HTMLElement, where: string) => {
@@ -110,15 +112,17 @@ describe('ホイールラベルの収納（第36弾・実パネル全数）', ()
       const x = parseFloat(t.getAttribute('x') ?? '150')
       const y = parseFloat(t.getAttribute('y') ?? '150')
       const fs = parseFloat((t as HTMLElement).style.fontSize || (t.getAttribute('class') === 'wheel-center' ? '15' : '12'))
-      const w = textWidthAt(text, fs)
-      const h = fs * 1.35
+      const w = safeWidthAt(text, fs)
+      const half = fs * 0.9
       // 全行: viewBox（300×300）の内側に収まること
       expect(x - w / 2, `${where}: 「${text}」が左端外`).toBeGreaterThanOrEqual(-0.5)
       expect(x + w / 2, `${where}: 「${text}」が右端外`).toBeLessThanOrEqual(300.5)
-      expect(y - h / 2, `${where}: 「${text}」が上端外`).toBeGreaterThanOrEqual(-0.5)
-      expect(y + h / 2, `${where}: 「${text}」が下端外`).toBeLessThanOrEqual(300.5)
-      // 全行: その行の高さにおける円盤の横幅に収まること（ユーザー指摘の再発防止）
-      const cross = Math.sqrt(Math.max(DISC_R * DISC_R - (y - 150) * (y - 150), 0))
+      expect(y - half, `${where}: 「${text}」が上端外`).toBeGreaterThanOrEqual(-0.5)
+      expect(y + half, `${where}: 「${text}」が下端外`).toBeLessThanOrEqual(300.5)
+      // 全行: 円盤の輪郭内に収まること（第46弾: 帯の角での弦で判定。
+      // ユーザー指摘のはみ出しの再発防止）
+      const dy = Math.max(Math.abs(y - half - 150), Math.abs(y + half - 150))
+      const cross = Math.sqrt(Math.max(DISC_R * DISC_R - dy * dy, 0))
       const extent = Math.abs(x - 150) + w / 2
       expect(extent, `${where}: 「${text}」が円盤の輪郭外 (extent=${extent.toFixed(1)} > ${cross.toFixed(1)})`).toBeLessThanOrEqual(cross + 0.5)
     }
@@ -130,6 +134,7 @@ describe('ホイールラベルの収納（第36弾・実パネル全数）', ()
       profile: item.profile,
       context: { side: 'tea', kindId: item.kindId, itemName: item.name, itemId: item.id },
     }))
+    fireEvent.click(screen.getByRole('tab', { name: '味' })) // 第46弾: 既定は香り。味ホイールを見る
     expectWheelTextsFit(container, '烘青緑茶・味第1階層')
     // うま味セグメントの併記に化合物名は無く、具体名（だし）だけが出る
     const subs = [...container.querySelectorAll('.wheel-sub')].map((el) => el.textContent ?? '').join('')
@@ -154,6 +159,7 @@ describe('ホイールラベルの収納（第36弾・実パネル全数）', ()
     ]
     for (const item of cases) {
       const { container } = render(createElement(ProfileWheelPanel, { profile: item.profile, context: item.context }))
+      fireEvent.click(screen.getByRole('tab', { name: '味' })) // 第46弾: 既定は香り。味ホイールを見る
       if (container.querySelector('svg.wheel')) expectWheelTextsFit(container, `${item.name}・味第1階層`)
       const gauge = container.querySelector('.astringency-gauge')
       if (gauge) {
@@ -173,6 +179,7 @@ describe('ホイールラベルの収納（第36弾・実パネル全数）', ()
     ]
     for (const a of analyses) {
       const { container } = render(createElement(ComboWheelPanel, { notes: a.notes, tastes: a.tastes, context: a.context, resetKey: a.title }))
+      fireEvent.click(screen.getByRole('tab', { name: '味' })) // 第46弾: 既定は香り。まず味を見る
       expectWheelTextsFit(container, `${a.title}・味第1階層`)
       fireEvent.click(screen.getByRole('tab', { name: '香り' }))
       expectWheelTextsFit(container, `${a.title}・香り第1階層`)

@@ -198,8 +198,9 @@ function TeaList({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'combo
   const cultivarId = cultivarRaw === 'all' ? '' : cultivarRaw
   const selects: TeaSelectsState = { kind, origin: region, cultivar: cultivarId }
   const applySelects = (next: TeaSelectsState) => { setKindRaw(next.kind); setRegionRaw(next.origin); setCultivarRaw(next.cultivar) }
-  // 第37弾: リセットボタンでプレビューのホイールを初期状態（モード=味）に戻すための
-  // 作り直しキー。通常のプルダウン変更では変わらず、モード（味／香り）は保持される。
+  // 第37弾: リセットボタンでプレビューのホイールを初期状態（モード=既定。
+  // 第46弾以降は香り）に戻すための作り直しキー。通常のプルダウン変更では
+  // 変わらず、モード（味／香り）は保持される。
   const [previewNonce, setPreviewNonce] = useState(0)
   // 分類の値（茶類IDでもアイテムIDでもよい）から大分類を引く
   const filterKindCategory = (kindValue: string): string => (kindValue ? teaComboCategoryOf(kindValue) : '')
@@ -618,7 +619,8 @@ function PairPage({ saved, toggleFav }: { saved: SavedData; toggleFav: (k: 'pair
   const [rightChocoOrigin, setRightChocoOrigin] = usePersistedState('pairing.pair.right.originId', '')
   const [rightCacaoSel, setRightCacaoSel] = usePersistedState<CacaoSel | null>('pairing.pair.right.cacaoSel', null)
   const [tab, setTab] = useState<'a' | 'b' | 'pair'>('pair')
-  // 第37弾: リセットボタンでのみ結果ホイールを作り直す（モード=味に戻す）キー。
+  // 第37弾: リセットボタンでのみ結果ホイールを作り直す（モード=既定に戻す。
+  // 第46弾以降の既定は香り）キー。
   // 通常のプルダウン変更では変わらず、モード（味／香り）は保持される。
   const [wheelNonce, setWheelNonce] = useState(0)
   const [pairNote, setPairNote] = useState<string | null>(null)
