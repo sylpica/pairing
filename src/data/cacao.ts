@@ -31,10 +31,12 @@ export const cacaoTraditionalGroups: CacaoTraditionalGroup[] = [
   {
     id: 'trad-forastero', name: 'Forastero', nameJa: 'フォラステロ', aliases: [],
     nature: '栽培・半野生・野生の集団を含む大きな集団（large group）を指す歴史的な呼称であり、単一の遺伝集団ではない。Motamayor et al. 2008 の10集団のうち Criollo を除く大半（Amelonado、Contamana、Curaray、Guiana、Iquitos、Marañon、Nanay、Purús、および Forastero 型とされる Nacional）にまたがる。その中で最も広く植えられているのは Amelonado 集団である。市場では bulk（ordinary）豆は Forastero の木から生産されると一般化されるが、例外が明記されている（下記の注記参照）。',
-    verification: { existence: 'confirmed', classification: 'confirmed', science: 'unconfirmed' },
-    scienceNote: '総称としての実測は原理的に存在しない。Elwers et al. 2009 には Upper Amazon Forastero / Lower Amazon Forastero のタイプ試料が含まれるが、Motamayor の遺伝集団との対応は未確認のため、本分類の所見としては登録しない。',
-    findings: [],
-    sourceIds: [ICCO, MOTA],
+    verification: { existence: 'confirmed', classification: 'confirmed', science: 'partial' },
+    scienceNote: '総称としての実測は原理的に存在しない。Elwers et al. 2009 には Upper Amazon Forastero / Lower Amazon Forastero のタイプ試料が含まれるが、Motamayor の遺伝集団との対応は未確認のため、本分類の所見としては登録しない。第43弾からは、総称の中核集団 Amelonado の特徴づけから一段弱く読み替えた推測（果実の方向）を組み合わせに反映する（総称自体の実測ではない）。',
+    findings: [
+      { kind: 'sensory', statement: '総説 Afoakwa et al. 2008 は、西アフリカのフォラステロ（Amelonado が中核で、フォラステロの中で最も広く植えられている集団）を、強い基本的なカカオ感と果実の含みを持つ標準的なカカオ香味として特徴づけている。', conditions: '中核集団についての特徴づけであり、Upper Amazon 型を含む総称全体の実測ではない。組み合わせへの反映は、この中核集団の知見からカカオの強調を落とした一段弱い読み替え（果実全般の弱い追加）に絞り、推測（inferred）として扱う。「フォラステロは苦い」式の単純比較は Elwers et al. 2009 で支持されないため、味覚の方向は反映しない。', sourceIds: ['afoakwa-2008-cocoa-flavour-review', MOTA] },
+    ],
+    sourceIds: [ICCO, MOTA, 'afoakwa-2008-cocoa-flavour-review'],
     note: 'fine/flavour と bulk の市場区分は伝統的分類と完全には対応しない。エクアドルの Nacional は Forastero 型とされながら fine/flavour 豆を生産し、逆にカメルーンの Trinitario 型の豆は bulk に分類される（ICCO）。',
   },
   {
@@ -147,9 +149,11 @@ export const cacaoGeneticGroups: CacaoGeneticGroup[] = [
     distribution: 'ペルー・アマゾンのナナイ川流域。Pound コレクションの NA（Nanay）系列が本クラスターの 90% を占める。Iquitos とは対立遺伝子頻度の差で区別される（小サンプルでは両者が1クラスターに融合する結果も原著に併記されている）。',
     classificationSystem: SYSTEM,
     verification: { existence: 'confirmed', classification: 'confirmed', science: 'unconfirmed' },
-    scienceNote: '集団としての香味・成分実測は未確認。',
-    findings: [],
-    sourceIds: [MOTA],
+    scienceNote: '集団としての香味・成分実測は未確認。第43弾からは、遺伝的に最も近い Iquitos の知見（IMC-67 のリナロール実測に基づく花様の方向）から、花様のみに絞った一段弱い合成を推測として組み合わせに反映する（Nanay 自体の実測ではない）。',
+    findings: [
+      { kind: 'genetic', statement: 'Motamayor et al. 2008 の原著では、Nanay と Iquitos は対立遺伝子頻度の差でのみ区別され、小サンプルでは1つのクラスターに融合し、採取地も重なり合うとされる。両者は遺伝的に最も近い関係にある。', conditions: '遺伝的近接の知見であり、香味の実測ではない。組み合わせへの反映は、近接集団 Iquitos の足がかり（IMC-67 のリナロール含量実測→花様・柑橘）のうち花様のみに絞った一段弱い合成に限り、推測（inferred）として扱う。', sourceIds: [MOTA, 'collin-2023-cocoa-bean-genotypes-aroma'] },
+    ],
+    sourceIds: [MOTA, 'collin-2023-cocoa-bean-genotypes-aroma'],
   },
   {
     id: 'gen-purus', name: 'Purús', nameJa: 'プルス', aliases: ['Purus'],
@@ -157,9 +161,11 @@ export const cacaoGeneticGroups: CacaoGeneticGroup[] = [
     distribution: 'プルス川・ソリモンエス川流域。上ソリモンエス川とイサ川（Iça River）のサブクラスターが含まれる。ソリモンエス川沿いでは遺伝子流動が広範で、下流の移入集団のクラスタリングは困難とされる。',
     classificationSystem: SYSTEM,
     verification: { existence: 'confirmed', classification: 'confirmed', science: 'unconfirmed' },
-    scienceNote: '集団としての香味・成分実測は未確認。',
-    findings: [],
-    sourceIds: [MOTA],
+    scienceNote: '集団としての香味・成分実測は未確認。第43弾からは、Thomas et al. 2012 が示す付随先の集団群（Contamana・Iquitos・Nacional）の香味の方向が花様のみで収束することから、花様の弱い追加を推測として組み合わせに反映する（Purús 自体の実測ではなく、遺伝情報からの合成として最も弱い部類の足がかりである）。',
+    findings: [
+      { kind: 'genetic', statement: 'Thomas et al. 2012 は、原野生集団に最も近いクラスター群として「Nacional + Contamana (+Purus)」「Iquitos (+Purus)」「Curaray」「Purus」を挙げ、Purús が2つのグループ化の双方に付随することを示した。付随先の構成集団（Contamana・Iquitos・Nacional）には、いずれも花様の方向の知見（SCA6・IMC-67 のリナロール実測、Nacional の花ノート）がある。', conditions: '遺伝的付随の知見であり、香味の実測ではない。柑橘は Iquitos 側のみの方向なので合成しない。組み合わせへの反映は花様の弱い追加のみに絞り、推測（inferred）として扱う。', sourceIds: ['thomas-2012-cacao-diversity', MOTA] },
+    ],
+    sourceIds: [MOTA, 'thomas-2012-cacao-diversity'],
   },
 ]
 export const geneticGroupById = (id: string) => cacaoGeneticGroups.find((g) => g.id === id)

@@ -5,7 +5,7 @@ import { createElement } from 'react'
 import TieredWheel from './TieredWheel'
 import ProfileWheelPanel from './ProfileWheelPanel'
 import ComboWheelPanel from './ComboWheelPanel'
-import { fitLabelLines, packScaledLines, textWidthAt, emWidthOf } from './wheelText'
+import { fitLabelLines, packScaledLines, textWidthAt, emWidthOf, boundaryCutsOf } from './wheelText'
 import { compounds } from '../data/compounds'
 import { teaItems } from '../data/teas'
 import { chocolateItems } from '../data/chocolates'
@@ -14,31 +14,39 @@ import { analyzeTeaCombo, analyzeChocoCombo } from '../engine/combo'
 // 第29弾: ホイール内ラベルの途切れ（左右端でのクリップと「…」省略）を
 // 恒常的に防ぐためのテスト。端のセグメントでの最小 avail は、ラベル中心
 // lx=46（r=104・左端）に対する 2*46-4 = 88 を基準にする。
+// 第43弾（ユーザー実機FB）で改行の作法が単位ベースに変わったため、この層の
+// 保証は「全文・無省略・単位の完全性・下限7px」に改めた。幅（avail）内に
+// 収まることは、TieredWheel 側の x 寄せ込みで最終描画が担保する
+// （実パネルの幾何検証は第36弾のテストと第43弾の wheelUnitBreak テスト）。
 const EDGE_AVAIL = 88
 
-describe('ホイールラベルの途切れ防止（第29弾）', () => {
-  it('全化合物名が、端のセグメントでも省略なしに収まる（fitLabelLines）', () => {
+describe('ホイールラベルの途切れ防止（第29弾・第43弾で単位ベースに改訂）', () => {
+  it('全化合物名が、原子モードでは絶対に割れず省略なしに返る（fitLabelLines atomic）', () => {
     for (const c of compounds) {
-      const lines = fitLabelLines(c.name, EDGE_AVAIL)
-      const joined = lines.map((l) => l.text).join('')
-      expect(joined, `${c.name} が欠けた: ${joined}`).toBe(c.name)
-      for (const l of lines) {
-        expect(l.text.includes('…'), `${c.name} に省略記号`).toBe(false)
-        expect(textWidthAt(l.text, l.fs), `${c.name} の行が avail 超過`).toBeLessThanOrEqual(EDGE_AVAIL)
-        expect(l.fs).toBeGreaterThanOrEqual(7)
-      }
+      const lines = fitLabelLines(c.name, EDGE_AVAIL, 12, 7, 'atomic')
+      expect(lines.length, `${c.name} が割れた`).toBe(1)
+      expect(lines[0].text).toBe(c.name)
+      expect(lines[0].text.includes('…'), `${c.name} に省略記号`).toBe(false)
+      expect(lines[0].fs).toBeGreaterThanOrEqual(7)
     }
   })
 
-  it('全化合物名が、狭いセグメント（avail=40）でも4行割りまでで省略なしに収まる', () => {
+  it('全化合物名が、狭いセグメント（avail=40）でも省略なしに全文が返る', () => {
     for (const c of compounds) {
       const lines = fitLabelLines(c.name, 40)
       expect(lines.map((l) => l.text).join(''), `${c.name} が欠けた`).toBe(c.name)
       expect(lines.length).toBeLessThanOrEqual(4)
+      // 割れる場合は意味の切れ目でのみ: 各行の境目が boundaryCutsOf の位置と一致すること
+      const cuts = boundaryCutsOf(c.name)
+      let acc = 0
+      for (let i = 0; i < lines.length - 1; i++) {
+        acc += [...lines[i].text].length
+        expect(cuts, `${c.name} の分割位置 ${acc} は意味の切れ目でない`).toContain(acc)
+      }
     }
   })
 
-  it('サブラベルの詰め込みでも化学物質名を「…」で隠さない（packScaledLines）', () => {
+  it('サブラベルの詰め込みでも化学物質名を「…」や途中分割で隠さない（packScaledLines）', () => {
     const names = compounds.map((c) => c.name).sort((a, b) => emWidthOf(b) - emWidthOf(a)).slice(0, 8)
     for (const avail of [EDGE_AVAIL, 60, 40]) {
       for (const maxLines of [1, 2]) {
@@ -46,11 +54,21 @@ describe('ホイールラベルの途切れ防止（第29弾）', () => {
         expect(lines.length).toBeGreaterThan(0)
         for (const l of lines) {
           expect(l.text.includes('…'), `avail=${avail} で省略: ${l.text}`).toBe(false)
-          expect(textWidthAt(l.text, l.fs), `avail=${avail} で幅超過: ${l.text}`).toBeLessThanOrEqual(avail)
+          // 行は単位の連結そのもの（＋末尾の「 ほか」）で、単位は欠けていない
+          expect(l.units, `avail=${avail} で単位情報なし: ${l.text}`).toBeDefined()
+          const units = l.units ?? []
+          const expected = units.length === 0 ? 'ほか' : units.join('・')
+          expect(l.text === expected || l.text === `${expected} ほか`, `avail=${avail} で単位が欠けた行: ${l.text}`).toBe(true)
+          for (const u of units) expect(names).toContain(u)
+          // 複数単位の行は必ず幅に収まる。単独単位の行だけは、その単位自体が
+          // 最小フォントでも幅を超える場合に限って超過を許す（x 寄せで収める）
+          if (units.length >= 2) {
+            expect(textWidthAt(l.text, l.fs), `avail=${avail} で幅超過: ${l.text}`).toBeLessThanOrEqual(avail)
+          }
         }
         // 先頭（最重要）の名前は全文がどこかに現れる
-        const joined = lines.map((l) => l.text).join('')
-        expect(joined.replace(/ ほか/g, '')).toContain(names[0])
+        const joinedUnits = lines.flatMap((l) => l.units ?? [])
+        expect(joinedUnits).toContain(names[0])
       }
     }
   })

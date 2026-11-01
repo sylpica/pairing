@@ -242,9 +242,9 @@ export default function TieredWheelPanel({ notes, tastes, context, contexts, res
   // 同じ作法で、寄与する化合物の実際の名前（重みの大きい順）を小さく併記する。
   const entrySegments: TierSeg[] = tier ? tier.entries.map((e) => {
     const names = e.compounds.slice().sort((a, b) => b.percent - a.percent).map((tc) => tc.compound.name)
-    const chipNames = names.length === 0 ? '成分データなし'
-      : names.length <= 2 ? names.join('、')
-      : `${names.slice(0, 2).join('、')} ほか`
+    // 第43弾: チップ内の化合物名は1単位として改行させない（単位の間でのみ折り返す）
+    const chipAux = names.length === 0 ? <span className="unit-keep">成分データなし</span>
+      : <>{names.slice(0, 2).map((n, i) => (<span key={n}>{i > 0 ? '、' : ''}<span className="unit-keep">{n}</span></span>))}{names.length > 2 ? ' ほか' : ''}</>
     return {
       key: e.key,
       label: e.label,
@@ -256,7 +256,7 @@ export default function TieredWheelPanel({ notes, tastes, context, contexts, res
       ariaLabel: e.compounds.length > 0
         ? `${e.label}（${e.percent}%）に寄与する化学物質を見る`
         : `${e.label}（${e.percent}%）の根拠を見る`,
-      chip: <><span className="chip-label">{e.label} {e.percent}%</span><span className="chip-aux">（{chipNames}）</span></>,
+      chip: <><span className="chip-label">{e.label} {e.percent}%</span><span className="chip-aux">（{chipAux}）</span></>,
       below: <LevelBadge level={e.level} />,
     }
   }) : []
@@ -271,6 +271,7 @@ export default function TieredWheelPanel({ notes, tastes, context, contexts, res
   const compoundSegments: TierSeg[] = entry ? entry.compounds.map((tc) => ({
     key: tc.compound.id,
     label: tc.compound.name,
+    labelAtomic: true,
     color: tier!.color,
     weight: tc.weight,
     percent: tc.percent,
@@ -317,9 +318,9 @@ export default function TieredWheelPanel({ notes, tastes, context, contexts, res
   // ===== 味・第2階層（具体名。第34弾。第32弾の作法で化合物名も小さく併記） =====
   const tasteNoteSegments: TierSeg[] = tasteTier ? tasteTier.entries.map((e) => {
     const names = e.compounds.slice().sort((a, b) => b.percent - a.percent).map((tc) => tc.compound.name)
-    const chipNames = names.length === 0 ? '成分データなし'
-      : names.length <= 2 ? names.join('、')
-      : `${names.slice(0, 2).join('、')} ほか`
+    // 第43弾: チップ内の化合物名は1単位として改行させない（単位の間でのみ折り返す）
+    const chipAux = names.length === 0 ? <span className="unit-keep">成分データなし</span>
+      : <>{names.slice(0, 2).map((n, i) => (<span key={n}>{i > 0 ? '、' : ''}<span className="unit-keep">{n}</span></span>))}{names.length > 2 ? ' ほか' : ''}</>
     return {
       key: e.key,
       label: e.label,
@@ -331,7 +332,7 @@ export default function TieredWheelPanel({ notes, tastes, context, contexts, res
       ariaLabel: e.compounds.length > 0
         ? `${e.label}（${e.percent}%）に寄与する化学物質を見る`
         : `${e.label}（${e.percent}%）の根拠を見る`,
-      chip: <><span className="chip-label">{e.label} {e.percent}%</span><span className="chip-aux">（{chipNames}）</span></>,
+      chip: <><span className="chip-label">{e.label} {e.percent}%</span><span className="chip-aux">（{chipAux}）</span></>,
       below: <LevelBadge level={e.level} />,
     }
   }) : []
@@ -346,6 +347,7 @@ export default function TieredWheelPanel({ notes, tastes, context, contexts, res
   const astringencySegments: TierSeg[] = astringency ? astringency.compounds.map((tc) => ({
     key: tc.compound.id,
     label: tc.compound.name,
+    labelAtomic: true,
     color: TASTE_COLORS.astringent,
     weight: tc.weight,
     percent: tc.percent,
@@ -358,6 +360,7 @@ export default function TieredWheelPanel({ notes, tastes, context, contexts, res
   const tasteNoteCompoundSegments: TierSeg[] = tasteEntry ? tasteEntry.compounds.map((tc) => ({
     key: tc.compound.id,
     label: tc.compound.name,
+    labelAtomic: true,
     color: TASTE_COLORS[tasteTier!.key],
     weight: tc.weight,
     percent: tc.percent,

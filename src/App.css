@@ -77,6 +77,8 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
    切らず、区切り（読点・空白）でのみ折り返す（最長トークン幅が下限になる
    ため、1文字ずつの縦折れにはならない）。 */
 .chip-aux { font-size: 0.78rem; opacity: 0.85; }
+/* 第43弾: 化合物名などの「単位」は途中で改行させない（折り返しは単位の間でのみ） */
+.unit-keep { white-space: nowrap; }
 .wheel-chip-item { display: flex; flex-direction: column; align-items: center; gap: 2px; max-width: 100%; }
 .wheel-chip-note { display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap; font-size: 0.78rem; opacity: 0.85; }
 @media (max-width: 400px) { .wheel-list .badge { white-space: nowrap; } }
@@ -320,6 +322,9 @@ body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "No
 
 /* 調べる画面の組み合わせプレビュー（プルダウン直下） */
 .combo-preview { background: var(--card); border: 2px solid #eec9a8; border-radius: 16px; padding: 12px 14px; margin: 10px 0 14px; }
+/* 第43弾自己監査: 280px幅で詳細ページボタン（nowrap）がカードからはみ出す
+   既存問題への最小ガード。収まる幅では1行のまま、狭い場合だけ折り返す。 */
+.combo-preview .btn { white-space: normal; max-width: 100%; }
 .combo-preview h3 { margin: 0 0 6px; }
 
 /* ===== 組み合わせページ（第2層） ===== */

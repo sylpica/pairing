@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import type { ComboLevel } from '../types'
-import { fitLabelLines, fitOneLine, packScaledLines, textWidthAt, WHEEL_SUB_FONT, type FittedLine } from './wheelText'
+import { fitLabelLines, fitOneLine, packScaledLines, textWidthAt, WHEEL_MIN_FONT, type FittedLine } from './wheelText'
 
 // 3階層ホイール共通の描画（第8弾）。大分類・中分類・小分類のどの階層でも、
 // 同じ作法で描く:
@@ -44,6 +44,12 @@ export interface TierSeg {
    */
   below?: ReactNode
   selected?: boolean
+  /**
+   * ラベル自体が化学物質名など「1つの単位」で、途中で割ってはいけない場合に
+   * 立てる（第43弾: 第3階層の化合物セグメント名、渋味ゲージ先の化合物名）。
+   * 立てると、収まらない場合は割らずに最小フォント＋x 寄せで収める。
+   */
+  labelAtomic?: boolean
 }
 
 const LABEL_R = 104
@@ -81,13 +87,22 @@ export default function TieredWheel({ segments, centerLabel, ariaLabel, onSelect
     // （2,5-ジメチルピラジン等）の両端が viewBox の外に切れていた。
     const baseAvail = Math.min(chordAvail, 2 * Math.min(lx, size - lx) - 4)
     const subMax = span >= 0.65 ? 2 : 1
-    const headLines: (FittedLine & { cls: string })[] = [
-      ...fitLabelLines(s.label, baseAvail).map((l) => ({ ...l, cls: 'wheel-label' })),
-    ]
-    if (s.percent !== undefined) {
-      headLines.push({ ...fitOneLine(`${s.percent}%`, baseAvail, 11), cls: 'wheel-label' })
+    // 第43弾: ラベル行のモデル。行ごとに x を持てるようにし（初期値はラベル中心 lx）、
+    // 円盤の弦幅に収まらない行は「割る」のではなく、単位を保ったまま詰め直すか、
+    // 行自体を円盤中心側へ寄せて収める。
+    type PlacedLine = FittedLine & {
+      cls: string
+      kind: 'label' | 'pct' | 'sub'
+      atomic?: boolean
+      x: number
+      y: number
+      w: number
+      h: number
     }
-    const place = (lines: (FittedLine & { cls: string })[]) => {
+    const mkLine = (l: FittedLine, cls: string, kind: PlacedLine['kind'], atomic?: boolean): PlacedLine => ({
+      ...l, cls, kind, atomic, x: lx, y: ly, w: textWidthAt(l.text, l.fs), h: l.fs * 1.35,
+    })
+    const place = (lines: PlacedLine[]): PlacedLine[] => {
       const totalH = lines.reduce((a, l) => a + l.fs * 1.35, 0)
       let y = ly - totalH / 2
       return lines.map((l) => {
@@ -96,47 +111,73 @@ export default function TieredWheel({ segments, centerLabel, ariaLabel, onSelect
       })
     }
     let placed = place([
-      ...headLines,
-      ...packScaledLines(s.subLabels ?? [], baseAvail, subMax).map((l) => ({ ...l, cls: 'wheel-sub' as const })),
+      ...fitLabelLines(s.label, baseAvail, 12, WHEEL_MIN_FONT, s.labelAtomic ? 'atomic' : 'boundary')
+        .map((l) => mkLine(l, 'wheel-label', 'label', s.labelAtomic)),
+      ...(s.percent !== undefined ? [mkLine(fitOneLine(`${s.percent}%`, baseAvail, 11), 'wheel-label', 'pct')] : []),
+      ...packScaledLines(s.subLabels ?? [], baseAvail, subMax).map((l) => mkLine(l, 'wheel-sub', 'sub')),
     ])
     // 第36弾: ラベル行が、その行の高さにおけるホイールの円盤の横幅からはみ出す
     // 場合は、その行だけを個別に収め直す。第29弾の制約（viewBox の端まで）
     // だけでは、斜め方向のセグメントで長い併記が円盤の輪郭を大きく横切って
     // いた（烘青緑茶のうま味の併記：行の左端が円盤の輪郭より16px外側まで
     // 達し、末尾が途切れて見えた。ユーザー指摘）。
-    // 収め直しは、行の中心の高さでの円盤の横幅から許容幅を解いて
-    // (1) フォントを段階的に下げる（下限7px）、(2) それでも入らなければ
-    // 折り返す、の順で行い、省略（…）で隠すことはしない。ブロック全体の幅は
-    // 潰さない（行数が増えてブロックが高くなり、かえって収まらなくなる
-    // 悪循環を避けるため、対象ははみ出した行に限る）。
-    const lineAllowed = (l: (typeof placed)[number]) => {
-      const dyC = Math.abs(l.y - cy)
-      const cross = Math.sqrt(Math.max(DISC_FIT_R * DISC_FIT_R - dyC * dyC, 0))
-      return 2 * Math.max(cross - Math.abs(lx - cx), 0)
+    // 第43弾: 収め直しの作法を単位ベースに改めた。旧作法は fitLabelLines の
+    // バランス分割で化学物質名やフレーズの途中で割っていた（アントラニル酸
+    // メチル→「アントラニ／ル酸メチル」等。ユーザー実機FB）。新しい作法は
+    // (1) 併記行はその行の単位だけを許容幅で詰め直す（改行は単位の間のみ）、
+    // (2) ラベル行は意味の切れ目でのみ割り直す、(3) それでも収まらない行は
+    // 割らずに行の x を円盤中心側へ寄せて収める。省略（…）はしない。
+    const crossAt = (y: number) => Math.sqrt(Math.max(DISC_FIT_R * DISC_FIT_R - (y - cy) * (y - cy), 0))
+    const allowedAt = (l: PlacedLine) => 2 * Math.max(crossAt(l.y) - Math.abs(l.x - cx), 0)
+    const violates = (l: PlacedLine) => l.w > allowedAt(l)
+    /** 行を円盤中心側へ寄せる。その行の高さで収まる範囲で、最も lx に近い x を選ぶ */
+    const shifted = (l: PlacedLine): PlacedLine => {
+      const maxOff = crossAt(l.y) - l.w / 2
+      if (maxOff < 0) return { ...l, x: cx }
+      const off = Math.max(-maxOff, Math.min(maxOff, lx - cx))
+      return { ...l, x: cx + off }
     }
-    const lineViolates = (l: (typeof placed)[number]) => l.w > lineAllowed(l)
-    for (let pass = 0; pass < 3 && placed.some(lineViolates); pass++) {
-      const adjusted: (FittedLine & { cls: string })[] = []
+    for (let pass = 0; pass < 6 && placed.some(violates); pass++) {
+      const next: PlacedLine[] = []
       for (const l of placed) {
-        if (!lineViolates(l)) { adjusted.push(l); continue }
-        const allowed = lineAllowed(l)
-        if (allowed < 14) { adjusted.push(l); continue }
-        const shrunk = fitOneLine(l.text, allowed, l.fs)
-        if (!shrunk.text.includes('…')) { adjusted.push({ ...shrunk, cls: l.cls }); continue }
-        adjusted.push(...fitLabelLines(l.text, allowed, l.cls === 'wheel-sub' ? WHEEL_SUB_FONT : 12).map((x) => ({ ...x, cls: l.cls })))
+        if (!violates(l)) { next.push(l); continue }
+        const allowed = Math.max(allowedAt(l), 1)
+        if (l.kind === 'sub' && l.units && l.units.length > 0) {
+          const repacked = packScaledLines(l.units, allowed, 4, l.fs)
+          for (const r of repacked) {
+            const nl = mkLine(r, 'wheel-sub', 'sub')
+            nl.x = l.x; nl.y = l.y; nl.w = textWidthAt(r.text, r.fs)
+            next.push(nl.w > allowed ? shifted(nl) : nl)
+          }
+          continue
+        }
+        if (l.kind === 'label' && !l.atomic) {
+          const refit = fitLabelLines(l.text, allowed, 12)
+          if (refit.every((r) => textWidthAt(r.text, r.fs) <= allowed)) {
+            for (const r of refit) { const nl = mkLine(r, 'wheel-label', 'label'); nl.x = l.x; next.push(nl) }
+          } else {
+            next.push(shifted({ ...l, fs: WHEEL_MIN_FONT, w: textWidthAt(l.text, WHEEL_MIN_FONT) }))
+          }
+          continue
+        }
+        // atomic なラベル行・％行・単位情報の無い併記行: 縮小（下限7px）してから x 寄せ
+        const fsFit = allowed / Math.max(textWidthAt(l.text, 1), 0.01)
+        const fs = Math.max(WHEEL_MIN_FONT, Math.min(l.fs, Math.floor(fsFit * 100) / 100))
+        const shrunk: PlacedLine = { ...l, fs, w: textWidthAt(l.text, fs) }
+        next.push(shrunk.w > allowed ? shifted(shrunk) : shrunk)
       }
-      placed = place(adjusted)
+      placed = place(next)
     }
     const opacity = s.drillable === false ? 0.42
       : s.level ? TIER_LEVEL_OPACITY[s.level]
       : s.opacity ?? 0.85
-    return { seg: s, a0, a1, lx, lines: placed, opacity }
+    return { seg: s, a0, a1, lines: placed, opacity }
   })
 
   return (
     <div className="wheel-wrap">
       <svg viewBox={`0 0 ${size} ${size}`} className="wheel" role="group" aria-label={ariaLabel}>
-        {drawn.map(({ seg, a0, a1, lx, lines, opacity }) => (
+        {drawn.map(({ seg, a0, a1, lines, opacity }) => (
           <g key={seg.key} onClick={() => onSelect(seg.key)} className="wheel-seg" tabIndex={0} role="button"
             aria-label={seg.ariaLabel}
             onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onSelect(seg.key) } }}>
@@ -146,7 +187,7 @@ export default function TieredWheel({ segments, centerLabel, ariaLabel, onSelect
               strokeWidth={seg.level === 'inferred' ? 1.6 : seg.selected ? 2.4 : 0}
               strokeDasharray={seg.level === 'inferred' ? '5 3' : undefined} />
             {lines.map((l, i) => (
-              <text key={i} x={lx} y={l.y} textAnchor="middle" dominantBaseline="middle" className={l.cls} style={{ fontSize: l.fs }}>{l.text}</text>
+              <text key={i} x={l.x} y={l.y} textAnchor="middle" dominantBaseline="middle" className={l.cls} style={{ fontSize: l.fs }}>{l.text}</text>
             ))}
           </g>
         ))}

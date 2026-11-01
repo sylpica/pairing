@@ -23,8 +23,9 @@ describe('調べる（お茶）：産地・品種を変えると直下のホイ�
     fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 第33弾: 既定は味。香りの顔ぶれを見る
     // 香駿の所見（読み替え推測）で花様が一段強まる
     expect(preview!.textContent).toContain('花様（強い）')
-    // 産地（村上）は反映されない理由がプレビューにも出る
-    expect(preview!.textContent).toContain('反映していません')
+    // 産地（村上）は第43弾から、伝統的評価に基づく味の推測が
+    // プレビューにも反映される
+    expect(preview!.textContent).toContain('「村上」の所見は、ホイール・味覚に反映されています')
     // 品種だけを変えると、プレビューがその場で描き直される
     fireEvent.change(screen.getByLabelText('品種で絞り込み'), { target: { value: 'yabukita' } })
     fireEvent.click(screen.getByRole('tab', { name: '香り' })) // 選択変更で既定の味に戻るため再切替

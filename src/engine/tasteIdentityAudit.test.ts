@@ -214,6 +214,39 @@ const TEA_CULTIVAR_EXCEPTIONS = new Set([
   'benifuuki,fenghuang-dancong-group,jinxuan,qingxin-damao,qingxin-oolong,sijichun,tsuiyu',
   'benifuuki,benihomare,hongyu,hongyun,p312,tri-2023,tri-2025,tri-2043',
   'hongyu,hongyun',
+  // 第43弾で追加・変更: 四季春は品種解説の「強い花様・果実様」という強さの
+  // 方向を果実全般の一段強調（推測）として反映し、土台一致から脱した。
+  // その結果、従来リストにあった「四季春を含む烏龍茶品種群」は四季春抜きの
+  // 形で残り（香りノートの差が味ホイールの％に現れない T1/T3 型）、
+  // 四季春は そうふう と新たに組になった（どちらも烏龍茶で果実全般が
+  // 一段強い推測: そうふうは葉成分の実測からの読み替え、四季春は品種解説
+  // の強さ表現からの読み替え。足がかりの方向が同一の C2 型）。
+  'benifuuki,fenghuang-dancong-group,jinxuan,qingxin-damao,qingxin-oolong,tsuiyu',
+  'jinxuan,qingxin-damao,qingxin-oolong,tsuiyu',
+  'sijichun,soufu',
+  // 第43弾差別化ラウンドで追加:
+  // T1（差別化が香り側にあり味署名に現れない）: ほくめい（木・スパイス）・
+  // 香駿（花様・干し草）・青心大冇（花様）は、味ノート階層＋渋味ゲージでは
+  // 同値になる文脈がある。香り側では区別されている。
+  'hokumei,koushun,qingxin-damao',
+  'hokumei,koushun',
+  'hokumei,kanayamidori,koushun',
+  // T2/C5: 国レベル集約の下では、さみどり・つゆひかりの穏やか方向の味
+  // 効果が下限で飽和し、香り主体の品種群と味署名が一致する。
+  'hokumei,koushun,samidori,tsuyuhikari',
+  // C5: 地域なしの紅茶文脈では土台の渋味が下限に近く、穏やか方向の効果
+  // （TRI 2025/2043）が飽和して、土台同値の やぶきた と一致する。
+  'tri-2025,tri-2043,yabukita',
+  // C2: TRI 2025 と TRI 2043 は独立した組成研究から同方向（穏やか）の
+  // 推測に帰着する。
+  'tri-2025,tri-2043',
+  // C5/T1: 地域なしの紅茶文脈では、べにふうき・べにほまれ・紅玉・紅韻の
+  // 味の差が味署名（味ノート階層＋渋味ゲージ）に現れない。
+  'benifuuki,benihomare,hongyu,hongyun',
+  // 第43弾差別化ラウンドで追加: 日本の国レベル集約の下では、べにふうき
+  // （緑茶で強い方向、紅茶では交配親からの穏やか方向）と べにほまれ・
+  // やぶきた の味署名が一致する（C2/C5 相当）。
+  'benifuuki,benihomare,yabukita',
 ].map((s) => norm(s.split(','))))
 
 const TEA_REGION_EXCEPTIONS = new Set([
@@ -233,6 +266,41 @@ const TEA_REGION_EXCEPTIONS = new Set([
   // 変わり、台湾地域群（南投を除く）と鳳凰単叢群の地域差が％で潰れた。
   'alishan,country:台湾,wenshan',
   'anhui,guangdong,guangxi,guizhou,henan,hubei,jiangsu,shaanxi,sichuan,yunnan,zhejiang',
+  // 第43弾差別化ラウンドで追加（T2 の逆向き）: おくみどり の渋味を穏やか
+  // にする推測、つゆひかり の苦味を穏やかにする推測、さみどり の渋味・
+  // 苦味を穏やかにする推測が、地域側の味の差（渋味・苦味の方向）を吸収
+  // し、これらの品種の下では地域の味署名が一致する文脈が生まれた。
+  'nagasaki,uji,yame',
+  'kochi,miyazaki,murakami,nagasaki,shizuoka,uji,yame',
+  // 第43弾差別化ラウンド（地域）で追加:
+  // ・村上（伝統的評価＋県広報に基づく苦味・渋味の穏やか方向の推測）は、
+  //   味署名では同じく穏やかな方向を持つ宮崎と広く一致する（C2 相当）。
+  'miyazaki,murakami',
+  // ・和紅茶クラスタ（宇治・佐賀・静岡・長崎・鹿児島）は、いずれも
+  //   参考情報に基づく渋味を穏やかにする方向の推測を持つため、紅茶の
+  //   味署名では相互に一致する文脈がある（C2 相当）。飽和で土台同値の
+  //   地域（村上・高知・宮崎）が混ざる文脈もある（C5 相当）。
+  'nagasaki,shizuoka,uji',
+  'kochi,miyazaki,murakami',
+  'kochi,miyazaki,murakami,nagasaki,shizuoka,uji',
+  'kagoshima,nagasaki,shizuoka',
+  'saga,uji',
+  'country:日本,saga,uji',
+  'kagoshima,kochi,miyazaki,murakami,nagasaki,shizuoka',
+  'country:日本,kagoshima,kochi,miyazaki,murakami,nagasaki,shizuoka',
+  'country:日本,kagoshima,kochi,miyazaki,murakami,nagasaki,saga,shizuoka,uji',
+  // 第43弾・全スイート再測で判明した残件（実測で理由を確認済み）:
+  // ・緑茶×せいめい では、長崎・静岡・宇治・八女のいずれも緑茶カテゴリの
+  //   味ルールを持たず、地域の味署名が土台と一致する（C2 相当）。
+  'nagasaki,shizuoka,uji,yame',
+  // ・紅茶×やぶきた では土台の渋味が既に下限（弱い）のため、和紅茶
+  //   クラスタの渋味を穏やかにする推測が飽和し、無効果の地域と味署名が
+  //   一致する（C5 相当。実測: 全群とも astringent:weak で一致）。
+  'kagoshima,kochi,miyazaki,murakami,nagasaki,shizuoka,yame',
+  // ・紅茶×べにふうき／べにほまれ では、鹿児島・長崎・静岡・八女の
+  //   4地域とも味の効果が渋味を穏やかにする方向のみで同値に収束する
+  //   （C2 相当。各地域の根拠は独立した参考情報）。
+  'kagoshima,nagasaki,shizuoka,yame',
 ].map((s) => norm(s.split(','))))
 
 const CHOCO_LINEAGE_EXCEPTIONS = new Set([
@@ -266,6 +334,32 @@ const CHOCO_LINEAGE_EXCEPTIONS = new Set([
   // フォラステロ・ICS-95 の％差が潰れた。土台の味が共通化した帰結で、
   // 系統側の記録が変わったわけではない。
   'clone:ics-95,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-nanay,genetic:gen-purus,traditional:trad-forastero',
+  // 第43弾差別化ラウンド（カカオ）で追加（味署名での一致）:
+  // ・Nanay の遺伝的近接合成は、味ノート階層では近接先 Iquitos とその
+  //   構成クローン IMC-67 と同値になる（C4 相当）。
+  // ・Purús の花様の弱い追加とフォラステロの果実の読み替えは、味署名
+  //   では野生集団群・中核集団と同値になる文脈がある（C2/T1 相当）。
+  'clone:ccn-51,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-purus',
+  'clone:ics-95,clone:imc-67,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'clone:ics-95,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'clone:ics-95,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-purus,traditional:trad-forastero',
+  'clone:ics-95,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-maranon,genetic:gen-purus,traditional:trad-forastero',
+  'clone:ics-95,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-purus,traditional:trad-forastero',
+  'clone:ics-95,genetic:gen-maranon,traditional:trad-forastero',
+  'clone:ics-95,traditional:trad-forastero',
+  'clone:imc-67,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-trinitario',
+  'clone:imc-67,genetic:gen-iquitos,genetic:gen-nanay',
+  'genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-trinitario',
+  'genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-purus,traditional:trad-forastero',
+  'genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-purus,traditional:trad-criollo',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-purus,traditional:trad-forastero',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-nanay,genetic:gen-purus',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-maranon,genetic:gen-purus,traditional:trad-forastero',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-purus',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-purus,traditional:trad-forastero',
+  'genetic:gen-iquitos,genetic:gen-nanay',
+  'genetic:gen-maranon,traditional:trad-forastero',
+  'traditional:trad-forastero,traditional:trad-trinitario',
 ].map((s) => norm(s.split(','))))
 
 const CHOCO_ORIGIN_EXCEPTIONS = new Set([
@@ -288,6 +382,22 @@ const CHOCO_ORIGIN_EXCEPTIONS = new Set([
   'cote-divoire,tanzania',
   'cote-divoire,tanzania,venezuela',
   'ecuador,peru',
+  // 第43弾差別化ラウンド（カカオ）で追加（味署名での一致）:
+  // 果実の方向の追加（コートジボワールの読み替え、ベネズエラの特徴表、
+  // ペルーの共通項、タンザニアの参考情報）が複数産地で同方向に帰着し、
+  // 味ノート階層＋渋味ゲージでは同値になる（C2 相当。香り側では区別
+  // される）。
+  'cote-divoire,dominican-republic,venezuela',
+  'cote-divoire,ecuador,ghana,peru',
+  'cote-divoire,ecuador,peru',
+  'cote-divoire,ecuador,peru,tanzania',
+  'cote-divoire,ghana',
+  'cote-divoire,ghana,peru',
+  'cote-divoire,ghana,venezuela',
+  'cote-divoire,madagascar,venezuela',
+  'cote-divoire,venezuela',
+  'dominican-republic,ecuador,madagascar,tanzania,venezuela',
+  'dominican-republic,venezuela',
 ].map((s) => norm(s.split(','))))
 
 const PAIR_CHOCO_EXCEPTIONS = new Set([
@@ -323,6 +433,41 @@ const PAIR_CHOCO_EXCEPTIONS = new Set([
   'genetic:gen-iquitos,genetic:gen-nacional',
   'genetic:gen-maranon,genetic:gen-nacional',
   'genetic:gen-maranon,genetic:gen-nacional,traditional:trad-trinitario',
+  // 第43弾差別化ラウンド（カカオ）で追加（ペアリング味署名での一致）:
+  // 理由は choco-lineage 側と同じ（Nanay の近接合成＝C4 相当、Purús・
+  // フォラステロの追加の埋没＝C2/T1 相当）に、ペアリング合成の段階化
+  // （T3）が重なったもの。単体コンボ側の区別は chocoVaryLineage 側で
+  // 担保される文脈が多い。
+  'clone:ccn-51,clone:imc-67,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-trinitario',
+  'clone:ccn-51,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-trinitario',
+  'clone:ccn-51,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-purus',
+  'clone:ccn-51,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-purus',
+  'clone:ics-95,clone:imc-67,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nacional,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'clone:ics-95,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-maranon,genetic:gen-nacional,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'clone:ics-95,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-maranon,genetic:gen-purus,traditional:trad-forastero',
+  'clone:ics-95,genetic:gen-amelonado,genetic:gen-maranon,genetic:gen-nacional,traditional:trad-forastero',
+  'clone:ics-95,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-maranon,genetic:gen-nacional,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'clone:ics-95,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-maranon,genetic:gen-nacional,genetic:gen-purus,traditional:trad-forastero',
+  'clone:ics-95,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-maranon,genetic:gen-purus,traditional:trad-forastero',
+  'clone:ics-95,genetic:gen-maranon,genetic:gen-nacional,traditional:trad-forastero',
+  'clone:ics-95,genetic:gen-maranon,traditional:trad-forastero',
+  'clone:ics-95,traditional:trad-forastero',
+  'clone:imc-67,genetic:gen-iquitos,genetic:gen-nanay',
+  'genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-trinitario',
+  'genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-purus,traditional:trad-forastero',
+  'genetic:gen-amelonado,traditional:trad-forastero',
+  'genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-nanay,genetic:gen-purus',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-purus',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-nanay,genetic:gen-purus',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-maranon,genetic:gen-nacional,genetic:gen-purus,traditional:trad-forastero',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-purus',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-purus,traditional:trad-forastero',
+  'genetic:gen-contamana,genetic:gen-iquitos,genetic:gen-nanay,genetic:gen-purus',
+  'genetic:gen-criollo,genetic:gen-maranon,genetic:gen-nacional,traditional:trad-criollo,traditional:trad-trinitario',
+  'genetic:gen-curaray,genetic:gen-guiana',
+  'genetic:gen-iquitos,genetic:gen-nanay',
+  'genetic:gen-maranon,genetic:gen-nacional,traditional:trad-forastero',
 ].map((s) => norm(s.split(','))))
 
 const PAIR_TEA_EXCEPTIONS = new Set([
@@ -364,6 +509,26 @@ const PAIR_TEA_EXCEPTIONS = new Set([
   'jinxuan,qingxin-damao,tsuiyu',
   'p312,tri-2023,tri-2025,tri-2043',
   'sijichun,tieguanyin',
+  // 第43弾で追加: 四季春×そうふう（上記 tea-cultivar と同じ C2 型の帰結が
+  // ペアリング側にも現れる）。
+  'sijichun,soufu',
+  // 第43弾差別化ラウンドで追加（いずれも T3: ペアリング合成の段階化で
+  // 単体側の差が味署名に現れないもの。単体側の区別は teaVaryCultivar
+  // 側で担保されている）:
+  // ・強い方向の推測を持つ緑茶品種群（べにふうき／さやまかおり／
+  //   ゆたかみどり、文脈により青心大冇が加わる）はペアリングの味で同値。
+  'benifuuki,qingxin-damao,sayamakaori,yutakamidori',
+  'benifuuki,sayamakaori,yutakamidori',
+  // ・穏やか方向の品種（さみどり／つゆひかり、おくみどり・かなやみどり
+  //   を含む群）もペアリングの味では同値になる。
+  'samidori,tsuyuhikari',
+  'kanayamidori,okumidori,samidori,tsuyuhikari',
+  'okumidori,samidori,tsuyuhikari',
+  'hokumei,koushun,samidori,tsuyuhikari',
+  'benifuuki,hokumei,kanayamidori,koushun,sayamakaori,yutakamidori',
+  // ・烏龍茶のペアリングでは、青心大冇・鉄観音の香り側の差別化が味署名に
+  //   現れず、従来群に合流する。
+  'benifuuki,fenghuang-dancong-group,jinxuan,qingxin-damao,tieguanyin,tsuiyu',
 ].map((s) => norm(s.split(','))))
 
 describe('味ホイールの同一性監査（第37弾）', () => {

@@ -75,12 +75,14 @@ describe('課題C: 軸指定がペアリング結果に効く', () => {
     expect(a.teaAnalysis?.title).toBe('村上 × はるみどり × 抹茶')
     expect(a.chocoAnalysis?.title).toContain('エクアドル')
     expect(a.chocoAnalysis?.title).toContain('アメロナド')
-    // お茶側: 品種は第2層に反映される／地域（村上）は理由つきで反映されない
+    // お茶側: 品種は第2層に反映される。地域（村上）も第43弾から、伝統的
+    // 評価に基づく味の推測（緑茶カテゴリのルール）が抹茶にも適用され、
+    // 反映されるようになった
     const teaCultivar = a.teaAnalysis?.axisSummaries.find((s) => s.axis === 'cultivar')
     expect(teaCultivar?.reflected).toBe(true)
     const teaRegion = a.teaAnalysis?.axisSummaries.find((s) => s.axis === 'region')
-    expect(teaRegion?.reflected).toBe(false)
-    expect(teaRegion?.text).toContain('寄与を示すものではない')
+    expect(teaRegion?.reflected).toBe(true)
+    expect(teaRegion?.text).toContain('反映されています')
     // チョコ側: 産地（エクアドル）は第7弾で、現代 Nacional 集団の花ノート経路の知見を
     // 産地へ読み替えた推測が反映されるようになった。系統（アメロナド）は集団自体の
     // 香味実測はないが、第28弾で総説の西アフリカ・フォラステロの特徴づけ（植栽の

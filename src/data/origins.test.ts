@@ -88,10 +88,13 @@ describe('カカオ産地エンティティ（2026-10-30 追加）', () => {
     expect(o.findings.some((f) => f.sourceIds.includes('kouassi-2022-cote-divoire-fermentation-places'))).toBe(true)
     expect(allText(o)).toContain('発酵場所')
   })
-  it('香味データ未確認の産地（タンザニア）は所見なし・evidence none のまま', () => {
+  it('タンザニアは査読データ未確認だが、第43弾から参考情報の収束に基づく所見を持つ', () => {
     const o = cacaoOriginById('tanzania')!
-    expect(o.flavorEvidence).toBe('none')
-    expect(o.findings).toHaveLength(0)
+    expect(o.flavorEvidence).toBe('general')
+    expect(o.findings).toHaveLength(1)
+    expect(o.findings[0].kind).toBe('sensory')
+    expect(o.findings[0].sourceIds).toContain('kokoa-kamili-beans')
+    // 査読済みの科学データが確認できたわけではない（格付けは参考情報のまま）
     expect(o.verification.science).toBe('unconfirmed')
   })
   it('系統から産地を逆引きできる（Nacional→エクアドル／ペルー、Trinitario→ドミニカ）', () => {

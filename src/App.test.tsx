@@ -365,7 +365,9 @@ describe('産地データと調べる画面の再設計（2026-10-30）', () => 
     expect(screen.getByText('産地の実測に基づく参考情報')).toBeTruthy()
     fireEvent.change(screen.getByLabelText('カカオの産地（任意）'), { target: { value: 'tanzania' } })
     expect(screen.getByText('カカオの産地：タンザニア')).toBeTruthy()
-    expect(screen.getByText('使えるデータがないため不使用')).toBeTruthy()
+    // 第43弾で変更: タンザニアは参考情報の収束に基づく所見を持ち、
+    // 集団レベルの参考情報として使われるようになった
+    expect(screen.getByText('分類・集団レベルの特徴に基づく参考情報')).toBeTruthy()
   })
 })
 
@@ -658,7 +660,9 @@ describe('実機フィードバック第4弾：組み合わせる画面で軸が
     expect(document.body.textContent).toContain('村上 × はるみどり × 抹茶')
     expect(document.body.textContent).toContain('エクアドル')
     expect(document.body.textContent).toContain('アメロナド')
-    expect(document.body.textContent).toContain('寄与を示すものではない')
+    // 第43弾で変更: 村上は伝統的評価に基づく味の推測が反映されるように
+    // なったため、変わらない理由ではなく反映の表示が出る
+    expect(document.body.textContent).toContain('「村上」の所見は、ホイール・味覚に反映されています')
   })
 
   it('軸指定時はお茶タブのホイールが組み合わせ側（軸効果込み）と一致する', () => {
@@ -1072,7 +1076,7 @@ describe('実機フィードバック第25弾：ホイールの無いページ�
     expect(screen.getByText(/公的資料・研究で未確認です/)).toBeTruthy()
   })
 
-  it('産地ページ（タンザニア）にもホイールが表示され、産地情報を使っていない旨が明示される', async () => {
+  it('産地ページ（タンザニア）にもホイールが表示され、第43弾からは参考情報に基づく産地の推測が使われる', async () => {
     render(<App />)
     fireEvent.click(screen.getByText('チョコを調べる'))
     expect(await screen.findByRole('heading', { name: 'チョコを調べる' })).toBeTruthy()
@@ -1080,7 +1084,10 @@ describe('実機フィードバック第25弾：ホイールの無いページ�
     fireEvent.click(originName!)
     expect(await screen.findByRole('heading', { name: /タンザニア/ })).toBeTruthy()
     expect(screen.getByRole('heading', { name: '種類との組み合わせで見る味わい（フレーバーホイール）' })).toBeTruthy()
-    expect(screen.getByText(/産地の情報は味わいの推測に使っていません/)).toBeTruthy()
+    // 第43弾で変更: 参考情報（生産者・メーカー）の収束に基づく所見が入り、
+    // 産地の推測がホイールに使われるようになった
+    expect(screen.queryByText(/産地の情報は味わいの推測に使っていません/)).toBeNull()
+    expect(screen.getByText(/赤い果実・ベリー/)).toBeTruthy()
   })
 })
 

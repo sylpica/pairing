@@ -26,14 +26,16 @@ describe('症状の再現ケース：緑茶の産地・品種を変えるとホ�
     const baseFloral = base.notes.find((n) => n.noteId === 'floral-general')
     expect(baseFloral?.intensity).toBe('normal')
   })
-  it('軸ごとの反映要約：品種は反映あり、村上は「反映していません」と理由が出る', () => {
+  it('軸ごとの反映要約：品種は反映あり、村上は第43弾から味の推測が反映される', () => {
     const cultivar = murakamiKoushun.axisSummaries.find((s) => s.axis === 'cultivar')
     expect(cultivar?.reflected).toBe(true)
+    // 第43弾で変更: 村上の伝統的評価（苦みが少ない・まろやか）と県広報の
+    // 方向に基づく味の推測ルールを追加したため、地域も反映ありになる。
+    // 村上の所見（官能で産地が分かれる・成分構成の差）自体は、特定ノートへの
+    // 寄与を示さない点は従来どおり。
     const region = murakamiKoushun.axisSummaries.find((s) => s.axis === 'region')
-    expect(region?.reflected).toBe(false)
-    expect(region?.text).toContain('反映していません')
-    // 村上の所見（官能で産地が分かれる・成分構成の差）は、特定ノートへの寄与を示さない
-    expect(region?.text).toContain('寄与を示すものではない')
+    expect(region?.reflected).toBe(true)
+    expect(murakamiKoushun.tastes.find((t) => t.key === 'bitter')?.level).toBe('inferred')
   })
 })
 
@@ -208,11 +210,19 @@ describe('チョコ側：産地・系統を変えるとホイールが変わる'
     expect(whiteOrigin?.reflected).toBe(false)
     expect(whiteOrigin?.text).toContain('反映していません')
   })
-  it('ダーク × タンザニア：香味所見が無い産地は、その旨が理由として出る', () => {
+  it('ダーク × タンザニア：第43弾で参考情報の収束に基づく推測が反映され、ホワイトでは理由が出る', () => {
+    // 第43弾で方針変更: 査読済みの所見は無いが、供給者・メーカーの記述
+    // （参考情報）が果実の方向で収束するため、推測として反映する。
     const a = analyzeChocoCombo({ kind: 'dark', originId: 'tanzania', lineage: null })
     const origin = a.axisSummaries.find((s) => s.axis === 'origin')
-    expect(origin?.reflected).toBe(false)
-    expect(origin?.text).toContain('確認できていない')
+    expect(origin?.reflected).toBe(true)
+    const berry = a.notes.find((n) => n.noteId === 'berry')
+    expect(berry?.level).toBe('inferred')
+    // ホワイト（カカオマス不使用）では反映せず、理由が表示される
+    const w = analyzeChocoCombo({ kind: 'white', originId: 'tanzania', lineage: null })
+    const wOrigin = w.axisSummaries.find((s) => s.axis === 'origin')
+    expect(wOrigin?.reflected).toBe(false)
+    expect(wOrigin?.text).toContain('反映していません')
   })
 })
 
@@ -225,7 +235,10 @@ describe('既存の代表例の回帰（長崎 × やぶきた × 紅茶の弱�
     const cultivar = a.axisSummaries.find((s) => s.axis === 'cultivar')
     expect(cultivar?.reflected).toBe(true)
     const region = a.axisSummaries.find((s) => s.axis === 'region')
-    expect(region?.reflected).toBe(false) // 長崎の所見は緑茶のもので、紅茶のノートには反映しない
+    // 第43弾で変更: 長崎の和紅茶の紹介（参考情報）に基づく推測ルールを
+    // 追加したため、紅茶でも地域が反映されるようになった（従来は緑茶の
+    // 所見のみで紅茶には反映しなかった）。
+    expect(region?.reflected).toBe(true)
   })
   it('チョコの選択空間アンカーは不変（成立条件に触れない）。エクアドル産地は第7弾で読み替え推測が反映される', () => {
     const sel: ChocoComboSel = { kind: 'dark', originId: 'ecuador', lineage: { layer: 'genetic', id: 'gen-nacional' } }

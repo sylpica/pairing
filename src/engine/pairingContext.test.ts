@@ -35,10 +35,11 @@ describe('ペアリングの階層判定（品種・系統指定）', () => {
     expect(note.level).toBe('group-general')
     expect(note.findings.length).toBeGreaterThan(0)
   })
-  it('伝統的分類 Forastero は香味データなし→不使用（insufficient）', () => {
+  it('伝統的分類 Forastero は第43弾から中核集団の特徴づけに基づく集団レベルの参考', () => {
     const note = cacaoPairingNote('traditional', traditionalGroupById('trad-forastero')!)
-    expect(note.level).toBe('insufficient')
-    expect(note.findings).toHaveLength(0)
+    expect(note.level).toBe('group-general')
+    expect(note.findings).toHaveLength(1)
+    expect(note.findings[0].kind).toBe('sensory')
   })
   it('遺伝集団 Nacional は集団レベルの参考（官能の所見あり）', () => {
     const note = cacaoPairingNote('genetic', geneticGroupById('gen-nacional')!)
@@ -85,11 +86,11 @@ describe('ペアリングの階層判定（産地指定）', () => {
     const note = cacaoOriginPairingNote(cacaoOriginById('venezuela')!)
     expect(note.level).toBe('group-general')
   })
-  it('タンザニアは香味データ未確認→insufficient（産地情報は見方に使わない）', () => {
+  it('タンザニアは査読データ未確認だが、第43弾から参考情報の収束に基づく集団レベルの参考', () => {
     const note = cacaoOriginPairingNote(cacaoOriginById('tanzania')!)
-    expect(note.level).toBe('insufficient')
-    expect(note.findings).toHaveLength(0)
-    expect(note.text).toContain('未確認')
+    expect(note.level).toBe('group-general')
+    expect(note.findings).toHaveLength(1)
+    expect(note.findings[0].sourceIds).toContain('kokoa-kamili-beans')
   })
   it('コートジボワールは産地の官能実測が加わり→origin-measured（地域差は小さいという結論側）', () => {
     const note = cacaoOriginPairingNote(cacaoOriginById('cote-divoire')!)

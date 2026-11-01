@@ -53,6 +53,17 @@ const TEA_COMBO_EXCEPTIONS = new Set([
   'tsuyuhikari,benifuuki,samidori',
   'tsuyuhikari,samidori',
   'yabukita,soufu',
+  // 第43弾で追加: 四季春は「強い果実様」の方向（品種解説・参考情報）を
+  // 果実全般の一段強調として反映し、土台（未指定）と完全一致する状態を
+  // 脱した。その結果、烏龍茶では そうふう（葉成分の実測からの読み替えで
+  // 果実全般が一段強い）と表示が一致する。足がかりの方向が同一である
+  // ことによる一致（C2 相当）としてここに記録する。
+  'sijichun,soufu',
+  // 第43弾差別化ラウンドで追加: TRI 2025 と TRI 2043 は、それぞれ独立した
+  // 組成研究（Kumar & Rajapaksha 2005 の分離収量／Kottawa-Arachchi et al.
+  // 2013 の低カテキン分類）から「カテキン少なめ→苦味・渋味が穏やか」と
+  // いう同方向の推測に帰着し、紅茶では表示が一致する（C2 相当）。
+  'tri-2025,tri-2043',
 ].map((s) => norm(s.split(','))))
 
 const TEA_WHEEL_EXCEPTIONS = new Set([
@@ -60,6 +71,31 @@ const TEA_WHEEL_EXCEPTIONS = new Set([
   'okumidori,yutakamidori,benifuuki,samidori',
   'p312,tri-2023,tri-2025,tri-2043',
   'sijichun,tieguanyin',
+  // 第43弾で追加: 四季春×そうふう（TEA_COMBO_EXCEPTIONS の第43弾注記と
+  // 同じ C2 相当の一致が、ペアリングホイール側にも現れる）。
+  'sijichun,soufu',
+  // 第43弾差別化ラウンドで追加: 緑茶で べにふうき（育成機関の特徴づけ
+  // 「渋味が強い」からの推測）と ゆたかみどり（既存の強い方向の推測）が
+  // 同方向に帰着し、ペアリングホイールで一致する（C2 相当）。
+  'benifuuki,yutakamidori',
+  // 第43弾差別化ラウンドで追加: さみどり（渋味・苦味が穏やか、参考情報
+  // 群の一致）と つゆひかり（渋味・苦味が穏やか、タンニン含量の方向）が
+  // 同方向の推測に帰着し、ペアリングホイールで一致する（C2 相当）。
+  'samidori,tsuyuhikari',
+  // 第43弾差別化ラウンドで追加: 青心大冇の緑茶での花様の強調（茶業文献
+  // の方向からの推測）は、ペアリング合成では さやまかおり（渋味の強い
+  // 推測を持つ）のホイールと％配分が一致する文脈がある（T3 相当：
+  // ペアリング側の段階化による吸収。単体コンボでは区別される）。
+  'qingxin-damao,sayamakaori',
+  // 第43弾差別化ラウンドで追加: 鉄観音のバラ追加（ゲラニオール候補から
+  // の推測）は、ペアリング合成では べにふうき の烏龍茶ホイールと％配分
+  // が一致する文脈がある（T3 相当。単体コンボでは区別される）。
+  'benifuuki,tieguanyin',
+  // 第43弾差別化ラウンドで追加: おくみどり・さみどり・つゆひかり は
+  // いずれも渋味（さみどり・つゆひかりは苦味も）を穏やかにする同方向の
+  // 推測を持ち、鹿児島・国集約の文脈ではペアリングホイールが一致する
+  // （C2/T2 相当）。
+  'okumidori,samidori,tsuyuhikari',
   'soufu,harumidori',
   'tieguanyin,fenghuang-dancong-group',
   'tri-2023,tri-2025,tri-2043',
@@ -94,6 +130,35 @@ const CHOCO_COMBO_EXCEPTIONS = new Set([
   'genetic:gen-curaray,genetic:gen-guiana,genetic:gen-nanay,genetic:gen-purus,traditional:trad-forastero',
   'genetic:gen-curaray,genetic:gen-nanay,genetic:gen-purus,traditional:trad-forastero',
   'genetic:gen-maranon,traditional:trad-trinitario',
+  // 第43弾差別化ラウンド（カカオ）で追加。理由は以下の通り:
+  // ・Nanay は Iquitos からの遺伝的近接合成（(e)）のため、近接先とその
+  //   構成クローン IMC-67 とは、合成の帰結として表示が一致する（C4 相当）。
+  // ・Purús の花様の弱い追加は、土台・他軸に花様がある文脈では署名に
+  //   現れず、野生集団群（Contamana / Curaray 等）と一致する（C1/C2 相当）。
+  // ・フォラステロ（Forastero）は中核集団 Amelonado からの読み替え（(d)）
+  //   のため、文脈により Amelonado やギアナ等と果実の方向が一致する
+  //   （C2 相当）。
+  'clone:ccn-51,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-purus',
+  'clone:ics-95,genetic:gen-contamana,genetic:gen-purus',
+  'clone:ics-95,traditional:trad-forastero',
+  'clone:imc-67,genetic:gen-iquitos,genetic:gen-nanay',
+  'genetic:gen-amelonado,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-maranon,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'genetic:gen-amelonado,genetic:gen-criollo,genetic:gen-curaray,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'genetic:gen-amelonado,genetic:gen-criollo,genetic:gen-curaray,traditional:trad-criollo,traditional:trad-trinitario',
+  'genetic:gen-amelonado,genetic:gen-curaray,genetic:gen-guiana,traditional:trad-forastero',
+  'genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-nanay,genetic:gen-purus',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-maranon,genetic:gen-purus,traditional:trad-forastero',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-purus',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-purus,traditional:trad-forastero',
+  'genetic:gen-contamana,genetic:gen-iquitos,genetic:gen-nanay,genetic:gen-purus',
+  'genetic:gen-contamana,genetic:gen-purus',
+  'genetic:gen-curaray,genetic:gen-guiana',
+  'genetic:gen-curaray,genetic:gen-guiana,traditional:trad-forastero',
+  'genetic:gen-curaray,genetic:gen-maranon,traditional:trad-forastero',
+  'genetic:gen-curaray,traditional:trad-forastero',
+  'genetic:gen-iquitos,genetic:gen-nanay',
+  'genetic:gen-maranon,traditional:trad-forastero',
 ].map((s) => norm(s.split(','))))
 
 const CHOCO_WHEEL_EXCEPTIONS = new Set([
@@ -126,6 +191,41 @@ const CHOCO_WHEEL_EXCEPTIONS = new Set([
   'genetic:gen-curaray,genetic:gen-guiana,genetic:gen-nanay,genetic:gen-purus,traditional:trad-forastero',
   'genetic:gen-maranon,genetic:gen-nacional',
   'genetic:gen-maranon,traditional:trad-trinitario',
+  // 第43弾差別化ラウンド（カカオ）で追加。理由は CHOCO_COMBO 側の注記と
+  // 同じ（Nanay の近接合成＝C4 相当、Purús の花様追加の埋没＝C1/C2 相当、
+  // フォラステロの読み替え＝C2 相当）。ペアリングホイールでは段階化で
+  // さらに潰れる（T3 相当の側面を含む）。
+  'clone:ccn-51,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-purus,traditional:trad-criollo,traditional:trad-trinitario',
+  'clone:ccn-51,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-purus',
+  'clone:ccn-51,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-purus',
+  'clone:ics-95,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-maranon,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'clone:ics-95,genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-maranon,genetic:gen-purus,traditional:trad-forastero',
+  'clone:ics-95,genetic:gen-amelonado,genetic:gen-maranon,genetic:gen-nacional,traditional:trad-forastero',
+  'clone:ics-95,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-maranon,genetic:gen-purus,traditional:trad-forastero',
+  'clone:ics-95,genetic:gen-contamana,genetic:gen-nacional,genetic:gen-purus',
+  'clone:ics-95,genetic:gen-maranon,genetic:gen-nacional,traditional:trad-forastero',
+  'clone:ics-95,genetic:gen-maranon,traditional:trad-forastero',
+  'clone:ics-95,traditional:trad-forastero',
+  'clone:imc-67,genetic:gen-iquitos,genetic:gen-nanay',
+  'genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-nanay,genetic:gen-purus,traditional:trad-criollo,traditional:trad-trinitario',
+  'genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-purus,traditional:trad-criollo,traditional:trad-trinitario',
+  'genetic:gen-amelonado,genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-purus,traditional:trad-forastero',
+  'genetic:gen-amelonado,genetic:gen-curaray,genetic:gen-guiana,traditional:trad-forastero',
+  'genetic:gen-amelonado,traditional:trad-forastero',
+  'genetic:gen-contamana,genetic:gen-criollo,genetic:gen-curaray,genetic:gen-purus,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-iquitos,genetic:gen-nanay,genetic:gen-purus',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-guiana,genetic:gen-purus',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-iquitos,genetic:gen-nanay,genetic:gen-purus',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-maranon,genetic:gen-purus,traditional:trad-forastero',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-purus',
+  'genetic:gen-contamana,genetic:gen-curaray,genetic:gen-purus,traditional:trad-forastero',
+  'genetic:gen-contamana,genetic:gen-iquitos,genetic:gen-nanay,genetic:gen-purus',
+  'genetic:gen-contamana,genetic:gen-purus',
+  'genetic:gen-criollo,genetic:gen-curaray,genetic:gen-maranon,traditional:trad-criollo,traditional:trad-forastero,traditional:trad-trinitario',
+  'genetic:gen-criollo,genetic:gen-maranon,traditional:trad-criollo,traditional:trad-trinitario',
+  'genetic:gen-curaray,genetic:gen-guiana',
+  'genetic:gen-iquitos,genetic:gen-nanay',
+  'genetic:gen-maranon,genetic:gen-nacional,traditional:trad-forastero',
 ].map((s) => norm(s.split(','))))
 
 const comboSigTea = (sel: TeaComboSel) => {

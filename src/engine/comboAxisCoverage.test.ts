@@ -179,14 +179,16 @@ describe('課題A: 新規変換の回帰', () => {
     expect(a.notes.find((n) => n.noteId === 'fruit-general')?.level).toBe('general')
   })
 
-  it('理由表示: 村上は「寄与を示すものではない」、タンザニアは「確認できていない」を含む', () => {
+  it('理由表示: 村上は第43弾から緑茶で味の推測が反映され、タンザニアはホワイトで理由が出る', () => {
+    // 第43弾で変更: 村上は伝統的評価に基づく味の推測ルールが入り、緑茶では
+    // 地域が反映されるようになった。タンザニアも参考情報に基づく推測が
+    // 入ったが、ホワイト（カカオマス不使用）では反映されず理由が出る。
     const tea = analyzeTeaCombo({ kindId: 'green', regionId: 'murakami', cultivarId: '' })
     const regionSummary = tea.axisSummaries.find((s) => s.axis === 'region')
-    expect(regionSummary?.reflected).toBe(false)
-    expect(regionSummary?.text).toContain('寄与を示すものではない')
-    const choco = analyzeChocoCombo({ kind: 'dark', originId: 'tanzania', lineage: null })
+    expect(regionSummary?.reflected).toBe(true)
+    const choco = analyzeChocoCombo({ kind: 'white', originId: 'tanzania', lineage: null })
     const originSummary = choco.axisSummaries.find((s) => s.axis === 'origin')
     expect(originSummary?.reflected).toBe(false)
-    expect(originSummary?.text).toContain('確認できていない')
+    expect(originSummary?.text).toContain('反映していません')
   })
 })

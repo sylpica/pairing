@@ -47,8 +47,14 @@ export const cacaoOrigins: CacaoOrigin[] = [
         conditions: '組成の実測であり、香味の特徴や優劣を示すものではありません（Parada et al. 2024、Panda et al. 2022）。',
         sourceIds: ['parada-2024-cacao-origins', 'panda-2022-cacao-composition'],
       },
+      {
+        kind: 'sensory',
+        statement: '総説 Afoakwa et al. 2008 の起源別特徴表では、ベネズエラの行（Venezuela Forastero 5）は「Fruity, raisin, caramel」と果実系で特徴づけられています。第43弾で原著の表を本文確認しました。',
+        conditions: '総説の特徴表（一般的知見）であり、強さの格付け数値は根拠に使わない。表の分類ラベルは Forastero で、産地行としての整理である点に留意。組み合わせへの反映は果実の方向（ドライフルーツ・果実全般）のみに絞り、推測（inferred）として扱う。',
+        sourceIds: ['afoakwa-2008-cocoa-flavour-review'],
+      },
     ],
-    sourceIds: ['marcano-2009-venezuela-admixture', 'lachenaud-2017-criollo-review', 'parada-2024-cacao-origins', 'panda-2022-cacao-composition'],
+    sourceIds: ['marcano-2009-venezuela-admixture', 'lachenaud-2017-criollo-review', 'parada-2024-cacao-origins', 'panda-2022-cacao-composition', 'afoakwa-2008-cocoa-flavour-review'],
     note: '産地名は品種名ではありません。ベネズエラ産のカカオは単一の遺伝的集団ではなく、地域と栽培集団によって構成が異なります。',
   },
   {
@@ -260,8 +266,14 @@ export const cacaoOrigins: CacaoOrigin[] = [
         conditions: '総説による「群」としての特徴づけであり、コートジボワール単独の官能実測ではない。統一条件で比較した実測（Amien et al. 2025）では産地差は見られておらず、両者は緊張関係にある',
         sourceIds: ['afoakwa-2008-cocoa-flavour-review'],
       },
+      {
+        kind: 'sensory',
+        statement: '第43弾追加：同じ総説の起源別特徴表で、同じ西アフリカ群のガーナには果実の含み（fruity notes）が挙げられており、西アフリカの栽培基盤は Amelonado 系統が中核です。群の一員であることと基盤系統の方向からの読み替えとして、果実全般の方向を推測（inferred）で組み合わせに反映します。',
+        conditions: '群レベルの記述と近接系統からの読み替えであり、コートジボワール単独の実測ではない。Amien et al. 2025 の「チョコレートでは産地影響なし」という実測とは緊張関係にあり、その点は産地の注記にも明記する。',
+        sourceIds: ['afoakwa-2008-cocoa-flavour-review', 'motamayor-2008-cacao-populations'],
+      },
     ],
-    sourceIds: ['amien-2025-cote-divoire-cocoa-origins', 'kouassi-2022-cote-divoire-fermentation-places', 'cote-divoire-yeast-2024', 'afoakwa-2008-cocoa-flavour-review'],
+    sourceIds: ['amien-2025-cote-divoire-cocoa-origins', 'kouassi-2022-cote-divoire-fermentation-places', 'cote-divoire-yeast-2024', 'afoakwa-2008-cocoa-flavour-review', 'motamayor-2008-cacao-populations'],
     note: '産地名は品種名ではありません。実測が示すのは、産地名から香味を決めることはできないという点です。',
   },
   {
@@ -273,10 +285,12 @@ export const cacaoOrigins: CacaoOrigin[] = [
     relatedTraditionalIds: [],
     relatedGeneticGroupIds: [],
     relatedCloneIds: [],
-    flavorEvidence: 'none',
+    flavorEvidence: 'general',
     verification: { existence: 'confirmed', classification: 'unconfirmed', science: 'unconfirmed' },
-    scienceNote: '遺伝・香味のどちらの査読データも、本アプリでは確認できていません（文献拡張ラインB・Eで再探索しても、タンザニア単独の官能・揮発の査読研究は見つかりませんでした）。そのため科学的な所見は表示しません。代わりに、事業者・団体の発信を「参考情報」として区別して併記します。参考情報は推測やペアリングの根拠には使いません。',
-    findings: [],
+    scienceNote: '遺伝・香味のどちらの査読データも、本アプリでは確認できていません（文献拡張ラインB・Eで再探索しても、タンザニア単独の官能・揮発の査読研究は見つかりませんでした）。第43弾からは、供給者自身の官能ノートと、その豆を使う独立メーカーのノートが「赤い果実・ベリー」で収束する点に限り、最低格の参考情報を足がかりとする推測（inferred）を組み合わせに反映します（科学的根拠としては扱いません）。',
+    findings: [
+      { kind: 'sensory', statement: 'キロンベロ渓谷の発酵事業者 Kokoa Kamili の公式説明は、自社発酵豆の官能ノートとして「主に果実様――赤い果実、リンゴ、プラム」を掲げ、その豆を使う独立メーカー（Dick Taylor Craft Chocolate）の自社バー紹介も「CHERRY, COFFEE & LEMON」と柑橘を含む果実系で一致する。', conditions: 'いずれも事業者・メーカー発信の参考情報であり、査読済みの官能データではない。対象は主にキロンベロ渓谷／Kokoa Kamili 経由の豆に偏る。組み合わせへの反映は、収束した果実の方向（ベリー・柑橘）のみに絞り、推測（inferred）として扱う。', sourceIds: ['kokoa-kamili-beans', 'dick-taylor-tanzania'] },
+    ],
     referenceNotes: [
       {
         text: 'タンザニア・キロンベロ渓谷の中央発酵事業者 Kokoa Kamili の公式説明では、ウェット豆を農家から買い付け、3段カスケード式木箱で6日間発酵し、5–7日天日乾燥する工程が紹介されています（工程の参考情報であり、香味の実測ではありません）。',
@@ -291,7 +305,7 @@ export const cacaoOrigins: CacaoOrigin[] = [
         sourceIds: ['hcp-heirloom-cacao'],
       },
     ],
-    sourceIds: ['kokoa-kamili-operations', 'hcp-heirloom-cacao'],
+    sourceIds: ['kokoa-kamili-operations', 'hcp-heirloom-cacao', 'kokoa-kamili-beans', 'dick-taylor-tanzania'],
     note: '産地名のみを登録しています。業界の紹介文にある香味の説明は、査読された実測ではないため科学的な所見としては採用せず、「参考情報」として区別して表示します。',
   },
 ]

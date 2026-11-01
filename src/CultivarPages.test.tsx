@@ -148,7 +148,9 @@ describe('品種・系統データベースの画面連携', () => {
 
   it('組み合わせ画面で香味データのない系統を指定すると「不使用」と表示される', () => {
     location.hash = '#/pair'; render(<App />)
-    fireEvent.change(screen.getByLabelText('カカオの系統（任意）'), { target: { value: 'traditional:trad-forastero' } })
+    // 第43弾でフォラステロは中核集団の特徴づけに基づく参考情報を持つように
+    // なったため、不使用の代表は分類のみが確認済みのクラライに替える
+    fireEvent.change(screen.getByLabelText('カカオの系統（任意）'), { target: { value: 'genetic:gen-curaray' } })
     expect(screen.getByText(/使えるデータがないため不使用/)).toBeTruthy()
     expect(screen.getAllByText(/未確認/).length).toBeGreaterThan(0)
   })

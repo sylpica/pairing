@@ -178,6 +178,7 @@ export const teaCultivars: TeaCultivar[] = [
     verification: { existence: 'confirmed', classification: 'confirmed', science: 'peer-reviewed' },
     findings: [
       { kind: 'composition', statement: 'O-メチル化カテキン EGCG3″Me（(−)-エピガロカテキン-3-O-(3-O-メチル)ガレート）を多く含む。EGCG3″Me は紅茶に加工するとポリフェノール酸化酵素により消失し、緑茶・半発酵茶では保持される。含量は成熟した葉（一番茶後期〜二番茶）で高い。', conditions: '機能性・含有に関する知見であり、香気・呈味への寄与を示すものではない。香味の強さの根拠には用いない。', compoundId: 'egcg3me', sourceIds: [MY07, MY12] },
+      { kind: 'sensory', statement: '緑茶に加工した場合の味について、育成機関（農研機構）は「もともと紅茶用として開発されているため渋味が強いという特長を持っている」と公式に特徴づけており、小売・専門解説も「一般的な緑茶より苦みや渋みが強い」「タンニン（カテキン類）が比較的多いため」と一致して記述する。', conditions: '公的機関の特徴づけと小売・専門解説（参考情報）であり、対照比較の官能実測ではない。根拠は品種全体のカテキン含量の多さに基づく方向であり、EGCG3″Me そのものを香味の寄与成分として扱うものではない。組み合わせへの反映は推測（inferred）として扱う。', sourceIds: ['naro-benifuuki-press', 'e-cha-benifuuki-guide'] },
     ],
     sourceIds: [NARO, MY07, MY12],
     note: '同一品種が紅茶・半発酵茶・緑茶のいずれにも加工される、品種×茶類が固定されない代表例。メチル化カテキンを利用するには緑茶（または包種茶）として製造する必要がある。',
@@ -289,6 +290,7 @@ export const teaCultivars: TeaCultivar[] = [
     scienceNote: '品評会出品碾茶の品種間比較（茶業研究報告 126, 2018）で、さみどり は やぶきた より全窒素・遊離アミノ酸含量が高くカテキン類含量が低い傾向が報告されたが、論文自身が「施肥、栽培条件が共通ではないため断定できない」と明記しており、本実装では出典リンクを検証できなかったため所見の登録は見送った。京都府茶業研究所の機械摘みてん茶適性試験では供試品種の中で適性が最も高いと判断された（適性の評価であり香味データではない）。',
     findings: [
       { kind: 'sensory', statement: '宇治の茶生産者・古川製茶の品種解説では、さみどりは「上品で穏やかなうまみが特徴」とされる（参考情報。生産者の記述であり、査読済みの官能データではない）。', sourceIds: ['furukawa-seicha-variety-guide'] },
+      { kind: 'sensory', statement: '渋味・苦味の少なさについて、小売事業者の品種解説は「あまり渋みや苦みはないため、マイルドで飲みやすい」とし、生産者（dmatcha）の品種解説も「深いうま味を持ち、苦味は少ない」と記述するなど、複数の独立した生産者・小売の解説が同じ方向を示す（参考情報）。', conditions: '生産者・小売の解説（参考情報）であり、査読済みの官能データではない。品評会出品碾茶の品種間比較（茶業研究報告 126, 2018）でカテキン類含量が低い傾向とされた報告とも方向は一致するが、同報告は栽培条件が共通でない旨の留保つきである。組み合わせへの反映は推測（inferred）として扱う。', sourceIds: ['e-cha-samidori-guide', 'dmatcha-samidori'] },
     ],
     sourceIds: [NARO, 'furukawa-seicha-variety-guide'],
   },
@@ -419,6 +421,7 @@ export const teaCultivars: TeaCultivar[] = [
     scienceNote: '品種単独を対象とした査読済みの香気・呈味・官能論文は未確認。TBRS の公式解説では適製性が広く、椪風茶（東方美人茶）と烏龍茶の品質が最良、緑茶が次ぐとされる。東方美人茶に使える品種は本品種に限らず、「青心大冇＝東方美人茶専用品種」という固定結び付けは誤り。出典は調査記録（docs/research/cultivars-world.md）で TBRS 公式品種解説により確認した。東方美人茶（製品）の加工中メタボロミクス（査読論文）はあるが本品種単独の実測ではないため、科学データの充足は partial とする。',
     findings: [
       { kind: 'contribution', statement: '東方美人茶の加工中メタボロミクスでは、酵素反応段階でゲラニオールが約103倍に増加し、製品は果実様の香りと甘い味で知られるとされた。TBRS の公式品種解説では、本品種は椪風茶（東方美人茶）の品質が最良とされる品種の一つである。', conditions: '加工中実測の試料は金萱・鉄観音の葉であり、本品種単独の実測ではない。品種への適用は、公的機関の品種解説による対応づけを介した一般的な知見として扱う', sourceIds: ['fu-2022-oriental-beauty-processing'] },
+      { kind: 'sensory', statement: '緑茶への適性について、台湾の茶業文献は緑茶製造用品種の比較で「香氣及滋味，均以青心大冇最優，香高而味強」（香りと滋味は青心大冇が最も優れ、香り高く味が強い）と評し、公的機関の品種解説でも適製性が広く緑茶が東方美人茶に次ぐ用途とされる。', conditions: '往年の品種比較の記述と公的機関の適性評価（参考情報）であり、現代の査読済みの官能データではない。組み合わせへの反映は推測（inferred）として扱う。', sourceIds: ['taiwan-green-tea-cultivar-treatise'] },
     ],
     sourceIds: ['fu-2022-oriental-beauty-processing'],
   },
@@ -565,13 +568,14 @@ export const teaCultivars: TeaCultivar[] = [
     sourceIds: [SCIREP, 'gopaldhara-cultivar-guide'],
   },
   {
-    id: 'p312', name: 'P312', aliases: ['Phoobsering 312'],
-    country: 'インド', rank: 'clone', originType: 'official-breeding',
+    id: 'p312', name: 'P312', aliases: ['Phoobsering 312'],    country: 'インド', rank: 'clone', originType: 'official-breeding',
     breeding: 'Tea Research Association（TRA、Tocklai）が放出したダージリン向けクローンの一つ。名称は Phoobsering 茶園系統に由来するとされるが、TRA 公式資料での直接確認は未実施。',
     regions: ['インド・ダージリン地方'],
-    verification: { existence: 'confirmed', classification: 'partial', science: 'unconfirmed' },
-    scienceNote: '査読研究（茶樹22遺伝子型の比較研究、および TRA 放出29品種の紅茶揮発性成分の定量研究）の供試クローンとして登場するが、P312 単独の官能・香気特性を検証した査読論文は未確認。',
-    findings: [],
+    verification: { existence: 'confirmed', classification: 'partial', science: 'partial' },
+    scienceNote: '査読研究（茶樹22遺伝子型の比較研究、および TRA 放出29品種の紅茶揮発性成分の定量研究）の供試クローンとして登場するが、P312 単独の官能・香気特性を検証した査読論文は未確認。第43弾追加で、生産者・業界メディアの品種解説（参考情報）に基づく推測の足がかりを追加した。',
+    findings: [
+      { kind: 'sensory', statement: '生産者（Gopaldhara 茶園）の品種解説では、P312 は春摘みで花様・柑橘・蜂蜜の風味、夏摘みでチョコレート・トフィー・ベリーとマスカテルの特徴を示すとされる。業界メディア（World Tea News）の記事でも、退職した茶園マネージャーの談話として、AV2 と P312 は柑橘・レモンのような後味と穏やかな花のノートで最も求められるクローンとされた。', conditions: '生産者・業界メディアの記述（参考情報）であり、査読済みの官能データではない。季節による変動を含むため、組み合わせへの反映は柑橘の方向のみに絞り、推測（inferred）として扱う。', sourceIds: ['gopaldhara-tea-cultivars', 'world-tea-news-darjeeling-clones'] },
+    ],
     sourceIds: [SCIREP],
   },
   {
@@ -604,6 +608,7 @@ export const teaCultivars: TeaCultivar[] = [
     scienceNote: 'TRI クローン個別の香気成分・官能評価を検証した査読論文は未確認。確認できるのは収量・耐病性・形態等の育種特性と、生葉カテキンの分析化学的な実測のみであり、香味プロファイルの根拠としては使えない。出典は調査記録（docs/research/cultivars-world.md）で TRI 一次資料により確認した（カテキン実測は 2026-10-31 文献拡張ラインCの統合で追加）。',
     findings: [
       { kind: 'composition', statement: 'TRI 2023 は、茶カテキンの分離・定量法を確立した査読研究（Journal of Chromatography A）の供試試料に含まれる。', conditions: '分析化学の実測であり、香味・官能のデータではない。このクローンの揮発性香気データは確認されていない。', sourceIds: ['kumar-rajapaksha-2005-tri-catechins'] },
+      { kind: 'composition', statement: '同研究の分離実績では、TRI 2023 の新鮮芽150g から EGCG 440mg（純度96%）が分離され、生葉1gあたりの分離収量は報告された品種の中で最も高かった（TRI 2025 の約2倍）。', conditions: '分離収量は回収率を含む値であり、含量そのものの直接測定ではない。EGCG を含むガレート型カテキン類が渋味・苦味の主要寄与成分群であることは再構成実験で確認されているため、含量の方向からの推測（inferred）の足がかりとしてのみ用いる。', sourceIds: ['kumar-rajapaksha-2005-tri-catechins'] },
     ],
     sourceIds: ['kumar-rajapaksha-2005-tri-catechins'],
     note: '「セイロン茶」は地域名・茶名であり品種名ではない（ダージリンと同様）。',
@@ -617,6 +622,7 @@ export const teaCultivars: TeaCultivar[] = [
     scienceNote: '香気成分・官能評価の査読論文は未確認。育種特性と、生葉カテキンの分析化学的な実測のみが確認できる（2026-10-31 文献拡張ラインCの統合）。',
     findings: [
       { kind: 'composition', statement: 'TRI 2025 は、茶カテキンの分離・定量法を確立した査読研究（Journal of Chromatography A）の供試試料に含まれる。', conditions: '分析化学の実測であり、香味・官能のデータではない。このクローンの揮発性香気データは確認されていない。', sourceIds: ['kumar-rajapaksha-2005-tri-catechins'] },
+      { kind: 'composition', statement: '同研究の分離実績では、TRI 2025 の新鮮芽235g から EGCG 347mg（純度99%）と ECG 40mg が分離され、生葉1gあたりの EGCG 分離収量は、収量が報告された4品種（TRI 2023・2025・3079・4006）の中で最も低かった。', conditions: '分離収量は回収率を含む値であり、含量そのものの直接測定ではない。同一研究・同一手法内の相対比較として、カテキン含量の方向からの推測（inferred）の足がかりとしてのみ用いる。', sourceIds: ['kumar-rajapaksha-2005-tri-catechins'] },
     ],
     sourceIds: ['kumar-rajapaksha-2005-tri-catechins'],
   },
@@ -629,8 +635,9 @@ export const teaCultivars: TeaCultivar[] = [
     scienceNote: '香気成分・官能評価の査読論文は未確認。育種特性と、フェノール類の含有量の実測のみが確認できる（2026-10-31 文献拡張ラインCの統合）。',
     findings: [
       { kind: 'composition', statement: 'TRI 2043 は、インドの UPASI 系統と並んで、季節によるフェノール類の含有量を実測した査読研究（Scientific Reports）の供試系統に含まれる。', conditions: '含有量の実測であり、香味への寄与や官能のデータではない。', sourceIds: ['kottur-2023-upasi-tri-phenolics'] },
+      { kind: 'composition', statement: 'スリランカの茶遺伝資源35系統の生化学的特徴づけ（査読研究）では、TRI 2043 は色素（クロロフィル・カロテノイド）の含量が高く、カテキン類の含量が低い系統群（クラスターIV）に分類された。', conditions: '生葉の含有レベルの知見であり、製茶の官能データではない。カテキン類の既知の呈味（苦味・渋味）への写像による推測（inferred）の足がかりとしてのみ用いる。', sourceIds: ['kottawa-arachchi-2013-germplasm-biochem'] },
     ],
-    sourceIds: ['kottur-2023-upasi-tri-phenolics'],
+    sourceIds: ['kottur-2023-upasi-tri-phenolics', 'kottawa-arachchi-2013-germplasm-biochem'],
   },
 ]
 export const teaCultivarById = (id: string) => teaCultivars.find((c) => c.id === id)
